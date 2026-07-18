@@ -16,7 +16,6 @@
 <body>
     <h1>Classroom Pink Noise Trainer</h1>
     
-    <!-- 모드 선택 버튼 -->
     <div class="mode-group">
         <button class="mode-btn active" id="mode1" onclick="setMode(1)">Boost Only</button>
         <button class="mode-btn" id="mode2" onclick="setMode(2)">Cut Only</button>
@@ -34,9 +33,14 @@
 
     <script>
         const ctx = new AudioContext();
+        // 헤드룸 확보를 위해 Master Gain 추가
+        const masterGain = ctx.createGain();
+        masterGain.gain.value = 0.2; // 전체 볼륨을 낮춰 디스토션을 방지합니다.
+        masterGain.connect(ctx.destination);
+
         const bands = [31.5, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
         let targetIdx, source, filter;
-        let mode = 1; // 1: Boost, 2: Cut, 3: Mixed
+        let mode = 1;
 
         function setMode(m) {
             mode = m;
@@ -52,7 +56,6 @@
             targetIdx = Math.floor(Math.random() * bands.length);
             filter.frequency.value = bands[targetIdx];
             
-            // 모드별 Gain 설정
             if(mode === 1) filter.gain.value = 6;
             else if(mode === 2) filter.gain.value = -6;
             else filter.gain.value = Math.random() > 0.5 ? 6 : -6;
@@ -71,7 +74,8 @@
             }
             const newSource = ctx.createBufferSource();
             newSource.buffer = b; newSource.loop = true;
-            newSource.connect(filter).connect(ctx.destination);
+            // 필터를 거친 후 Master Gain으로 연결
+            newSource.connect(filter).connect(masterGain); 
             return newSource;
         }
 
