@@ -6,41 +6,34 @@
     <style>
         body { margin: 0; height: 100vh; font-family: 'Pretendard', sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; background: #1a1a1a; }
         
-        /* 기어 아이콘 스타일 */
-        #settings-trigger { position: fixed; top: 20px; right: 20px; font-size: 2em; cursor: pointer; z-index: 200; }
+        /* 기어 아이콘 */
+        #settings-trigger { position: fixed; top: 20px; right: 20px; font-size: 2em; cursor: pointer; z-index: 200; background: #1a1a1a; padding: 10px; border-radius: 50%; }
         
         /* 사이드 설정 메뉴 */
         #settings-menu { 
             position: fixed; top: 0; right: -300px; width: 300px; height: 100%; 
-            background: #2c3e50; z-index: 150; transition: 0.3s; padding: 20px; box-shadow: -5px 0 15px rgba(0,0,0,0.5);
+            background: #2c3e50; z-index: 150; transition: 0.3s; padding: 40px 20px; box-shadow: -5px 0 15px rgba(0,0,0,0.5);
             display: flex; flex-direction: column; align-items: center; justify-content: center;
         }
         #settings-menu.open { right: 0; }
         
+        /* 메뉴 버튼 정리 */
+        .settings-group { width: 100%; margin-bottom: 30px; }
+        .settings-label { margin-bottom: 10px; font-size: 0.9em; color: #bdc3c7; }
+        .btn-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+        .settings-btn { padding: 10px 15px; font-size: 0.9em; cursor: pointer; border-radius: 6px; border: none; background: #444; color: white; transition: 0.2s; min-width: 80px; }
+        .settings-btn.active { background: #3498db !important; }
+        
+        /* 클로즈 버튼 (박스 없이 아랫줄만) */
+        #close-btn { background: none; border: none; color: white; cursor: pointer; font-size: 1.1em; border-bottom: 2px solid white; padding: 5px 0; margin-top: 20px; }
+        
+        /* 기타 UI */
         .overlay-screen { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:100; display:flex; flex-direction:column; align-items:center; justify-content:center; }
         .mode-btn { padding: 20px 40px; font-size: 1.5em; margin: 10px; cursor: pointer; border-radius: 10px; border: none; background: #3498db; color: white; }
-        
-        #main-ui { text-align: center; width: 100%; }
-        
-        #display-area { 
-            position: relative; width: 600px; height: 300px; margin: 20px auto; 
-            background: #000; border: 4px solid #3498db; border-radius: 40px;
-            display: flex; align-items: center; justify-content: center; overflow: hidden;
-            box-shadow: 0 0 20px rgba(52, 152, 219, 0.3);
-        }
+        #display-area { position: relative; width: 600px; height: 300px; margin: 20px auto; background: #000; border: 4px solid #3498db; border-radius: 40px; display: flex; align-items: center; justify-content: center; overflow: hidden; box-shadow: 0 0 20px rgba(52, 152, 219, 0.3); }
         #rta-canvas { width: 100%; height: 100%; }
-        #answer-display { 
-            position: absolute; width: 85%; height: 85%;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            font-size: 2.2em; line-height: 1.4; font-weight: 900; color: #ffeb3b; 
-            background: rgba(0,0,0,0.9); border-radius: 30px; z-index: 10;
-            padding: 10px; box-sizing: border-box; text-align: center;
-        }
-        
-        .btn-row { margin: 10px; }
-        .btn-row button { padding: 12px 20px; font-size: 0.9em; cursor: pointer; border-radius: 6px; border: none; margin: 4px; background: #444; color: white; transition: 0.2s; }
-        .btn-row button:hover { background: #666; }
-        .nav-btn.active, .range-btn.active { background: #3498db !important; }
+        #answer-display { position: absolute; width: 85%; height: 85%; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 2.2em; line-height: 1.4; font-weight: 900; color: #ffeb3b; background: rgba(0,0,0,0.9); border-radius: 30px; z-index: 10; padding: 10px; box-sizing: border-box; text-align: center; }
+        .action-row button { padding: 12px 20px; font-size: 0.9em; cursor: pointer; border-radius: 8px; border: none; margin: 4px; background: #444; color: white; }
     </style>
 </head>
 <body>
@@ -48,19 +41,24 @@
     <div id="settings-trigger" onclick="toggleSettings()">⚙️</div>
     
     <div id="settings-menu">
-        <h2>SETTINGS</h2>
-        <div class="btn-row">
-            <button id="m1" class="nav-btn active" onclick="setMode(1)">BOOST</button>
-            <button id="m2" class="nav-btn" onclick="setMode(2)">CUT</button>
-            <button id="m3" class="nav-btn" onclick="setMode(3)">MIXED</button>
+        <div class="settings-group">
+            <div class="settings-label">MODE</div>
+            <div class="btn-row">
+                <button id="m1" class="settings-btn active" onclick="setMode(1)">BOOST</button>
+                <button id="m2" class="settings-btn" onclick="setMode(2)">CUT</button>
+                <button id="m3" class="settings-btn" onclick="setMode(3)">MIXED</button>
+            </div>
         </div>
-        <div class="btn-row">
-            <button class="range-btn active" onclick="setRange('all', this)">ALL</button>
-            <button class="range-btn" onclick="setRange('low', this)">LOW</button>
-            <button class="range-btn" onclick="setRange('mid', this)">MID</button>
-            <button class="range-btn" onclick="setRange('high', this)">HIGH</button>
+        <div class="settings-group">
+            <div class="settings-label">FREQUENCY RANGE</div>
+            <div class="btn-row">
+                <button class="settings-btn range-btn active" onclick="setRange('all', this)">ALL</button>
+                <button class="settings-btn range-btn" onclick="setRange('low', this)">LOW</button>
+                <button class="settings-btn range-btn" onclick="setRange('mid', this)">MID</button>
+                <button class="settings-btn range-btn" onclick="setRange('high', this)">HIGH</button>
+            </div>
         </div>
-        <button onclick="toggleSettings()" style="margin-top:20px;">CLOSE</button>
+        <button id="close-btn" onclick="toggleSettings()">CLOSE</button>
     </div>
 
     <div id="overlay" class="overlay-screen">
@@ -76,13 +74,13 @@
             <div id="answer-display" style="display:none;"></div>
         </div>
         <div id="status" style="font-size: 1.2em; font-weight:bold; margin-bottom: 10px;">Ready</div>
-        <div class="btn-row">
-            <button onclick="run()" style="padding: 15px 30px;">START / NEXT</button>
-            <button onclick="listenAgain()" style="padding: 15px 30px;">AGAIN</button>
-            <button onclick="stopAll()" style="padding: 15px 30px;">STOP</button>
-            <button onclick="showAnswers()" style="padding: 15px 30px;">ANSWERS</button>
-            <br>
-            <button onclick="goBack()" style="background:#c0392b; padding: 15px 30px;">RETURN TO START</button>
+        <div class="action-row">
+            <button onclick="run()">START / NEXT</button>
+            <button onclick="listenAgain()">AGAIN</button>
+            <button onclick="stopAll()">STOP</button>
+            <button onclick="showAnswers()">ANSWERS</button>
+            <br><br>
+            <button onclick="goBack()" style="background:#c0392b;">RETURN TO START</button>
         </div>
     </div>
 
@@ -115,7 +113,7 @@
         let type, mode = 1, currentRange = 'all', set = [], timer, filter, source, currentQ = 0;
 
         function init(t) { type = t; document.getElementById('overlay').style.display = 'none'; ctx.resume(); }
-        function setMode(m) { mode = m; document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active')); document.getElementById('m' + m).classList.add('active'); }
+        function setMode(m) { mode = m; document.querySelectorAll('.settings-btn').forEach(btn => btn.classList.remove('active')); document.getElementById('m' + m).classList.add('active'); }
         function setRange(r, btn) { currentRange = r; document.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); }
         function goBack() { stopAll(); document.getElementById('overlay').style.display = 'flex'; }
 
