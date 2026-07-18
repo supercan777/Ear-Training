@@ -47,8 +47,6 @@
 
         function init(t) { type = t; document.getElementById('overlay').style.display = 'none'; document.getElementById('main-ui').style.display = 'block'; document.getElementById('ui-title').innerText = t === 'free' ? "Free Practice" : "5-Question Set"; ctx.resume(); }
         function setMode(m) { mode = m; }
-        
-        // 인트로로 돌아가기
         function goBack() { stopAll(); document.getElementById('overlay').style.display = 'flex'; document.getElementById('main-ui').style.display = 'none'; }
 
         function createSource(f, g) {
@@ -82,6 +80,7 @@
 
         function run() {
             stopAll();
+            document.getElementById('answer-display').innerText = ""; // 시작할 때 정답 초기화
             if(type === 'free') {
                 let f = bands[Math.floor(Math.random()*bands.length)];
                 let g = (mode==1)?6:(mode==2)?-6:(Math.random()>0.5?6:-6);
