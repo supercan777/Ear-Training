@@ -9,8 +9,8 @@
         button { padding: 15px 30px; font-size: 1em; cursor: pointer; border-radius: 8px; border: none; margin: 5px; transition: 0.2s; }
         .mode-btn { background: #ddd; }
         .mode-btn.active { background: #3498db; color: white; }
-        #status { font-weight: bold; color: #d35400; font-size: 1.8em; margin: 20px; }
-        #answer-display { font-size: 1.5em; color: #2c3e50; font-weight: bold; line-height: 1.6; }
+        #status { font-weight: bold; color: #d35400; font-size: 1.5em; margin: 20px; }
+        #answer-display { font-size: 1.3em; color: #2c3e50; font-weight: bold; line-height: 1.6; }
     </style>
 </head>
 <body>
@@ -24,6 +24,7 @@
 
     <div class="controls">
         <button onclick="startFiveQuestionSet()" style="background:#27ae60; color:white;">Start 5-Question Set</button>
+        <button onclick="stopAll()" style="background:#c0392b; color:white;">Stop All</button>
         <button onclick="showAllAnswers()" style="background:#2980b9; color:white;">Show All Answers</button>
     </div>
 
@@ -54,7 +55,6 @@
             if(filter) filter.disconnect();
             filter = ctx.createBiquadFilter(); filter.type = "peaking";
             filter.frequency.value = freq; filter.gain.value = gain; filter.Q.value = 1.4;
-            
             const b = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
             const data = b.getChannelData(0);
             for(let i=0; i<data.length; i++) data[i] = Math.random()*2-1;
@@ -68,17 +68,16 @@
             source = createSource(set[i].freq, set[i].gain);
             source.start();
 
-            // 패턴: 3(Flat) - 3(Var) - 3(Flat) - 3(Var) - 2(Silence)
-            filter.gain.value = 0; document.getElementById('status').innerText = `Q${i+1}: Flat`;
+            filter.gain.value = 0; document.getElementById('status').innerText = `Q${i+1}: Flat (3s)`;
             timer = setTimeout(() => {
-                filter.gain.value = set[i].gain; document.getElementById('status').innerText = `Q${i+1}: Change`;
+                filter.gain.value = set[i].gain; document.getElementById('status').innerText = `Q${i+1}: Change (3s)`;
                 timer = setTimeout(() => {
-                    filter.gain.value = 0; document.getElementById('status').innerText = `Q${i+1}: Flat`;
+                    filter.gain.value = 0; document.getElementById('status').innerText = `Q${i+1}: Flat (3s)`;
                     timer = setTimeout(() => {
-                        filter.gain.value = set[i].gain; document.getElementById('status').innerText = `Q${i+1}: Change`;
+                        filter.gain.value = set[i].gain; document.getElementById('status').innerText = `Q${i+1}: Change (3s)`;
                         timer = setTimeout(() => {
-                            source.stop(); source.disconnect();
-                            document.getElementById('status').innerText = "Silence";
+                            try { source.stop(); source.disconnect(); } catch(e){}
+                            document.getElementById('status').innerText = "Silence (2s)";
                             timer = setTimeout(() => playSet(i + 1), 2000);
                         }, 3000);
                     }, 3000);
@@ -87,10 +86,16 @@
         }
 
         function startFiveQuestionSet() {
-            ctx.resume(); clearTimeout(timer);
+            ctx.resume(); stopAll();
             generateSet();
             document.getElementById('answer-display').innerText = "";
             playSet(0);
+        }
+
+        function stopAll() {
+            clearTimeout(timer);
+            try { source.stop(); source.disconnect(); } catch(e){}
+            document.getElementById('status').innerText = "Stopped";
         }
 
         function showAllAnswers() {
