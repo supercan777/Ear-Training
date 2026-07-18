@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -19,22 +19,22 @@
 </head>
 <body>
     <div id="start-screen">
-        <h1>음향 청음 훈련</h1>
-        <button onclick="initApp()" style="padding:25px 50px; font-size:1.5em; background:#27ae60; color:white; border:none; border-radius:15px; cursor:pointer;">훈련 시작</button>
+        <h1>Audio Ear Training</h1>
+        <button onclick="initApp()" style="padding:25px 50px; font-size:1.5em; background:#27ae60; color:white; border:none; border-radius:15px; cursor:pointer;">Start Training</button>
     </div>
 
     <h1>Ear Trainer</h1>
     <canvas id="visualizer"></canvas>
-    <div id="status" style="font-size: 1.1em; font-weight: bold; margin: 15px;">단계와 난이도를 선택하고 시작하세요.</div>
+    <div id="status" style="font-size: 1.1em; font-weight: bold; margin: 15px;">Select a stage to begin.</div>
     
     <div class="btn-group">
-        <button class="stage-btn" id="s1" onclick="setStage(1)">1단계(부스트)</button>
-        <button class="stage-btn" id="s2" onclick="setStage(2)">2단계(컷)</button>
-        <button class="stage-btn" id="s3" onclick="setStage(3)">3단계(혼합)</button>
+        <button class="stage-btn" id="s1" onclick="setStage(1)">1. Boost Only</button>
+        <button class="stage-btn" id="s2" onclick="setStage(2)">2. Cut Only</button>
+        <button class="stage-btn" id="s3" onclick="setStage(3)">3. Mixed</button>
     </div>
 
     <div class="eq-grid" id="eq-controls"></div>
-    <button onclick="checkAnswer()" style="width:100%; padding:20px; font-size:1.2em; background:#2c3e50; color:white; border:none; border-radius:12px; cursor:pointer;">정답 제출</button>
+    <button onclick="checkAnswer()" style="width:100%; padding:20px; font-size:1.2em; background:#2c3e50; color:white; border:none; border-radius:12px; cursor:pointer;">Submit Answer</button>
 
     <script>
         const ctx = new AudioContext();
@@ -44,6 +44,7 @@
         const MAX_QUESTIONS = 20;
         let stats = { wins: 0, losses: 0 };
 
+        // [Audio Engine]
         const analyser = ctx.createAnalyser();
         analyser.fftSize = 1024;
         const source = ctx.createBufferSource();
@@ -91,28 +92,28 @@
 
         function startQuiz() {
             clearTimeout(timer);
-            if (questionCount >= MAX_QUESTIONS) { alert(`훈련 종료! 결과: ${stats.wins}승 ${stats.losses}패`); questionCount = 0; }
+            if (questionCount >= MAX_QUESTIONS) { alert(`Training Complete! Score: ${stats.wins}/${MAX_QUESTIONS}`); questionCount = 0; }
             filters.forEach(f => f.gain.value = 0);
-            document.getElementById('status').innerText = "기준음 (Flat, 3초)";
+            document.getElementById('status').innerText = "Reference Sound (Flat, 3s)";
             timer = setTimeout(() => {
                 let newIdx = Math.floor(Math.random() * bands.length);
                 while (newIdx === lastIdx) newIdx = Math.floor(Math.random() * bands.length);
                 targetIdx = newIdx; lastIdx = targetIdx;
                 filters[targetIdx].gain.value = (stage === 1) ? 6 : ((stage === 2) ? -6 : (Math.random() > 0.5 ? 6 : -6));
-                document.getElementById('status').innerText = "변화된 소리 (3초)";
+                document.getElementById('status').innerText = "Modified Sound (3s)";
                 timer = setTimeout(() => {
                     filters.forEach(f => f.gain.value = 0);
-                    document.getElementById('status').innerText = "기준음 재청취 (3초)";
+                    document.getElementById('status').innerText = "Reference Sound Again (3s)";
                     timer = setTimeout(() => {
                         filters[targetIdx].gain.value = (stage === 1) ? 6 : ((stage === 2) ? -6 : (Math.random() > 0.5 ? 6 : -6));
-                        document.getElementById('status').innerText = `최종 확인 (문제 ${++questionCount}/${MAX_QUESTIONS})`;
+                        document.getElementById('status').innerText = `Final Check (Question ${++questionCount}/${MAX_QUESTIONS})`;
                     }, 3000);
                 }, 3000);
             }, 3000);
         }
 
         function checkAnswer() {
-            if(selectedIdx === -1) { alert("주파수를 선택하세요!"); return; }
+            if(selectedIdx === -1) { alert("Please select a frequency!"); return; }
             if(selectedIdx === targetIdx) stats.wins++; else stats.losses++;
             document.querySelectorAll('.band-btn').forEach(b => b.classList.remove('selected'));
             selectedIdx = -1; startQuiz();
