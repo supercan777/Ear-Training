@@ -4,15 +4,15 @@
     <meta charset="UTF-8">
     <title>Classroom Trainer</title>
     <style>
-        body { margin: 0; height: 100vh; font-family: 'Pretendard', sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; background: #1a1a1a; }
+        body { margin: 0; height: 100vh; font-family: 'Pretendard', sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; background: #1a1a1a; overflow: hidden; }
         
-        /* 기어 아이콘 */
+        /* 기어 아이콘 (메뉴가 닫혀있을 때도 항상 보임) */
         #settings-trigger { position: fixed; top: 20px; right: 20px; font-size: 2em; cursor: pointer; z-index: 200; background: #1a1a1a; padding: 10px; border-radius: 50%; }
         
-        /* 사이드 설정 메뉴 (바탕색과 통일) */
+        /* 사이드 설정 메뉴 (초기값: 화면 밖으로 완전히 숨김) */
         #settings-menu { 
             position: fixed; top: 0; right: -300px; width: 300px; height: 100%; 
-            background: #1a1a1a; border-left: 1px solid #333; z-index: 150; transition: 0.3s; padding: 40px 20px; box-shadow: -5px 0 15px rgba(0,0,0,0.5);
+            background: #1a1a1a; border-left: 1px solid #333; z-index: 150; transition: 0.4s ease-in-out; padding: 40px 20px; box-shadow: -5px 0 15px rgba(0,0,0,0.5);
             display: flex; flex-direction: column; align-items: center; justify-content: center;
         }
         #settings-menu.open { right: 0; }
@@ -122,7 +122,6 @@
             return bands;
         }
 
-        // 핑크 노이즈 생성 로직
         function createSource(f, g) {
             if(filter) filter.disconnect();
             filter = ctx.createBiquadFilter(); filter.type = "peaking";
