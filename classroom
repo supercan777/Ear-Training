@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Classroom Pink Noise Trainer</title>
+    <style>
+        body { font-family: 'Pretendard', sans-serif; background: #f4f4f9; text-align: center; padding: 40px; }
+        .controls { margin: 20px; }
+        .mode-group { margin-bottom: 20px; }
+        button { padding: 15px 30px; font-size: 1em; cursor: pointer; border-radius: 8px; border: none; margin: 5px; transition: 0.2s; }
+        .mode-btn { background: #ddd; }
+        .mode-btn.active { background: #3498db; color: white; }
+        #answer-display { font-size: 3em; font-weight: bold; color: #2c3e50; margin: 30px; }
+    </style>
+</head>
+<body>
+    <h1>Classroom Pink Noise Trainer</h1>
+    
+    <!-- 모드 선택 버튼 -->
+    <div class="mode-group">
+        <button class="mode-btn active" id="mode1" onclick="setMode(1)">Boost Only</button>
+        <button class="mode-btn" id="mode2" onclick="setMode(2)">Cut Only</button>
+        <button class="mode-btn" id="mode3" onclick="setMode(3)">Mixed</button>
+    </div>
+
+    <div class="controls">
+        <button onclick="playAudio()" style="background:#27ae60; color:white;">Play Sound</button>
+        <button onclick="stopAndNext()" style="background:#c0392b; color:white;">Stop & Next Problem</button>
+        <button onclick="showAnswer()" style="background:#2980b9; color:white;">Show Answer</button>
+    </div>
+
+    <div id="status" style="font-weight:bold; color:#666;">Press Play to start</div>
+    <div id="answer-display">?</div>
+
+    <script>
+        const ctx = new AudioContext();
+        const bands = [31.5, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
+        let targetIdx, source, filter;
+        let mode = 1; // 1: Boost, 2: Cut, 3: Mixed
+
+        function setMode(m) {
+            mode = m;
+            document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('mode'+m).classList.add('active');
+            stopAndNext();
+        }
+
+        function createNewSource() {
+            if(filter) filter.disconnect();
+            filter = ctx.createBiquadFilter();
+            filter.type = "peaking";
+            targetIdx = Math.floor(Math.random() * bands.length);
+            filter.frequency.value = bands[targetIdx];
+            
+            // 모드별 Gain 설정
+            if(mode === 1) filter.gain.value = 6;
+            else if(mode === 2) filter.gain.value = -6;
+            else filter.gain.value = Math.random() > 0.5 ? 6 : -6;
+            
+            filter.Q.value = 1.4;
+
+            const b = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
+            const data = b.getChannelData(0);
+            let b0=0, b1=0, b2=0, b3=0, b4=0, b5=0, b6=0;
+            for(let i=0; i<data.length; i++) {
+                let w = Math.random()*2-1;
+                b0=0.99886*b0+w*0.0555179; b1=0.99332*b1+w*0.0750759;
+                b2=0.96900*b2+w*0.1538520; b3=0.86650*b3+w*0.3104856;
+                b4=0.55000*b4+w*0.5329522; b5=-0.7616*b5-w*0.0168980;
+                data[i]=b0+b1+b2+b3+b4+b5+b6+w*0.5362; b6=w*0.115926;
+            }
+            const newSource = ctx.createBufferSource();
+            newSource.buffer = b; newSource.loop = true;
+            newSource.connect(filter).connect(ctx.destination);
+            return newSource;
+        }
+
+        function playAudio() { ctx.resume(); if(source) source.start(); document.getElementById('status').innerText='Playing...'; }
+        
+        function stopAndNext() { 
+            if(source) { source.stop(); source.disconnect(); }
+            source = createNewSource(); 
+            document.getElementById('answer-display').innerText = "?";
+            document.getElementById('status').innerText = "Ready. Press Play.";
+        }
+
+        function showAnswer() {
+            document.getElementById('answer-display').innerText = bands[targetIdx] + "Hz (" + (filter.gain.value > 0 ? "Boost" : "Cut") + ")";
+        }
+
+        source = createNewSource();
+    </script>
+</body>
+</html>
