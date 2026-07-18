@@ -10,24 +10,22 @@
         
         .controls { display: none; text-align: center; width: 100%; }
         
-        /* 중앙 애니메이션 박스 */
         #display-area { 
-            position: relative; width: 600px; height: 300px; margin: 30px auto; 
+            position: relative; width: 600px; height: 300px; margin: 20px auto; 
             background: #000; border: 4px solid #3498db; border-radius: 40px;
             display: flex; align-items: center; justify-content: center; overflow: hidden;
+            box-shadow: 0 0 20px rgba(52, 152, 219, 0.3);
         }
-        
-        /* RTA 애니메이션 캔버스 */
         #rta-canvas { width: 100%; height: 100%; }
-        
         #answer-display { 
             position: absolute; font-size: 3.5em; font-weight: 900; color: #ffeb3b; 
             text-shadow: 0 0 15px rgba(0,0,0,0.8); z-index: 10;
         }
         
-        .btn-row button { padding: 10px 25px; font-size: 1.1em; cursor: pointer; border-radius: 6px; border: none; margin: 5px; background: #444; color: white; transition: 0.3s; }
+        .btn-row { margin: 5px; }
+        .btn-row button { padding: 10px 18px; font-size: 0.9em; cursor: pointer; border-radius: 6px; border: none; margin: 3px; background: #444; color: white; transition: 0.2s; }
         .btn-row button:hover { background: #666; }
-        .nav-btn.active { background: #3498db !important; }
+        .nav-btn.active, .range-btn.active { background: #3498db !important; }
     </style>
 </head>
 <body>
@@ -45,13 +43,19 @@
             <button id="m2" class="nav-btn" onclick="setMode(2)">CUT</button>
             <button id="m3" class="nav-btn" onclick="setMode(3)">MIXED</button>
         </div>
+        <div class="btn-row">
+            <button class="range-btn active" onclick="setRange('all', this)">ALL</button>
+            <button class="range-btn" onclick="setRange('low', this)">LOW (31.5-500)</button>
+            <button class="range-btn" onclick="setRange('mid', this)">MID (250-4k)</button>
+            <button class="range-btn" onclick="setRange('high', this)">HIGH (1k-16k)</button>
+        </div>
 
         <div id="display-area">
             <canvas id="rta-canvas"></canvas>
             <div id="answer-display"></div>
         </div>
 
-        <div id="status" style="font-size: 1.3em; font-weight:bold; margin-bottom: 20px;">Ready</div>
+        <div id="status" style="font-size: 1.2em; font-weight:bold; margin-bottom: 10px;">Ready</div>
 
         <div class="btn-row">
             <button onclick="run()">START / NEXT</button>
@@ -64,35 +68,42 @@
     </div>
 
     <script>
-        // RTA 애니메이션 로직
-        const canvas = document.getElementById('rta-canvas');
-        const rtaCtx = canvas.getContext('2d');
-        function drawRTA() {
-            canvas.width = 600; canvas.height = 300;
-            rtaCtx.clearRect(0, 0, canvas.width, canvas.height);
-            let barCount = 30;
-            for(let i=0; i<barCount; i++) {
-                let h = Math.random() * 200 + 50;
-                rtaCtx.fillStyle = '#3498db';
-                rtaCtx.fillRect(i * 20, canvas.height - h, 15, h);
-            }
-            requestAnimationFrame(drawRTA);
-        } drawRTA();
-
-        // [보안] 및 기타 로직 (기존과 동일)
         (function() {
             const pw = prompt("교수님 전용 비밀번호를 입력하세요:");
             if (pw !== "1234") { alert("접근 권한이 없습니다."); window.location.href = "index.html"; }
         })();
 
+        const canvas = document.getElementById('rta-canvas');
+        const rtaCtx = canvas.getContext('2d');
+        let bars = new Array(30).fill(0);
+        function drawRTA() {
+            canvas.width = 600; canvas.height = 300;
+            rtaCtx.clearRect(0, 0, canvas.width, canvas.height);
+            for(let i=0; i<bars.length; i++) {
+                let targetH = Math.random() * 200 + 30;
+                bars[i] += (targetH - bars[i]) * 0.08;
+                rtaCtx.fillStyle = '#3498db';
+                rtaCtx.fillRect(i * 20, canvas.height - bars[i], 15, bars[i]);
+            }
+            setTimeout(() => { requestAnimationFrame(drawRTA); }, 40); 
+        } drawRTA();
+
         const ctx = new AudioContext();
         const master = ctx.createGain(); master.gain.value = 0.2; master.connect(ctx.destination);
         const bands = [31.5, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
-        let type, mode = 1, set = [], timer, filter, source, currentQ = 0;
+        let type, mode = 1, currentRange = 'all', set = [], timer, filter, source, currentQ = 0;
 
         function init(t) { type = t; document.getElementById('overlay').style.display = 'none'; document.getElementById('main-ui').style.display = 'block'; document.getElementById('ui-title').innerText = t === 'free' ? "Free Practice" : "5-Question Set"; ctx.resume(); }
         function setMode(m) { mode = m; document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active')); document.getElementById('m' + m).classList.add('active'); }
+        function setRange(r, btn) { currentRange = r; document.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); }
         function goBack() { stopAll(); document.getElementById('overlay').style.display = 'flex'; document.getElementById('main-ui').style.display = 'none'; }
+
+        function getActiveBands() {
+            if(currentRange === 'low') return [31.5, 63, 125, 250, 500];
+            if(currentRange === 'mid') return [250, 500, 1000, 2000, 4000];
+            if(currentRange === 'high') return [1000, 2000, 4000, 8000, 16000];
+            return bands;
+        }
 
         function createSource(f, g) {
             if(filter) filter.disconnect();
@@ -126,13 +137,14 @@
         function run() {
             stopAll();
             document.getElementById('answer-display').innerHTML = ""; 
+            let activeBands = getActiveBands();
             if(type === 'free') {
-                let f = bands[Math.floor(Math.random()*bands.length)];
+                let f = activeBands[Math.floor(Math.random()*activeBands.length)];
                 let g = (mode==1)?6:(mode==2)?-6:(Math.random()>0.5?6:-6);
                 set = [{freq: f, gain: g}];
                 source = createSource(f, g); source.start(); playPattern(g);
             } else {
-                set = [...bands].sort(()=>Math.random()-0.5).slice(0,5).map(f=>({freq:f, gain:(mode==1)?6:(mode==2)?-6:(Math.random()>0.5?6:-6)}));
+                set = [...activeBands].sort(()=>Math.random()-0.5).slice(0,5).map(f=>({freq:f, gain:(mode==1)?6:(mode==2)?-6:(Math.random()>0.5?6:-6)}));
                 playSet(0);
             }
         }
