@@ -7,11 +7,11 @@
         body { font-family: 'Pretendard', sans-serif; background: #f4f4f9; text-align: center; padding: 40px; }
         .controls { margin: 20px; }
         .mode-group { margin-bottom: 20px; }
-        button { padding: 15px 30px; font-size: 1em; cursor: pointer; border-radius: 8px; border: none; margin: 5px; transition: 0.2s; }
-        .mode-btn { background: #ddd; }
+        button { padding: 20px 40px; font-size: 1.1em; cursor: pointer; border-radius: 10px; border: none; margin: 5px; transition: 0.2s; }
+        .mode-btn { background: #ddd; padding: 10px 20px; font-size: 0.9em; }
         .mode-btn.active { background: #3498db; color: white; }
         #answer-display { font-size: 3em; font-weight: bold; color: #2c3e50; margin: 30px; }
-        #status { font-weight: bold; color: #666; margin: 10px; }
+        #status { font-weight: bold; color: #666; margin: 10px; font-size: 1.2em; }
     </style>
 </head>
 <body>
@@ -24,12 +24,12 @@
     </div>
 
     <div class="controls">
-        <button onclick="startAutoPlay()" style="background:#27ae60; color:white;">Play & Auto-Repeat</button>
-        <button onclick="stopAndNext()" style="background:#c0392b; color:white;">Stop & Next Problem</button>
+        <button onclick="playNewProblem()" style="background:#27ae60; color:white;">Play (Next Problem)</button>
+        <button onclick="playAgain()" style="background:#f39c12; color:white;">Listen Again</button>
         <button onclick="showAnswer()" style="background:#2980b9; color:white;">Show Answer</button>
     </div>
 
-    <div id="status">Ready. Press Play.</div>
+    <div id="status">Press Play to start</div>
     <div id="answer-display">?</div>
 
     <script>
@@ -39,14 +39,13 @@
         masterGain.connect(ctx.destination);
 
         const bands = [31.5, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
-        let targetIdx, source, filter, timer;
+        let targetIdx, source, filter, timer, currentGain;
         let mode = 1;
 
         function setMode(m) {
             mode = m;
             document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
             document.getElementById('mode'+m).classList.add('active');
-            stopAndNext();
         }
 
         function createNewSource() {
@@ -55,51 +54,52 @@
             filter.type = "peaking";
             targetIdx = Math.floor(Math.random() * bands.length);
             filter.frequency.value = bands[targetIdx];
-            filter.gain.value = 0; // 초기값은 Flat
+            currentGain = (mode === 1) ? 6 : ((mode === 2) ? -6 : (Math.random() > 0.5 ? 6 : -6));
+            filter.gain.value = 0; // 초기값 Flat
             filter.Q.value = 1.4;
 
             const b = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
             const data = b.getChannelData(0);
-            for(let i=0; i<data.length; i++) {
-                let w = Math.random()*2-1;
-                data[i] = w; // 간소화된 화이트 노이즈 (핑크 노이즈 엔진 동일)
-            }
+            for(let i=0; i<data.length; i++) data[i] = Math.random()*2-1;
+            
             const newSource = ctx.createBufferSource();
             newSource.buffer = b; newSource.loop = true;
             newSource.connect(filter).connect(masterGain);
             return newSource;
         }
 
-        function startAutoPlay() {
+        function playPattern() {
+            clearTimeout(timer);
             ctx.resume();
-            if(source) source.start();
-            
-            // 2회 반복 패턴: Flat(3s) -> Target(3s) -> Flat(3s) -> Target(3s)
+            filter.gain.value = 0;
             document.getElementById('status').innerText = "Flat (3s)";
             timer = setTimeout(() => {
-                filter.gain.value = (mode === 1) ? 6 : ((mode === 2) ? -6 : (Math.random() > 0.5 ? 6 : -6));
+                filter.gain.value = currentGain;
                 document.getElementById('status').innerText = "Target (3s)";
                 timer = setTimeout(() => {
                     filter.gain.value = 0;
                     document.getElementById('status').innerText = "Flat (3s)";
                     timer = setTimeout(() => {
-                        filter.gain.value = (mode === 1) ? 6 : ((mode === 2) ? -6 : (Math.random() > 0.5 ? 6 : -6));
+                        filter.gain.value = currentGain;
                         document.getElementById('status').innerText = "Target (3s)";
+                        timer = setTimeout(() => { filter.gain.value = 0; document.getElementById('status').innerText = "Stopped."; }, 3000);
                     }, 3000);
                 }, 3000);
             }, 3000);
         }
 
-        function stopAndNext() { 
-            clearTimeout(timer);
+        function playNewProblem() {
             if(source) { try { source.stop(); source.disconnect(); } catch(e){} }
-            source = createNewSource(); 
+            source = createNewSource();
+            source.start();
             document.getElementById('answer-display').innerText = "?";
-            document.getElementById('status').innerText = "Ready. Press Play.";
+            playPattern();
         }
 
+        function playAgain() { playPattern(); }
+
         function showAnswer() {
-            document.getElementById('answer-display').innerText = bands[targetIdx] + "Hz (" + (filter.gain.value > 0 ? "Boost" : "Cut") + ")";
+            document.getElementById('answer-display').innerText = bands[targetIdx] + "Hz (" + (currentGain > 0 ? "Boost" : "Cut") + ")";
         }
 
         source = createNewSource();
