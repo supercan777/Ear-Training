@@ -5,31 +5,37 @@
     <title>Pink Noise Ear Training</title>
     <style>
         body { font-family: 'Pretendard', sans-serif; background: #f4f4f9; text-align: center; padding: 20px; }
-        .btn-group { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin: 20px 0; }
+        .mode-select { margin: 30px 0; display: flex; justify-content: center; gap: 20px; }
+        .mode-select button { padding: 30px 50px; font-size: 1.2em; cursor: pointer; border-radius: 15px; border: none; background: #3498db; color: white; transition: 0.3s; }
+        .mode-select button:hover { background: #2980b9; transform: scale(1.05); }
+        .btn-group { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin: 20px 0; display: none; }
         .stage-btn { padding: 15px; border: none; border-radius: 10px; background: #ddd; cursor: pointer; }
         .stage-btn.active { background: #3498db; color: #fff; }
-        .eq-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin: 20px 0; }
+        .eq-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin: 20px 0; display: none; }
         .band-btn { padding: 20px; border: 1px solid #ccc; border-radius: 12px; background: #fff; cursor: pointer; }
-        .band-btn:hover { background: #eee; }
-        #overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:#f4f4f9; display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:100; }
+        #main-ui { display: none; }
     </style>
 </head>
 <body>
     <div id="overlay">
         <h1>Pink Noise Ear Training</h1>
-        <button onclick="startSession()" style="padding:20px 40px; font-size:1.5em; background:#27ae60; color:white; border:none; border-radius:15px; cursor:pointer;">Start Training</button>
+        <p>Choose your learning mode:</p>
+        <div class="mode-select">
+            <button onclick="initMode('training')">Training Mode<br><small>(Instant Feedback)</small></button>
+            <button onclick="initMode('test')">Test Mode<br><small>(20 Questions)</small></button>
+        </div>
     </div>
 
-    <h1>Training Session</h1>
-    <div id="status" style="font-size: 1.2em; font-weight: bold; margin: 20px;">Select a stage to begin.</div>
-    
-    <div class="btn-group">
-        <button class="stage-btn" id="s1" onclick="setStage(1)">1. Boost</button>
-        <button class="stage-btn" id="s2" onclick="setStage(2)">2. Cut</button>
-        <button class="stage-btn" id="s3" onclick="setStage(3)">3. Mixed</button>
+    <div id="main-ui">
+        <h1><span id="modeTitle">Mode</span> Session</h1>
+        <div id="status" style="font-size: 1.2em; font-weight: bold; margin: 20px;">Select a stage to begin.</div>
+        <div class="btn-group" id="stages">
+            <button class="stage-btn" id="s1" onclick="setStage(1)">1. Boost</button>
+            <button class="stage-btn" id="s2" onclick="setStage(2)">2. Cut</button>
+            <button class="stage-btn" id="s3" onclick="setStage(3)">3. Mixed</button>
+        </div>
+        <div class="eq-grid" id="eq-controls"></div>
     </div>
-
-    <div class="eq-grid" id="eq-controls"></div>
 
     <script>
         const ctx = new AudioContext();
@@ -38,15 +44,23 @@
         masterGain.connect(ctx.destination);
 
         const bands = [31.5, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
-        let stage = 1, questionIdx = 0, score = 0, timer, filter, source, currentGain, targetIdx;
+        let stage = 1, questionIdx = 0, score = 0, timer, filter, source, currentGain, targetIdx, modeType;
 
-        function startSession() { document.getElementById('overlay').style.display = 'none'; ctx.resume(); }
+        function initMode(m) {
+            modeType = m;
+            document.getElementById('modeTitle').innerText = m === 'training' ? "TRAINING" : "TEST";
+            document.getElementById('overlay').style.display = 'none';
+            document.getElementById('main-ui').style.display = 'block';
+            document.getElementById('stages').style.display = 'grid';
+            document.getElementById('eq-controls').style.display = 'grid';
+            ctx.resume();
+        }
 
-        function setStage(s) {
-            stage = s; questionIdx = 0; score = 0;
-            document.querySelectorAll('.stage-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById('s'+s).classList.add('active');
-            nextProblem();
+        function setStage(s) { 
+            stage = s; questionIdx = 0; score = 0; 
+            document.querySelectorAll('.stage-btn').forEach(b => b.classList.remove('active')); 
+            document.getElementById('s'+s).classList.add('active'); 
+            nextProblem(); 
         }
 
         function createNewSource() {
@@ -57,7 +71,6 @@
             filter.frequency.value = bands[targetIdx];
             currentGain = (stage === 1) ? 6 : ((stage === 2) ? -6 : (Math.random() > 0.5 ? 6 : -6));
             filter.gain.value = 0; filter.Q.value = 1.4;
-            
             const b = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
             const data = b.getChannelData(0);
             for(let i=0; i<data.length; i++) data[i] = Math.random()*2-1;
@@ -80,26 +93,17 @@
                     timer = setTimeout(() => {
                         filter.gain.value = currentGain;
                         document.getElementById('status').innerText = "Target (3s)";
-                        timer = setTimeout(() => { 
-                            filter.gain.value = 0; 
-                            source.stop(); 
-                            document.getElementById('status').innerText = "Select your answer"; 
-                        }, 3000);
+                        timer = setTimeout(() => { filter.gain.value = 0; source.stop(); document.getElementById('status').innerText = "Select your answer"; }, 3000);
                     }, 3000);
                 }, 3000);
             }, 3000);
         }
 
         function nextProblem() {
-            if(questionIdx >= 20) { 
-                alert(`Training Complete! Score: ${score}/20`); 
-                questionIdx = 0; score = 0;
-                return; 
-            }
+            if(modeType === 'test' && questionIdx >= 20) { alert(`Test Complete! Score: ${score}/20`); questionIdx = 0; score = 0; return; }
             questionIdx++;
             if(source) try { source.stop(); } catch(e){}
-            source = createNewSource();
-            source.start();
+            source = createNewSource(); source.start();
             playPattern();
         }
 
@@ -109,8 +113,13 @@
             btn.className = 'band-btn';
             btn.innerText = freq + "Hz";
             btn.onclick = () => {
-                if(i === targetIdx) score++;
-                nextProblem();
+                if(modeType === 'training') {
+                    alert(i === targetIdx ? "Correct! " + bands[targetIdx] + "Hz" : "Wrong! Correct: " + bands[targetIdx] + "Hz");
+                    nextProblem();
+                } else {
+                    if(i === targetIdx) score++;
+                    nextProblem();
+                }
             };
             container.appendChild(btn);
         });
