@@ -5,29 +5,25 @@
     <title>Classroom Trainer</title>
     <style>
         body { margin: 0; height: 100vh; font-family: 'Pretendard', sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; background: #1a1a1a; }
-        
         #overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:100; display:flex; flex-direction:column; align-items:center; justify-content:center; }
         .mode-btn { padding: 20px 40px; font-size: 1.5em; margin: 10px; cursor: pointer; border-radius: 10px; border: none; background: #3498db; color: white; }
         
         .controls { display: none; text-align: center; width: 100%; }
         
-        /* 테두리 박스 애니메이션 */
+        /* 중앙 애니메이션 박스 */
         #display-area { 
             position: relative; width: 600px; height: 300px; margin: 30px auto; 
-            background: #2c3e50; border: 4px solid #3498db; border-radius: 40px;
-            display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 0 20px rgba(52, 152, 219, 0.3);
-            /* 박스 자체가 부드럽게 숨 쉬는 효과 */
-            animation: pulse 3s infinite ease-in-out;
+            background: #000; border: 4px solid #3498db; border-radius: 40px;
+            display: flex; align-items: center; justify-content: center; overflow: hidden;
         }
         
-        @keyframes pulse { 
-            0% { transform: scale(1); border-color: #3498db; } 
-            50% { transform: scale(1.02); border-color: #5dade2; } 
-            100% { transform: scale(1); border-color: #3498db; } 
-        }
+        /* RTA 애니메이션 캔버스 */
+        #rta-canvas { width: 100%; height: 100%; }
         
-        #answer-display { font-size: 3.5em; font-weight: 900; color: #ffeb3b; text-shadow: 0 0 15px rgba(0,0,0,0.5); }
+        #answer-display { 
+            position: absolute; font-size: 3.5em; font-weight: 900; color: #ffeb3b; 
+            text-shadow: 0 0 15px rgba(0,0,0,0.8); z-index: 10;
+        }
         
         .btn-row button { padding: 10px 25px; font-size: 1.1em; cursor: pointer; border-radius: 6px; border: none; margin: 5px; background: #444; color: white; transition: 0.3s; }
         .btn-row button:hover { background: #666; }
@@ -51,6 +47,7 @@
         </div>
 
         <div id="display-area">
+            <canvas id="rta-canvas"></canvas>
             <div id="answer-display"></div>
         </div>
 
@@ -67,6 +64,22 @@
     </div>
 
     <script>
+        // RTA 애니메이션 로직
+        const canvas = document.getElementById('rta-canvas');
+        const rtaCtx = canvas.getContext('2d');
+        function drawRTA() {
+            canvas.width = 600; canvas.height = 300;
+            rtaCtx.clearRect(0, 0, canvas.width, canvas.height);
+            let barCount = 30;
+            for(let i=0; i<barCount; i++) {
+                let h = Math.random() * 200 + 50;
+                rtaCtx.fillStyle = '#3498db';
+                rtaCtx.fillRect(i * 20, canvas.height - h, 15, h);
+            }
+            requestAnimationFrame(drawRTA);
+        } drawRTA();
+
+        // [보안] 및 기타 로직 (기존과 동일)
         (function() {
             const pw = prompt("교수님 전용 비밀번호를 입력하세요:");
             if (pw !== "1234") { alert("접근 권한이 없습니다."); window.location.href = "index.html"; }
