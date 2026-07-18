@@ -8,7 +8,6 @@
         #overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:#f4f4f9; z-index:100; display:flex; flex-direction:column; align-items:center; justify-content:center; }
         .mode-btn { padding: 30px 50px; font-size: 1.5em; margin: 10px; cursor: pointer; border-radius: 15px; border: none; background: #3498db; color: white; }
         .controls { display: none; }
-        .active-btn { background: #3498db; color: white; }
         button { padding: 15px 30px; margin: 5px; cursor: pointer; border-radius: 8px; border: none; }
     </style>
 </head>
@@ -25,21 +24,32 @@
         <button id="m2" onclick="setMode(2)">Cut</button>
         <button id="m3" onclick="setMode(3)">Mixed</button>
         <br><br>
-        <button onclick="run()" style="background:#27ae60; color:white;">Start</button>
-        <button onclick="stopAll()" style="background:#c0392b; color:white;">Stop</button>
+        <button onclick="run()" style="background:#27ae60; color:white;">Start / Next</button>
+        <button onclick="listenAgain()" style="background:#f39c12; color:white;">Listen Again</button>
+        <button onclick="stopAll()" style="background:#c0392b; color:white;">Stop All</button>
         <button onclick="showAnswers()" style="background:#2980b9; color:white;">Answers</button>
+        <br>
+        <button onclick="goBack()" style="background:#7f8c8d; color:white;">Return to Mode Select</button>
         <div id="status" style="margin:20px; font-size:1.2em; font-weight:bold;">Ready</div>
         <div id="answer-display"></div>
     </div>
 
     <script>
+        (function() {
+            const pw = prompt("교수님 전용 비밀번호를 입력하세요:");
+            if (pw !== "1234") { alert("접근 권한이 없습니다."); window.location.href = "index.html"; }
+        })();
+
         const ctx = new AudioContext();
         const master = ctx.createGain(); master.gain.value = 0.2; master.connect(ctx.destination);
         const bands = [31.5, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
-        let type, mode = 1, set = [], timer, filter, source;
+        let type, mode = 1, set = [], timer, filter, source, currentQ = 0;
 
         function init(t) { type = t; document.getElementById('overlay').style.display = 'none'; document.getElementById('main-ui').style.display = 'block'; document.getElementById('ui-title').innerText = t === 'free' ? "Free Practice" : "5-Question Set"; ctx.resume(); }
         function setMode(m) { mode = m; }
+        
+        // 인트로로 돌아가기
+        function goBack() { stopAll(); document.getElementById('overlay').style.display = 'flex'; document.getElementById('main-ui').style.display = 'none'; }
 
         function createSource(f, g) {
             if(filter) filter.disconnect();
@@ -52,16 +62,19 @@
             s.connect(filter).connect(master); return s;
         }
 
-        function playPattern(callback) {
-            filter.gain.value = 0; document.getElementById('status').innerText = "Flat";
+        function playPattern(g, callback) {
+            filter.gain.value = 0; document.getElementById('status').innerText = "Flat (3s)";
             timer = setTimeout(() => {
-                filter.gain.value = filter.gain.value === 0 ? (mode==1?6:mode==2?-6:(Math.random()>0.5?6:-6)) : 0;
-                document.getElementById('status').innerText = "Change";
+                filter.gain.value = g; document.getElementById('status').innerText = "Change (3s)";
                 timer = setTimeout(() => {
-                    filter.gain.value = 0;
+                    filter.gain.value = 0; document.getElementById('status').innerText = "Flat (3s)";
                     timer = setTimeout(() => {
-                        filter.gain.value = filter.gain.value === 0 ? (mode==1?6:mode==2?-6:(Math.random()>0.5?6:-6)) : 0;
-                        timer = setTimeout(() => { if(callback) callback(); }, 3000);
+                        filter.gain.value = g; document.getElementById('status').innerText = "Change (3s)";
+                        timer = setTimeout(() => { 
+                            filter.gain.value = 0; document.getElementById('status').innerText = "Finished";
+                            if (type === 'free') stopAll();
+                            if(callback) callback();
+                        }, 3000);
                     }, 3000);
                 }, 3000);
             }, 3000);
@@ -72,20 +85,33 @@
             if(type === 'free') {
                 let f = bands[Math.floor(Math.random()*bands.length)];
                 let g = (mode==1)?6:(mode==2)?-6:(Math.random()>0.5?6:-6);
-                set = [{freq: f, gain: g}]; source = createSource(f, g); source.start(); playPattern();
+                set = [{freq: f, gain: g}];
+                source = createSource(f, g); source.start(); playPattern(g);
             } else {
-                let s = [...bands].sort(()=>Math.random()-0.5).slice(0,5).map(f=>({freq:f, gain:(mode==1)?6:(mode==2)?-6:(Math.random()>0.5?6:-6)}));
-                set = s; playSet(0);
+                set = [...bands].sort(()=>Math.random()-0.5).slice(0,5).map(f=>({freq:f, gain:(mode==1)?6:(mode==2)?-6:(Math.random()>0.5?6:-6)}));
+                playSet(0);
             }
         }
 
         function playSet(i) {
-            if(i >= 5) { document.getElementById('status').innerText = "Complete"; return; }
+            if(i >= 5) { document.getElementById('status').innerText = "Set Complete"; return; }
+            currentQ = i;
             source = createSource(set[i].freq, set[i].gain); source.start();
-            playPattern(() => { source.stop(); document.getElementById('status').innerText = "Next..."; timer = setTimeout(() => playSet(i+1), 2000); });
+            playPattern(set[i].gain, () => { 
+                try { source.stop(); } catch(e){}
+                document.getElementById('status').innerText = "Silence (2s)";
+                timer = setTimeout(() => playSet(i+1), 2000); 
+            });
         }
 
-        function stopAll() { clearTimeout(timer); try { source.stop(); } catch(e){} document.getElementById('status').innerText = "Stopped"; }
+        function listenAgain() {
+            stopAll();
+            let q = (type === 'free') ? set[0] : set[currentQ];
+            source = createSource(q.freq, q.gain); source.start();
+            playPattern(q.gain);
+        }
+
+        function stopAll() { clearTimeout(timer); try { source.stop(); source.disconnect(); } catch(e){} document.getElementById('status').innerText = "Stopped"; }
         function showAnswers() { document.getElementById('answer-display').innerHTML = set.map((q,i)=>`Q${i+1}: ${q.freq}Hz (${q.gain>0?'Boost':'Cut'})`).join('<br>'); }
     </script>
 </body>
