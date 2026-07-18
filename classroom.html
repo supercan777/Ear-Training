@@ -2,17 +2,26 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Classroom Pink Noise Trainer</title>
+    <title>Classroom 5-Question Set Trainer</title>
     <style>
-        body { font-family: 'Pretendard', sans-serif; background: #f4f4f9; text-align: center; padding: 40px; }
-        .controls { margin: 20px; }
-        button { padding: 20px 40px; font-size: 1.1em; cursor: pointer; border-radius: 10px; border: none; margin: 5px; }
-        #status { font-weight: bold; color: #d35400; font-size: 1.5em; margin: 20px; }
-        #answer-display { font-size: 2em; color: #2c3e50; font-weight: bold; }
+        body { font-family: 'Pretendard', sans-serif; background: #f4f4f9; text-align: center; padding: 30px; }
+        .mode-group { margin-bottom: 20px; }
+        button { padding: 15px 30px; font-size: 1em; cursor: pointer; border-radius: 8px; border: none; margin: 5px; transition: 0.2s; }
+        .mode-btn { background: #ddd; }
+        .mode-btn.active { background: #3498db; color: white; }
+        #status { font-weight: bold; color: #d35400; font-size: 1.8em; margin: 20px; }
+        #answer-display { font-size: 1.5em; color: #2c3e50; font-weight: bold; line-height: 1.6; }
     </style>
 </head>
 <body>
-    <h1>5-Question Set Training</h1>
+    <h1>Classroom 5-Question Set</h1>
+    
+    <div class="mode-group">
+        <button class="mode-btn active" id="mode1" onclick="setMode(1)">Boost Only</button>
+        <button class="mode-btn" id="mode2" onclick="setMode(2)">Cut Only</button>
+        <button class="mode-btn" id="mode3" onclick="setMode(3)">Mixed</button>
+    </div>
+
     <div class="controls">
         <button onclick="startFiveQuestionSet()" style="background:#27ae60; color:white;">Start 5-Question Set</button>
         <button onclick="showAllAnswers()" style="background:#2980b9; color:white;">Show All Answers</button>
@@ -25,13 +34,19 @@
         const ctx = new AudioContext();
         const masterGain = ctx.createGain(); masterGain.gain.value = 0.2; masterGain.connect(ctx.destination);
         const bands = [31.5, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
-        let set = [], currentIdx = 0, timer, filter, source;
+        let set = [], timer, filter, source, mode = 1;
+
+        function setMode(m) {
+            mode = m;
+            document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('mode'+m).classList.add('active');
+        }
 
         function generateSet() {
             let shuffled = [...bands].sort(() => Math.random() - 0.5);
             set = shuffled.slice(0, 5).map(f => ({
                 freq: f,
-                gain: Math.random() > 0.5 ? 6 : -6
+                gain: (mode === 1) ? 6 : ((mode === 2) ? -6 : (Math.random() > 0.5 ? 6 : -6))
             }));
         }
 
@@ -50,19 +65,17 @@
 
         function playSet(i) {
             if(i >= 5) { document.getElementById('status').innerText = "Set Complete"; return; }
-            currentIdx = i;
             source = createSource(set[i].freq, set[i].gain);
             source.start();
 
-            // 3(Flat) - 3(Var) - 3(Flat) - 3(Var) - 2(Silence)
-            let q = set[i];
+            // 패턴: 3(Flat) - 3(Var) - 3(Flat) - 3(Var) - 2(Silence)
             filter.gain.value = 0; document.getElementById('status').innerText = `Q${i+1}: Flat`;
             timer = setTimeout(() => {
-                filter.gain.value = q.gain; document.getElementById('status').innerText = `Q${i+1}: Change`;
+                filter.gain.value = set[i].gain; document.getElementById('status').innerText = `Q${i+1}: Change`;
                 timer = setTimeout(() => {
                     filter.gain.value = 0; document.getElementById('status').innerText = `Q${i+1}: Flat`;
                     timer = setTimeout(() => {
-                        filter.gain.value = q.gain; document.getElementById('status').innerText = `Q${i+1}: Change`;
+                        filter.gain.value = set[i].gain; document.getElementById('status').innerText = `Q${i+1}: Change`;
                         timer = setTimeout(() => {
                             source.stop(); source.disconnect();
                             document.getElementById('status').innerText = "Silence";
