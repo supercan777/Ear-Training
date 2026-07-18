@@ -11,19 +11,21 @@
         
         #settings-trigger { position: fixed; top: 20px; right: 20px; font-size: 2em; cursor: pointer; z-index: 200; background: #1a1a1a; padding: 10px; border-radius: 50%; }
         
-        /* 메뉴가 아예 보이지 않게 더 멀리 숨김 */
         #settings-menu { 
-            position: fixed; top: 0; right: -400px; width: 300px; height: 100%; 
+            position: fixed; top: 0; right: -400px; width: 350px; height: 100%; 
             background: #1a1a1a; border-left: 1px solid #333; z-index: 150; transition: 0.4s ease-in-out; padding: 40px 20px; box-shadow: -5px 0 15px rgba(0,0,0,0.5);
             display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
         }
         #settings-menu.open { right: 0; }
         
-        /* 메뉴 내부 요소 가운데 정렬 */
         .settings-group { width: 100%; margin-bottom: 30px; display: flex; flex-direction: column; align-items: center; }
         .settings-label { margin-bottom: 10px; font-size: 0.9em; color: #7f8c8d; text-align: center; }
-        .btn-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
-        .settings-btn { padding: 10px 15px; font-size: 0.9em; cursor: pointer; border-radius: 6px; border: none; background: #333; color: white; transition: 0.2s; min-width: 70px; }
+        
+        /* 좌우 배치 및 실선 구분 */
+        .btn-row { display: flex; align-items: center; justify-content: center; gap: 5px; }
+        .separator { color: #555; margin: 0 5px; font-weight: 200; }
+        
+        .settings-btn { padding: 8px 12px; font-size: 0.85em; cursor: pointer; border-radius: 4px; border: none; background: #333; color: white; transition: 0.2s; min-width: 50px; }
         .settings-btn.active { background: #3498db !important; }
         
         #close-btn { background: none; border: none; color: white; cursor: pointer; font-size: 1em; border-bottom: 1px solid white; padding: 5px 0; margin-top: 20px; }
@@ -52,7 +54,9 @@
             <div class="settings-label">MODE</div>
             <div class="btn-row">
                 <button id="m1" class="settings-btn active" onclick="setMode(1)">BOOST</button>
+                <span class="separator">|</span>
                 <button id="m2" class="settings-btn" onclick="setMode(2)">CUT</button>
+                <span class="separator">|</span>
                 <button id="m3" class="settings-btn" onclick="setMode(3)">MIXED</button>
             </div>
         </div>
@@ -60,8 +64,11 @@
             <div class="settings-label">FREQUENCY RANGE</div>
             <div class="btn-row">
                 <button class="settings-btn range-btn active" onclick="setRange('all', this)">ALL</button>
+                <span class="separator">|</span>
                 <button class="settings-btn range-btn" onclick="setRange('low', this)">LOW</button>
+                <span class="separator">|</span>
                 <button class="settings-btn range-btn" onclick="setRange('mid', this)">MID</button>
+                <span class="separator">|</span>
                 <button class="settings-btn range-btn" onclick="setRange('high', this)">HIGH</button>
             </div>
         </div>
