@@ -86,7 +86,7 @@
                         timer = setTimeout(() => {
                             filter.gain.value = 0;
                             document.getElementById('status').innerText = "Stopped.";
-                            source.stop();
+                            try { source.stop(); } catch(e) {}
                         }, 3000);
                     }, 3000);
                 }, 3000);
@@ -102,7 +102,6 @@
         }
 
         function playAgain() {
-            // 재생 중일 때 중복 방지
             try { source.stop(); } catch(e) {}
             source = createNewSource();
             source.start();
