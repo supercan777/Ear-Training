@@ -4,11 +4,24 @@
     <meta charset="UTF-8">
     <title>Classroom Trainer</title>
     <style>
-        body { font-family: 'Pretendard', sans-serif; background: #f4f4f9; text-align: center; padding: 30px; }
+        body { font-family: 'Pretendard', sans-serif; background: #f4f4f9; text-align: center; padding: 20px; }
         #overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:#f4f4f9; z-index:100; display:flex; flex-direction:column; align-items:center; justify-content:center; }
         .mode-btn { padding: 30px 50px; font-size: 1.5em; margin: 10px; cursor: pointer; border-radius: 15px; border: none; background: #3498db; color: white; }
         .controls { display: none; }
-        button { padding: 15px 30px; margin: 5px; cursor: pointer; border-radius: 8px; border: none; }
+        
+        /* 중앙 영역: GIF와 정답이 겹치도록 설정 */
+        #display-area { position: relative; margin: 30px auto; width: 400px; height: 250px; }
+        #visualizer { width: 100%; height: 100%; border-radius: 20px; }
+        #answer-display { 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            font-size: 3em; color: #e74c3c; font-weight: 900; background: rgba(255,255,255,0.9);
+            border-radius: 20px; pointer-events: none; /* 클릭 방해 방지 */
+        }
+        
+        .btn-bottom { margin-top: 20px; }
+        .nav-btn { padding: 15px 30px; margin: 5px; cursor: pointer; border-radius: 8px; border: none; background: #ddd; }
+        .nav-btn.active { background: #3498db; color: white; }
     </style>
 </head>
 <body>
@@ -20,21 +33,31 @@
 
     <div id="main-ui" class="controls">
         <h1 id="ui-title">Training</h1>
-        <button id="m1" onclick="setMode(1)">Boost</button>
-        <button id="m2" onclick="setMode(2)">Cut</button>
-        <button id="m3" onclick="setMode(3)">Mixed</button>
-        <br><br>
-        <button onclick="run()" style="background:#27ae60; color:white;">Start / Next</button>
-        <button onclick="listenAgain()" style="background:#f39c12; color:white;">Listen Again</button>
-        <button onclick="stopAll()" style="background:#c0392b; color:white;">Stop All</button>
-        <button onclick="showAnswers()" style="background:#2980b9; color:white;">Answers</button>
-        <br>
-        <button onclick="goBack()" style="background:#7f8c8d; color:white;">Return to Mode Select</button>
-        <div id="status" style="margin:20px; font-size:1.2em; font-weight:bold;">Ready</div>
-        <div id="answer-display"></div>
+        
+        <button id="m1" class="nav-btn active" onclick="setMode(1)">Boost</button>
+        <button id="m2" class="nav-btn" onclick="setMode(2)">Cut</button>
+        <button id="m3" class="nav-btn" onclick="setMode(3)">Mixed</button>
+
+        <!-- GIF와 정답이 겹치는 중앙 영역 -->
+        <div id="display-area">
+            <img id="visualizer" src="pinknoise.gif" alt="Pink Noise">
+            <div id="answer-display"></div>
+        </div>
+
+        <div id="status" style="font-size: 1.5em; font-weight:bold;">Ready</div>
+
+        <div class="btn-bottom">
+            <button onclick="run()" style="background:#27ae60; color:white; padding: 20px 40px;">Start / Next</button>
+            <button onclick="listenAgain()" style="background:#f39c12; color:white; padding: 20px 40px;">Listen Again</button>
+            <button onclick="stopAll()" style="background:#c0392b; color:white; padding: 20px 40px;">Stop All</button>
+            <button onclick="showAnswers()" style="background:#2980b9; color:white; padding: 20px 40px;">Answers</button>
+            <br><br>
+            <button onclick="goBack()" style="background:#7f8c8d; color:white;">Return to Mode Select</button>
+        </div>
     </div>
 
     <script>
+        // ... (이전과 동일한 로직) ...
         (function() {
             const pw = prompt("교수님 전용 비밀번호를 입력하세요:");
             if (pw !== "1234") { alert("접근 권한이 없습니다."); window.location.href = "index.html"; }
@@ -46,7 +69,7 @@
         let type, mode = 1, set = [], timer, filter, source, currentQ = 0;
 
         function init(t) { type = t; document.getElementById('overlay').style.display = 'none'; document.getElementById('main-ui').style.display = 'block'; document.getElementById('ui-title').innerText = t === 'free' ? "Free Practice" : "5-Question Set"; ctx.resume(); }
-        function setMode(m) { mode = m; }
+        function setMode(m) { mode = m; document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active')); document.getElementById('m' + m).classList.add('active'); }
         function goBack() { stopAll(); document.getElementById('overlay').style.display = 'flex'; document.getElementById('main-ui').style.display = 'none'; }
 
         function createSource(f, g) {
@@ -80,7 +103,7 @@
 
         function run() {
             stopAll();
-            document.getElementById('answer-display').innerText = ""; // 시작할 때 정답 초기화
+            document.getElementById('answer-display').innerHTML = ""; 
             if(type === 'free') {
                 let f = bands[Math.floor(Math.random()*bands.length)];
                 let g = (mode==1)?6:(mode==2)?-6:(Math.random()>0.5?6:-6);
@@ -111,7 +134,7 @@
         }
 
         function stopAll() { clearTimeout(timer); try { source.stop(); source.disconnect(); } catch(e){} document.getElementById('status').innerText = "Stopped"; }
-        function showAnswers() { document.getElementById('answer-display').innerHTML = set.map((q,i)=>`Q${i+1}: ${q.freq}Hz (${q.gain>0?'Boost':'Cut'})`).join('<br>'); }
+        function showAnswers() { document.getElementById('answer-display').innerHTML = set.map((q,i)=>`Q${i+1}: ${q.freq}Hz<br>${q.gain>0?'BOOST':'CUT'}`).join('<br><br>'); }
     </script>
 </body>
 </html>
