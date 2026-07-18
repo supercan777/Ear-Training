@@ -4,27 +4,29 @@
     <meta charset="UTF-8">
     <title>Classroom Trainer</title>
     <style>
-        body { font-family: 'Pretendard', sans-serif; background: #f4f4f9; text-align: center; padding: 20px; }
-        #overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:#f4f4f9; z-index:100; display:flex; flex-direction:column; align-items:center; justify-content:center; }
-        .mode-btn { padding: 30px 50px; font-size: 1.5em; margin: 10px; cursor: pointer; border-radius: 15px; border: none; background: #3498db; color: white; }
-        .controls { display: none; }
+        body { margin: 0; height: 100vh; overflow: hidden; font-family: 'Pretendard', sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; }
         
-        /* 중앙 영역: GIF와 정답이 겹치도록 설정 */
-        #display-area { position: relative; margin: 30px auto; width: 400px; height: 250px; }
-        #visualizer { width: 100%; height: 100%; border-radius: 20px; }
-        #answer-display { 
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            font-size: 3em; color: #e74c3c; font-weight: 900; background: rgba(255,255,255,0.9);
-            border-radius: 20px; pointer-events: none; /* 클릭 방해 방지 */
-        }
+        /* 움직이는 파형 배경 */
+        #bg-canvas { position: fixed; top:0; left:0; width:100%; height:100%; z-index:-1; background: #1a1a1a; }
         
-        .btn-bottom { margin-top: 20px; }
-        .nav-btn { padding: 15px 30px; margin: 5px; cursor: pointer; border-radius: 8px; border: none; background: #ddd; }
-        .nav-btn.active { background: #3498db; color: white; }
+        #overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:100; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+        .mode-btn { padding: 20px 40px; font-size: 1.5em; margin: 10px; cursor: pointer; border-radius: 10px; border: none; background: #3498db; color: white; }
+        
+        .controls { display: none; text-align: center; width: 100%; }
+        
+        /* 중앙 영역 */
+        #display-area { position: relative; width: 600px; height: 200px; margin: 20px auto; display: flex; align-items: center; justify-content: center; }
+        #answer-display { font-size: 3em; font-weight: 900; color: #ffeb3b; text-shadow: 0 0 10px rgba(0,0,0,0.5); }
+        
+        /* 버튼 스타일 조정 (작은 버튼, 큰 글씨) */
+        .btn-row button { padding: 8px 20px; font-size: 1.1em; cursor: pointer; border-radius: 6px; border: none; margin: 4px; background: rgba(255,255,255,0.2); color: white; transition: 0.3s; }
+        .btn-row button:hover { background: rgba(255,255,255,0.4); }
+        .nav-btn.active { background: #3498db !important; }
     </style>
 </head>
 <body>
+    <canvas id="bg-canvas"></canvas>
+
     <div id="overlay">
         <h1>Select Mode</h1>
         <button class="mode-btn" onclick="init('free')">Free Practice</button>
@@ -34,30 +36,44 @@
     <div id="main-ui" class="controls">
         <h1 id="ui-title">Training</h1>
         
-        <button id="m1" class="nav-btn active" onclick="setMode(1)">Boost</button>
-        <button id="m2" class="nav-btn" onclick="setMode(2)">Cut</button>
-        <button id="m3" class="nav-btn" onclick="setMode(3)">Mixed</button>
+        <div class="btn-row">
+            <button id="m1" class="nav-btn active" onclick="setMode(1)">BOOST</button>
+            <button id="m2" class="nav-btn" onclick="setMode(2)">CUT</button>
+            <button id="m3" class="nav-btn" onclick="setMode(3)">MIXED</button>
+        </div>
 
-        <!-- GIF와 정답이 겹치는 중앙 영역 -->
         <div id="display-area">
-            <img id="visualizer" src="pinknoise.gif" alt="Pink Noise">
             <div id="answer-display"></div>
         </div>
 
-        <div id="status" style="font-size: 1.5em; font-weight:bold;">Ready</div>
+        <div id="status" style="font-size: 1.2em; font-weight:bold; margin:10px;">Ready</div>
 
-        <div class="btn-bottom">
-            <button onclick="run()" style="background:#27ae60; color:white; padding: 20px 40px;">Start / Next</button>
-            <button onclick="listenAgain()" style="background:#f39c12; color:white; padding: 20px 40px;">Listen Again</button>
-            <button onclick="stopAll()" style="background:#c0392b; color:white; padding: 20px 40px;">Stop All</button>
-            <button onclick="showAnswers()" style="background:#2980b9; color:white; padding: 20px 40px;">Answers</button>
-            <br><br>
-            <button onclick="goBack()" style="background:#7f8c8d; color:white;">Return to Mode Select</button>
+        <div class="btn-row">
+            <button onclick="run()">START / NEXT</button>
+            <button onclick="listenAgain()">AGAIN</button>
+            <button onclick="stopAll()">STOP</button>
+            <button onclick="showAnswers()">ANSWERS</button>
+            <br>
+            <button onclick="goBack()" style="background:#e74c3c;">RETURN</button>
         </div>
     </div>
 
     <script>
-        // ... (이전과 동일한 로직) ...
+        // 파형 배경 애니메이션
+        const canvas = document.getElementById('bg-canvas');
+        const ctx_c = canvas.getContext('2d');
+        function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+        window.onresize = resize; resize();
+        function draw() {
+            ctx_c.fillStyle = 'rgba(26, 26, 26, 0.1)'; ctx_c.fillRect(0,0,canvas.width,canvas.height);
+            ctx_c.strokeStyle = '#3498db'; ctx_c.lineWidth = 2; ctx_c.beginPath();
+            for(let i=0; i<canvas.width; i++) {
+                ctx_c.lineTo(i, canvas.height/2 + Math.sin(i*0.01 + Date.now()*0.005)*50 * Math.random());
+            }
+            ctx_c.stroke(); requestAnimationFrame(draw);
+        } draw();
+
+        // [보안] 및 기타 로직 (이전과 동일)
         (function() {
             const pw = prompt("교수님 전용 비밀번호를 입력하세요:");
             if (pw !== "1234") { alert("접근 권한이 없습니다."); window.location.href = "index.html"; }
@@ -84,15 +100,15 @@
         }
 
         function playPattern(g, callback) {
-            filter.gain.value = 0; document.getElementById('status').innerText = "Flat (3s)";
+            filter.gain.value = 0; document.getElementById('status').innerText = "FLAT (3s)";
             timer = setTimeout(() => {
-                filter.gain.value = g; document.getElementById('status').innerText = "Change (3s)";
+                filter.gain.value = g; document.getElementById('status').innerText = "CHANGE (3s)";
                 timer = setTimeout(() => {
-                    filter.gain.value = 0; document.getElementById('status').innerText = "Flat (3s)";
+                    filter.gain.value = 0; document.getElementById('status').innerText = "FLAT (3s)";
                     timer = setTimeout(() => {
-                        filter.gain.value = g; document.getElementById('status').innerText = "Change (3s)";
+                        filter.gain.value = g; document.getElementById('status').innerText = "CHANGE (3s)";
                         timer = setTimeout(() => { 
-                            filter.gain.value = 0; document.getElementById('status').innerText = "Finished";
+                            filter.gain.value = 0; document.getElementById('status').innerText = "FINISHED";
                             if (type === 'free') stopAll();
                             if(callback) callback();
                         }, 3000);
@@ -116,12 +132,12 @@
         }
 
         function playSet(i) {
-            if(i >= 5) { document.getElementById('status').innerText = "Set Complete"; return; }
+            if(i >= 5) { document.getElementById('status').innerText = "SET COMPLETE"; return; }
             currentQ = i;
             source = createSource(set[i].freq, set[i].gain); source.start();
             playPattern(set[i].gain, () => { 
                 try { source.stop(); } catch(e){}
-                document.getElementById('status').innerText = "Silence (2s)";
+                document.getElementById('status').innerText = "SILENCE (2s)";
                 timer = setTimeout(() => playSet(i+1), 2000); 
             });
         }
@@ -133,8 +149,8 @@
             playPattern(q.gain);
         }
 
-        function stopAll() { clearTimeout(timer); try { source.stop(); source.disconnect(); } catch(e){} document.getElementById('status').innerText = "Stopped"; }
-        function showAnswers() { document.getElementById('answer-display').innerHTML = set.map((q,i)=>`Q${i+1}: ${q.freq}Hz<br>${q.gain>0?'BOOST':'CUT'}`).join('<br><br>'); }
+        function stopAll() { clearTimeout(timer); try { source.stop(); source.disconnect(); } catch(e){} document.getElementById('status').innerText = "STOPPED"; }
+        function showAnswers() { document.getElementById('answer-display').innerHTML = set.map((q,i)=>`Q${i+1}: ${q.freq}Hz<br>${q.gain>0?'BOOST':'CUT'}`).join('<br>'); }
     </script>
 </body>
 </html>
