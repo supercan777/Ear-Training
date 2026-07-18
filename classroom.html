@@ -6,53 +6,40 @@
     <style>
         body { font-family: 'Pretendard', sans-serif; background: #f4f4f9; text-align: center; padding: 40px; }
         .controls { margin: 20px; }
-        .mode-group { margin-bottom: 10px; }
-        button { padding: 15px 30px; font-size: 1em; cursor: pointer; border-radius: 8px; border: none; margin: 5px; transition: 0.2s; }
-        .mode-btn { background: #ddd; }
-        .mode-btn.active { background: #3498db; color: white; }
-        #answer-display { font-size: 2.5em; font-weight: bold; color: #2c3e50; margin: 20px; }
-        #status { font-weight: bold; color: #666; margin: 10px; font-size: 1.2em; }
+        button { padding: 20px 40px; font-size: 1.1em; cursor: pointer; border-radius: 10px; border: none; margin: 5px; }
+        #status { font-weight: bold; color: #d35400; font-size: 1.5em; margin: 20px; }
+        #answer-display { font-size: 2em; color: #2c3e50; font-weight: bold; }
     </style>
 </head>
 <body>
-    <h1>Classroom Pink Noise Trainer</h1>
-    
-    <div class="mode-group">
-        <button class="mode-btn active" id="classMode" onclick="setClassMode('free')">Free Practice</button>
-        <button class="mode-btn" id="testMode" onclick="setClassMode('test10')">10-Question Test</button>
-    </div>
-    <div id="test-info" style="margin-bottom: 20px; font-weight: bold;">Mode: Free Practice</div>
-
+    <h1>5-Question Set Training</h1>
     <div class="controls">
-        <button onclick="playNewProblem()" style="background:#27ae60; color:white;">Play (Next)</button>
-        <button onclick="playAgain()" style="background:#f39c12; color:white;">Listen Again</button>
-        <button onclick="showAnswer()" style="background:#2980b9; color:white;">Show Answer</button>
+        <button onclick="startFiveQuestionSet()" style="background:#27ae60; color:white;">Start 5-Question Set</button>
+        <button onclick="showAllAnswers()" style="background:#2980b9; color:white;">Show All Answers</button>
     </div>
 
-    <div id="status">Press Play to start</div>
-    <div id="answer-display">?</div>
+    <div id="status">Ready</div>
+    <div id="answer-display"></div>
 
     <script>
         const ctx = new AudioContext();
         const masterGain = ctx.createGain(); masterGain.gain.value = 0.2; masterGain.connect(ctx.destination);
         const bands = [31.5, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
-        let targetIdx, source, filter, timer, currentGain, classMode = 'free', testCount = 0;
+        let set = [], currentIdx = 0, timer, filter, source;
 
-        function setClassMode(m) {
-            classMode = m; testCount = 0;
-            document.getElementById('classMode').className = (m === 'free' ? 'mode-btn active' : 'mode-btn');
-            document.getElementById('testMode').className = (m === 'test10' ? 'mode-btn active' : 'mode-btn');
-            document.getElementById('test-info').innerText = "Mode: " + (m === 'free' ? "Free Practice" : "10-Question Test");
-            stopAndReset();
+        function generateSet() {
+            let shuffled = [...bands].sort(() => Math.random() - 0.5);
+            set = shuffled.slice(0, 5).map(f => ({
+                freq: f,
+                gain: Math.random() > 0.5 ? 6 : -6
+            }));
         }
 
-        function createNewSource() {
+        function createSource(freq, gain) {
             if(filter) filter.disconnect();
             filter = ctx.createBiquadFilter(); filter.type = "peaking";
-            targetIdx = Math.floor(Math.random() * bands.length);
-            filter.frequency.value = bands[targetIdx];
-            currentGain = (Math.random() > 0.5 ? 6 : -6);
-            filter.gain.value = 0; filter.Q.value = 1.4;
+            filter.frequency.value = freq; filter.gain.value = gain; filter.Q.value = 1.4;
+            
             const b = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
             const data = b.getChannelData(0);
             for(let i=0; i<data.length; i++) data[i] = Math.random()*2-1;
@@ -61,36 +48,43 @@
             return s;
         }
 
-        function playPattern() {
-            clearTimeout(timer); ctx.resume();
-            filter.gain.value = 0; document.getElementById('status').innerText = "Flat (3s)";
+        function playSet(i) {
+            if(i >= 5) { document.getElementById('status').innerText = "Set Complete"; return; }
+            currentIdx = i;
+            source = createSource(set[i].freq, set[i].gain);
+            source.start();
+
+            // 3(Flat) - 3(Var) - 3(Flat) - 3(Var) - 2(Silence)
+            let q = set[i];
+            filter.gain.value = 0; document.getElementById('status').innerText = `Q${i+1}: Flat`;
             timer = setTimeout(() => {
-                filter.gain.value = currentGain; document.getElementById('status').innerText = "Target (3s)";
+                filter.gain.value = q.gain; document.getElementById('status').innerText = `Q${i+1}: Change`;
                 timer = setTimeout(() => {
-                    filter.gain.value = 0; document.getElementById('status').innerText = "Flat (3s)";
+                    filter.gain.value = 0; document.getElementById('status').innerText = `Q${i+1}: Flat`;
                     timer = setTimeout(() => {
-                        filter.gain.value = currentGain; document.getElementById('status').innerText = "Target (3s)";
-                        timer = setTimeout(() => { 
-                            filter.gain.value = 0; document.getElementById('status').innerText = "Stopped."; 
-                            try { source.stop(); } catch(e){}
+                        filter.gain.value = q.gain; document.getElementById('status').innerText = `Q${i+1}: Change`;
+                        timer = setTimeout(() => {
+                            source.stop(); source.disconnect();
+                            document.getElementById('status').innerText = "Silence";
+                            timer = setTimeout(() => playSet(i + 1), 2000);
                         }, 3000);
                     }, 3000);
                 }, 3000);
             }, 3000);
         }
 
-        function playNewProblem() {
-            if(classMode === 'test10' && testCount >= 10) { alert("Test Finished!"); return; }
-            if(classMode === 'test10') testCount++;
-            if(source) try { source.stop(); } catch(e){}
-            source = createNewSource(); source.start();
-            document.getElementById('answer-display').innerText = "?";
-            playPattern();
+        function startFiveQuestionSet() {
+            ctx.resume(); clearTimeout(timer);
+            generateSet();
+            document.getElementById('answer-display').innerText = "";
+            playSet(0);
         }
 
-        function playAgain() { try { source.stop(); } catch(e){} source = createNewSource(); source.start(); playPattern(); }
-        function showAnswer() { document.getElementById('answer-display').innerText = bands[targetIdx] + "Hz (" + (currentGain > 0 ? "Boost" : "Cut") + ")"; }
-        function stopAndReset() { try { source.stop(); } catch(e){} document.getElementById('status').innerText = "Ready."; }
+        function showAllAnswers() {
+            let html = "Answers:<br>";
+            set.forEach((q, i) => html += `Q${i+1}: ${q.freq}Hz (${q.gain > 0 ? "Boost" : "Cut"})<br>`);
+            document.getElementById('answer-display').innerHTML = html;
+        }
     </script>
 </body>
 </html>
