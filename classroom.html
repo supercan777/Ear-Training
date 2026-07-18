@@ -6,18 +6,27 @@
     <style>
         body { margin: 0; height: 100vh; font-family: 'Pretendard', sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; background: #1a1a1a; overflow: hidden; }
         
-        /* 보안 로그인 오버레이 (비번 숨김 처리) */
+        /* 인증 화면 */
         #auth-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:#1a1a1a; z-index:999; display:flex; flex-direction:column; align-items:center; justify-content:center; }
         #pw-input { padding: 15px; font-size: 1.2em; border-radius: 8px; border: none; margin-bottom: 10px; width: 250px; text-align: center; }
         
+        /* 기어 아이콘 */
         #settings-trigger { position: fixed; top: 20px; right: 20px; font-size: 2em; cursor: pointer; z-index: 200; background: #1a1a1a; padding: 10px; border-radius: 50%; }
-        #settings-menu { position: fixed; top: 0; right: -300px; width: 300px; height: 100%; background: #1a1a1a; border-left: 1px solid #333; z-index: 150; transition: 0.4s ease-in-out; padding: 40px 20px; box-shadow: -5px 0 15px rgba(0,0,0,0.5); display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        
+        /* 사이드 설정 메뉴 (완전히 숨김 처리) */
+        #settings-menu { 
+            position: fixed; top: 0; right: -310px; width: 300px; height: 100%; 
+            background: #1a1a1a; border-left: 1px solid #333; z-index: 150; transition: 0.4s ease-in-out; padding: 40px 20px; box-shadow: -5px 0 15px rgba(0,0,0,0.5);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
         #settings-menu.open { right: 0; }
+        
         .settings-group { width: 100%; margin-bottom: 30px; }
         .settings-label { margin-bottom: 10px; font-size: 0.9em; color: #7f8c8d; }
         .btn-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
         .settings-btn { padding: 10px 15px; font-size: 0.9em; cursor: pointer; border-radius: 6px; border: none; background: #333; color: white; transition: 0.2s; min-width: 70px; }
         .settings-btn.active { background: #3498db !important; }
+        
         #close-btn { background: none; border: none; color: white; cursor: pointer; font-size: 1em; border-bottom: 1px solid white; padding: 5px 0; margin-top: 20px; }
         
         .overlay-screen { position: fixed; top:0; left:0; width:100%; height:100%; background:#1a1a1a; z-index:100; display:flex; flex-direction:column; align-items:center; justify-content:center; }
@@ -31,11 +40,10 @@
 </head>
 <body>
 
-    <!-- 비번 입력 화면 -->
     <div id="auth-overlay">
-        <h2>교수님 인증</h2>
-        <input type="password" id="pw-input" placeholder="비밀번호 입력">
-        <button onclick="checkPassword()" style="padding: 10px 30px;">입장</button>
+        <h2>AUTHENTICATION</h2>
+        <input type="password" id="pw-input" placeholder="Password">
+        <button onclick="checkPassword()" style="padding: 10px 30px;">ENTER</button>
     </div>
 
     <div id="settings-trigger" onclick="toggleSettings()">⚙️</div>
@@ -89,12 +97,11 @@
             if (document.getElementById('pw-input').value === "1234") {
                 document.getElementById('auth-overlay').style.display = 'none';
                 document.getElementById('overlay').style.display = 'flex';
-            } else { alert("비밀번호가 틀렸습니다."); }
+            } else { alert("Wrong Password"); }
         }
 
         function toggleSettings() { document.getElementById('settings-menu').classList.toggle('open'); }
 
-        // RTA 및 기타 로직 (기존과 동일)
         const canvas = document.getElementById('rta-canvas');
         const rtaCtx = canvas.getContext('2d');
         let bars = new Array(30).fill(0);
