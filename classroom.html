@@ -6,23 +6,18 @@
     <style>
         body { margin: 0; height: 100vh; font-family: 'Pretendard', sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; background: #1a1a1a; overflow: hidden; }
         
-        /* 기어 아이콘 (메뉴가 닫혀있을 때도 항상 보임) */
+        /* 보안 로그인 오버레이 (비번 숨김 처리) */
+        #auth-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:#1a1a1a; z-index:999; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+        #pw-input { padding: 15px; font-size: 1.2em; border-radius: 8px; border: none; margin-bottom: 10px; width: 250px; text-align: center; }
+        
         #settings-trigger { position: fixed; top: 20px; right: 20px; font-size: 2em; cursor: pointer; z-index: 200; background: #1a1a1a; padding: 10px; border-radius: 50%; }
-        
-        /* 사이드 설정 메뉴 (초기값: 화면 밖으로 완전히 숨김) */
-        #settings-menu { 
-            position: fixed; top: 0; right: -300px; width: 300px; height: 100%; 
-            background: #1a1a1a; border-left: 1px solid #333; z-index: 150; transition: 0.4s ease-in-out; padding: 40px 20px; box-shadow: -5px 0 15px rgba(0,0,0,0.5);
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-        }
+        #settings-menu { position: fixed; top: 0; right: -300px; width: 300px; height: 100%; background: #1a1a1a; border-left: 1px solid #333; z-index: 150; transition: 0.4s ease-in-out; padding: 40px 20px; box-shadow: -5px 0 15px rgba(0,0,0,0.5); display: flex; flex-direction: column; align-items: center; justify-content: center; }
         #settings-menu.open { right: 0; }
-        
         .settings-group { width: 100%; margin-bottom: 30px; }
         .settings-label { margin-bottom: 10px; font-size: 0.9em; color: #7f8c8d; }
         .btn-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
         .settings-btn { padding: 10px 15px; font-size: 0.9em; cursor: pointer; border-radius: 6px; border: none; background: #333; color: white; transition: 0.2s; min-width: 70px; }
         .settings-btn.active { background: #3498db !important; }
-        
         #close-btn { background: none; border: none; color: white; cursor: pointer; font-size: 1em; border-bottom: 1px solid white; padding: 5px 0; margin-top: 20px; }
         
         .overlay-screen { position: fixed; top:0; left:0; width:100%; height:100%; background:#1a1a1a; z-index:100; display:flex; flex-direction:column; align-items:center; justify-content:center; }
@@ -35,6 +30,13 @@
     </style>
 </head>
 <body>
+
+    <!-- 비번 입력 화면 -->
+    <div id="auth-overlay">
+        <h2>교수님 인증</h2>
+        <input type="password" id="pw-input" placeholder="비밀번호 입력">
+        <button onclick="checkPassword()" style="padding: 10px 30px;">입장</button>
+    </div>
 
     <div id="settings-trigger" onclick="toggleSettings()">⚙️</div>
     
@@ -59,7 +61,7 @@
         <button id="close-btn" onclick="toggleSettings()">CLOSE</button>
     </div>
 
-    <div id="overlay" class="overlay-screen">
+    <div id="overlay" class="overlay-screen" style="display:none;">
         <h1>Classroom Trainer</h1>
         <button class="mode-btn" onclick="init('free')">Free Practice</button>
         <button class="mode-btn" onclick="init('set')">5-Question Set</button>
@@ -83,13 +85,16 @@
     </div>
 
     <script>
-        (function() {
-            const pw = prompt("교수님 전용 비밀번호를 입력하세요:");
-            if (pw !== "1234") { alert("접근 권한이 없습니다."); window.location.href = "index.html"; }
-        })();
+        function checkPassword() {
+            if (document.getElementById('pw-input').value === "1234") {
+                document.getElementById('auth-overlay').style.display = 'none';
+                document.getElementById('overlay').style.display = 'flex';
+            } else { alert("비밀번호가 틀렸습니다."); }
+        }
 
         function toggleSettings() { document.getElementById('settings-menu').classList.toggle('open'); }
 
+        // RTA 및 기타 로직 (기존과 동일)
         const canvas = document.getElementById('rta-canvas');
         const rtaCtx = canvas.getContext('2d');
         let bars = new Array(30).fill(0);
@@ -126,12 +131,10 @@
             if(filter) filter.disconnect();
             filter = ctx.createBiquadFilter(); filter.type = "peaking";
             filter.frequency.value = f; filter.gain.value = g; filter.Q.value = 1.4;
-
             const bufferSize = ctx.sampleRate * 2;
             const b = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
             const data = b.getChannelData(0);
-            let b0, b1, b2, b3, b4, b5, b6;
-            b0 = b1 = b2 = b3 = b4 = b5 = b6 = 0.0;
+            let b0=0, b1=0, b2=0, b3=0, b4=0, b5=0, b6=0;
             for (let i = 0; i < bufferSize; i++) {
                 let white = Math.random() * 2 - 1;
                 b0 = 0.99886 * b0 + white * 0.0555179;
