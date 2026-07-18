@@ -2,111 +2,91 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Classroom Training Suite</title>
+    <title>Classroom Trainer</title>
     <style>
         body { font-family: 'Pretendard', sans-serif; background: #f4f4f9; text-align: center; padding: 30px; }
-        .mode-group { margin-bottom: 20px; border-bottom: 1px solid #ccc; padding-bottom: 20px; }
-        .btn-row { margin: 10px 0; }
-        button { padding: 15px 30px; font-size: 1em; cursor: pointer; border-radius: 8px; border: none; margin: 5px; transition: 0.2s; }
-        .mode-btn { background: #ddd; }
-        .mode-btn.active { background: #3498db; color: white; }
-        #status { font-weight: bold; color: #d35400; font-size: 1.5em; margin: 20px; }
-        #answer-display { font-size: 1.3em; color: #2c3e50; font-weight: bold; line-height: 1.6; }
+        #overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:#f4f4f9; z-index:100; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+        .mode-btn { padding: 30px 50px; font-size: 1.5em; margin: 10px; cursor: pointer; border-radius: 15px; border: none; background: #3498db; color: white; }
+        .controls { display: none; }
+        .active-btn { background: #3498db; color: white; }
+        button { padding: 15px 30px; margin: 5px; cursor: pointer; border-radius: 8px; border: none; }
     </style>
 </head>
 <body>
-    <h1>Classroom Training Suite</h1>
-    
-    <!-- 난이도 선택 -->
-    <div class="mode-group">
-        <button class="mode-btn active" id="mode1" onclick="setMode(1)">Boost Only</button>
-        <button class="mode-btn" id="mode2" onclick="setMode(2)">Cut Only</button>
-        <button class="mode-btn" id="mode3" onclick="setMode(3)">Mixed</button>
+    <div id="overlay">
+        <h1>Select Mode</h1>
+        <button class="mode-btn" onclick="init('free')">Free Practice</button>
+        <button class="mode-btn" onclick="init('set')">5-Question Set</button>
     </div>
 
-    <!-- 실행 모드 선택 및 컨트롤 -->
-    <div class="btn-row">
-        <button onclick="startFreeMode()" style="background:#f39c12; color:white;">Free Practice</button>
-        <button onclick="startFiveQuestionSet()" style="background:#27ae60; color:white;">5-Question Set</button>
-        <button onclick="stopAll()" style="background:#c0392b; color:white;">Stop All</button>
-        <button onclick="showAnswers()" style="background:#2980b9; color:white;">Show Answers</button>
+    <div id="main-ui" class="controls">
+        <h1 id="ui-title">Training</h1>
+        <button id="m1" onclick="setMode(1)">Boost</button>
+        <button id="m2" onclick="setMode(2)">Cut</button>
+        <button id="m3" onclick="setMode(3)">Mixed</button>
+        <br><br>
+        <button onclick="run()" style="background:#27ae60; color:white;">Start</button>
+        <button onclick="stopAll()" style="background:#c0392b; color:white;">Stop</button>
+        <button onclick="showAnswers()" style="background:#2980b9; color:white;">Answers</button>
+        <div id="status" style="margin:20px; font-size:1.2em; font-weight:bold;">Ready</div>
+        <div id="answer-display"></div>
     </div>
-
-    <div id="status">Ready</div>
-    <div id="answer-display"></div>
 
     <script>
         const ctx = new AudioContext();
-        const masterGain = ctx.createGain(); masterGain.gain.value = 0.2; masterGain.connect(ctx.destination);
+        const master = ctx.createGain(); master.gain.value = 0.2; master.connect(ctx.destination);
         const bands = [31.5, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
-        let set = [], timer, filter, source, mode = 1, isSetMode = false;
+        let type, mode = 1, set = [], timer, filter, source;
 
-        function setMode(m) {
-            mode = m;
-            document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById('mode'+m).classList.add('active');
-        }
+        function init(t) { type = t; document.getElementById('overlay').style.display = 'none'; document.getElementById('main-ui').style.display = 'block'; document.getElementById('ui-title').innerText = t === 'free' ? "Free Practice" : "5-Question Set"; ctx.resume(); }
+        function setMode(m) { mode = m; }
 
-        function createSource(freq, gain) {
+        function createSource(f, g) {
             if(filter) filter.disconnect();
             filter = ctx.createBiquadFilter(); filter.type = "peaking";
-            filter.frequency.value = freq; filter.gain.value = gain; filter.Q.value = 1.4;
+            filter.frequency.value = f; filter.gain.value = g; filter.Q.value = 1.4;
             const b = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
             const data = b.getChannelData(0);
             for(let i=0; i<data.length; i++) data[i] = Math.random()*2-1;
             const s = ctx.createBufferSource(); s.buffer = b; s.loop = true;
-            s.connect(filter).connect(masterGain);
-            return s;
+            s.connect(filter).connect(master); return s;
         }
 
         function playPattern(callback) {
-            filter.gain.value = 0; document.getElementById('status').innerText = "Flat (3s)";
+            filter.gain.value = 0; document.getElementById('status').innerText = "Flat";
             timer = setTimeout(() => {
-                filter.gain.value = filter.gain.value === 0 ? (Math.random()>0.5 ? 6 : -6) : 0; // 이건 나중에 보정
-                // 간단히 패턴 재생
-                filter.gain.value = filter.gain.value === 0 ? 6 : 0; // 예시 로직
-                document.getElementById('status').innerText = "Change (3s)";
+                filter.gain.value = filter.gain.value === 0 ? (mode==1?6:mode==2?-6:(Math.random()>0.5?6:-6)) : 0;
+                document.getElementById('status').innerText = "Change";
                 timer = setTimeout(() => {
-                    filter.gain.value = 0; document.getElementById('status').innerText = "Flat (3s)";
+                    filter.gain.value = 0;
                     timer = setTimeout(() => {
-                        filter.gain.value = 6; document.getElementById('status').innerText = "Change (3s)";
+                        filter.gain.value = filter.gain.value === 0 ? (mode==1?6:mode==2?-6:(Math.random()>0.5?6:-6)) : 0;
                         timer = setTimeout(() => { if(callback) callback(); }, 3000);
                     }, 3000);
                 }, 3000);
             }, 3000);
         }
 
-        // 5문제 로직
+        function run() {
+            stopAll();
+            if(type === 'free') {
+                let f = bands[Math.floor(Math.random()*bands.length)];
+                let g = (mode==1)?6:(mode==2)?-6:(Math.random()>0.5?6:-6);
+                set = [{freq: f, gain: g}]; source = createSource(f, g); source.start(); playPattern();
+            } else {
+                let s = [...bands].sort(()=>Math.random()-0.5).slice(0,5).map(f=>({freq:f, gain:(mode==1)?6:(mode==2)?-6:(Math.random()>0.5?6:-6)}));
+                set = s; playSet(0);
+            }
+        }
+
         function playSet(i) {
-            if(i >= 5) { document.getElementById('status').innerText = "Set Complete"; return; }
+            if(i >= 5) { document.getElementById('status').innerText = "Complete"; return; }
             source = createSource(set[i].freq, set[i].gain); source.start();
-            // ... (기존 패턴 재생 로직)
-            playPattern(() => { try { source.stop(); } catch(e){} document.getElementById('status').innerText = "Silence"; timer = setTimeout(() => playSet(i + 1), 2000); });
+            playPattern(() => { source.stop(); document.getElementById('status').innerText = "Next..."; timer = setTimeout(() => playSet(i+1), 2000); });
         }
 
-        function startFiveQuestionSet() {
-            ctx.resume(); stopAll(); isSetMode = true;
-            let shuffled = [...bands].sort(() => Math.random() - 0.5);
-            set = shuffled.slice(0, 5).map(f => ({ freq: f, gain: (mode === 1) ? 6 : ((mode === 2) ? -6 : (Math.random() > 0.5 ? 6 : -6)) }));
-            document.getElementById('answer-display').innerText = "";
-            playSet(0);
-        }
-
-        function startFreeMode() {
-            ctx.resume(); stopAll(); isSetMode = false;
-            let freq = bands[Math.floor(Math.random()*bands.length)];
-            let gain = (mode === 1) ? 6 : ((mode === 2) ? -6 : (Math.random() > 0.5 ? 6 : -6));
-            source = createSource(freq, gain); source.start();
-            set = [{freq, gain}];
-            playPattern(() => { source.stop(); document.getElementById('status').innerText = "Finished One Question"; });
-        }
-
-        function stopAll() { clearTimeout(timer); try { source.stop(); source.disconnect(); } catch(e){} document.getElementById('status').innerText = "Stopped"; }
-        function showAnswers() {
-            let html = isSetMode ? "Set Answers:<br>" : "Answer:<br>";
-            set.forEach((q, i) => html += (isSetMode ? `Q${i+1}: ` : "") + `${q.freq}Hz (${q.gain > 0 ? "Boost" : "Cut"})<br>`);
-            document.getElementById('answer-display').innerHTML = html;
-        }
+        function stopAll() { clearTimeout(timer); try { source.stop(); } catch(e){} document.getElementById('status').innerText = "Stopped"; }
+        function showAnswers() { document.getElementById('answer-display').innerHTML = set.map((q,i)=>`Q${i+1}: ${q.freq}Hz (${q.gain>0?'Boost':'Cut'})`).join('<br>'); }
     </script>
 </body>
 </html>
