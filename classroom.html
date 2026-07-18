@@ -9,27 +9,25 @@
         /* 기어 아이콘 */
         #settings-trigger { position: fixed; top: 20px; right: 20px; font-size: 2em; cursor: pointer; z-index: 200; background: #1a1a1a; padding: 10px; border-radius: 50%; }
         
-        /* 사이드 설정 메뉴 */
+        /* 사이드 설정 메뉴 (바탕색과 통일) */
         #settings-menu { 
             position: fixed; top: 0; right: -300px; width: 300px; height: 100%; 
-            background: #2c3e50; z-index: 150; transition: 0.3s; padding: 40px 20px; box-shadow: -5px 0 15px rgba(0,0,0,0.5);
+            background: #1a1a1a; border-left: 1px solid #333; z-index: 150; transition: 0.3s; padding: 40px 20px; box-shadow: -5px 0 15px rgba(0,0,0,0.5);
             display: flex; flex-direction: column; align-items: center; justify-content: center;
         }
         #settings-menu.open { right: 0; }
         
-        /* 메뉴 버튼 정리 */
         .settings-group { width: 100%; margin-bottom: 30px; }
-        .settings-label { margin-bottom: 10px; font-size: 0.9em; color: #bdc3c7; }
+        .settings-label { margin-bottom: 10px; font-size: 0.9em; color: #7f8c8d; }
         .btn-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
-        .settings-btn { padding: 10px 15px; font-size: 0.9em; cursor: pointer; border-radius: 6px; border: none; background: #444; color: white; transition: 0.2s; min-width: 80px; }
+        .settings-btn { padding: 10px 15px; font-size: 0.9em; cursor: pointer; border-radius: 6px; border: none; background: #333; color: white; transition: 0.2s; min-width: 70px; }
         .settings-btn.active { background: #3498db !important; }
         
-        /* 클로즈 버튼 (박스 없이 아랫줄만) */
-        #close-btn { background: none; border: none; color: white; cursor: pointer; font-size: 1.1em; border-bottom: 2px solid white; padding: 5px 0; margin-top: 20px; }
+        #close-btn { background: none; border: none; color: white; cursor: pointer; font-size: 1em; border-bottom: 1px solid white; padding: 5px 0; margin-top: 20px; }
         
-        /* 기타 UI */
-        .overlay-screen { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:100; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+        .overlay-screen { position: fixed; top:0; left:0; width:100%; height:100%; background:#1a1a1a; z-index:100; display:flex; flex-direction:column; align-items:center; justify-content:center; }
         .mode-btn { padding: 20px 40px; font-size: 1.5em; margin: 10px; cursor: pointer; border-radius: 10px; border: none; background: #3498db; color: white; }
+        
         #display-area { position: relative; width: 600px; height: 300px; margin: 20px auto; background: #000; border: 4px solid #3498db; border-radius: 40px; display: flex; align-items: center; justify-content: center; overflow: hidden; box-shadow: 0 0 20px rgba(52, 152, 219, 0.3); }
         #rta-canvas { width: 100%; height: 100%; }
         #answer-display { position: absolute; width: 85%; height: 85%; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 2.2em; line-height: 1.4; font-weight: 900; color: #ffeb3b; background: rgba(0,0,0,0.9); border-radius: 30px; z-index: 10; padding: 10px; box-sizing: border-box; text-align: center; }
@@ -62,7 +60,7 @@
     </div>
 
     <div id="overlay" class="overlay-screen">
-        <h1>Select Mode</h1>
+        <h1>Classroom Trainer</h1>
         <button class="mode-btn" onclick="init('free')">Free Practice</button>
         <button class="mode-btn" onclick="init('set')">5-Question Set</button>
     </div>
@@ -124,13 +122,29 @@
             return bands;
         }
 
+        // 핑크 노이즈 생성 로직
         function createSource(f, g) {
             if(filter) filter.disconnect();
             filter = ctx.createBiquadFilter(); filter.type = "peaking";
             filter.frequency.value = f; filter.gain.value = g; filter.Q.value = 1.4;
-            const b = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
+
+            const bufferSize = ctx.sampleRate * 2;
+            const b = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
             const data = b.getChannelData(0);
-            for(let i=0; i<data.length; i++) data[i] = Math.random()*2-1;
+            let b0, b1, b2, b3, b4, b5, b6;
+            b0 = b1 = b2 = b3 = b4 = b5 = b6 = 0.0;
+            for (let i = 0; i < bufferSize; i++) {
+                let white = Math.random() * 2 - 1;
+                b0 = 0.99886 * b0 + white * 0.0555179;
+                b1 = 0.99332 * b1 + white * 0.0750759;
+                b2 = 0.96900 * b2 + white * 0.1538520;
+                b3 = 0.86650 * b3 + white * 0.3104856;
+                b4 = 0.55000 * b4 + white * 0.5329522;
+                b5 = -0.7616 * b5 - white * 0.0168980;
+                data[i] = b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362;
+                data[i] *= 0.11;
+                b6 = white * 0.115926;
+            }
             const s = ctx.createBufferSource(); s.buffer = b; s.loop = true;
             s.connect(filter).connect(master); return s;
         }
