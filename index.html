@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Professional Ear Training</title>
+    <title>Pink Noise Ear Training</title>
     <style>
         body { font-family: 'Pretendard', sans-serif; background: #f4f4f9; color: #333; text-align: center; padding: 20px; margin: 0; }
         h1 { color: #2c3e50; margin-bottom: 10px; }
@@ -19,11 +19,11 @@
 </head>
 <body>
     <div id="start-screen">
-        <h1>Audio Ear Training</h1>
+        <h1>Pink Noise Ear Training</h1>
         <button onclick="initApp()" style="padding:25px 50px; font-size:1.5em; background:#27ae60; color:white; border:none; border-radius:15px; cursor:pointer;">Start Training</button>
     </div>
 
-    <h1>Ear Trainer</h1>
+    <h1>Pink Noise Trainer</h1>
     <canvas id="visualizer"></canvas>
     <div id="status" style="font-size: 1.1em; font-weight: bold; margin: 15px;">Select a stage to begin.</div>
     
@@ -44,7 +44,6 @@
         const MAX_QUESTIONS = 20;
         let stats = { wins: 0, losses: 0 };
 
-        // [Audio Engine]
         const analyser = ctx.createAnalyser();
         analyser.fftSize = 1024;
         const source = ctx.createBufferSource();
@@ -94,16 +93,16 @@
             clearTimeout(timer);
             if (questionCount >= MAX_QUESTIONS) { alert(`Training Complete! Score: ${stats.wins}/${MAX_QUESTIONS}`); questionCount = 0; }
             filters.forEach(f => f.gain.value = 0);
-            document.getElementById('status').innerText = "Reference Sound (Flat, 3s)";
+            document.getElementById('status').innerText = "Reference Pink Noise (Flat, 3s)";
             timer = setTimeout(() => {
                 let newIdx = Math.floor(Math.random() * bands.length);
                 while (newIdx === lastIdx) newIdx = Math.floor(Math.random() * bands.length);
                 targetIdx = newIdx; lastIdx = targetIdx;
                 filters[targetIdx].gain.value = (stage === 1) ? 6 : ((stage === 2) ? -6 : (Math.random() > 0.5 ? 6 : -6));
-                document.getElementById('status').innerText = "Modified Sound (3s)";
+                document.getElementById('status').innerText = "Modified Pink Noise (3s)";
                 timer = setTimeout(() => {
                     filters.forEach(f => f.gain.value = 0);
-                    document.getElementById('status').innerText = "Reference Sound Again (3s)";
+                    document.getElementById('status').innerText = "Reference Pink Noise Again (3s)";
                     timer = setTimeout(() => {
                         filters[targetIdx].gain.value = (stage === 1) ? 6 : ((stage === 2) ? -6 : (Math.random() > 0.5 ? 6 : -6));
                         document.getElementById('status').innerText = `Final Check (Question ${++questionCount}/${MAX_QUESTIONS})`;
