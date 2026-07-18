@@ -1,10 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Classroom Pink Noise Trainer</title>
+    <style>
+        body { font-family: 'Pretendard', sans-serif; background: #f4f4f9; text-align: center; padding: 40px; }
+        .controls { margin: 20px; }
+        .mode-group { margin-bottom: 20px; }
+        button { padding: 20px 40px; font-size: 1.1em; cursor: pointer; border-radius: 10px; border: none; margin: 5px; transition: 0.2s; }
+        .mode-btn { background: #ddd; padding: 10px 20px; font-size: 0.9em; }
+        .mode-btn.active { background: #3498db; color: white; }
+        #answer-display { font-size: 3em; font-weight: bold; color: #2c3e50; margin: 30px; }
+        #status { font-weight: bold; color: #666; margin: 10px; font-size: 1.2em; }
+    </style>
+</head>
+<body>
+    <h1>Classroom Pink Noise Trainer</h1>
+    
+    <div class="mode-group">
+        <button class="mode-btn active" id="mode1" onclick="setMode(1)">Boost Only</button>
+        <button class="mode-btn" id="mode2" onclick="setMode(2)">Cut Only</button>
+        <button class="mode-btn" id="mode3" onclick="setMode(3)">Mixed</button>
+    </div>
+
+    <div class="controls">
+        <button onclick="playNewProblem()" style="background:#27ae60; color:white;">Play (Next Problem)</button>
+        <button onclick="playAgain()" style="background:#f39c12; color:white;">Listen Again</button>
+        <button onclick="showAnswer()" style="background:#2980b9; color:white;">Show Answer</button>
+    </div>
+
+    <div id="status">Ready. Press Play.</div>
+    <div id="answer-display">?</div>
+
+    <script>
+        const ctx = new AudioContext();
+        const masterGain = ctx.createGain();
+        masterGain.gain.value = 0.2;
+        masterGain.connect(ctx.destination);
+
+        const bands = [31.5, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
+        let targetIdx, source, filter, timer, currentGain;
+        let mode = 1;
+
+        function setMode(m) {
+            mode = m;
+            document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('mode'+m).classList.add('active');
+        }
+
+        function createNewSource() {
+            if(filter) filter.disconnect();
+            filter = ctx.createBiquadFilter();
+            filter.type = "peaking";
+            targetIdx = Math.floor(Math.random() * bands.length);
+            filter.frequency.value = bands[targetIdx];
+            currentGain = (mode === 1) ? 6 : ((mode === 2) ? -6 : (Math.random() > 0.5 ? 6 : -6));
+            filter.gain.value = 0;
+            filter.Q.value = 1.4;
+
+            const b = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
+            const data = b.getChannelData(0);
+            for(let i=0; i<data.length; i++) data[i] = Math.random()*2-1;
+            
+            const newSource = ctx.createBufferSource();
+            newSource.buffer = b; newSource.loop = true;
+            newSource.connect(filter).connect(masterGain);
+            return newSource;
+        }
+
         function playPattern() {
             clearTimeout(timer);
             ctx.resume();
             filter.gain.value = 0;
             document.getElementById('status').innerText = "Flat (3s)";
             
-            // 패턴 시작
             timer = setTimeout(() => {
                 filter.gain.value = currentGain;
                 document.getElementById('status').innerText = "Target (3s)";
@@ -14,19 +83,35 @@
                     timer = setTimeout(() => {
                         filter.gain.value = currentGain;
                         document.getElementById('status').innerText = "Target (3s)";
-                        
-                        // 마지막 패턴이 끝나고 3초 뒤에 소리 멈춤
                         timer = setTimeout(() => {
                             filter.gain.value = 0;
                             document.getElementById('status').innerText = "Stopped.";
-                            // [수정된 부분] 마지막 재생 후 소리를 중단합니다.
-                            source.stop(); 
-                            source.disconnect();
-                            // 소리가 멈췄으므로 다음 Play를 위해 소스 재생성
-                            source = createNewSource();
+                            source.stop();
                         }, 3000);
-                        
                     }, 3000);
                 }, 3000);
             }, 3000);
         }
+
+        function playNewProblem() {
+            if(source) { try { source.stop(); source.disconnect(); } catch(e){} }
+            source = createNewSource();
+            source.start();
+            document.getElementById('answer-display').innerText = "?";
+            playPattern();
+        }
+
+        function playAgain() {
+            // 재생 중일 때 중복 방지
+            try { source.stop(); } catch(e) {}
+            source = createNewSource();
+            source.start();
+            playPattern();
+        }
+
+        function showAnswer() {
+            document.getElementById('answer-display').innerText = bands[targetIdx] + "Hz (" + (currentGain > 0 ? "Boost" : "Cut") + ")";
+        }
+    </script>
+</body>
+</html>
