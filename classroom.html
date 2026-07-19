@@ -4,59 +4,95 @@
     <meta charset="UTF-8">
     <title>Classroom Trainer</title>
     <style>
+        /* 기본 레이아웃 및 배경 설정 */
         body { 
-            margin: 0; height: 100vh; font-family: 'Pretendard', sans-serif; 
-            display: flex; flex-direction: column; align-items: center; justify-content: center; 
-            color: white; background: #1a1a1a; overflow: hidden; 
+            margin: 0; 
+            height: 100vh; 
+            font-family: 'Pretendard', sans-serif; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            color: white; 
+            background: #1a1a1a; 
+            overflow: hidden; 
         }
-        
-        #auth-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:#1a1a1a; z-index:999; display:flex; flex-direction:column; align-items:center; justify-content:center; }
-        #pw-input { padding: 15px; font-size: 1.2em; border-radius: 8px; border: none; margin-bottom: 10px; width: 250px; text-align: center; }
-        
-        #settings-trigger { position: fixed; top: 20px; right: 20px; font-size: 2em; cursor: pointer; z-index: 200; background: #1a1a1a; padding: 10px; border-radius: 50%; }
-        
+
+        /* 인증 오버레이 */
+        #auth-overlay { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: #1a1a1a; z-index: 999; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+        }
+        #pw-input { 
+            padding: 15px; font-size: 1.2em; border-radius: 8px; border: none; 
+            margin-bottom: 10px; width: 250px; text-align: center; 
+        }
+
+        /* 설정 메뉴 및 트리거 */
+        #settings-trigger { 
+            position: fixed; top: 20px; right: 20px; font-size: 2em; cursor: pointer; z-index: 200; 
+        }
+
         #settings-menu { 
             position: fixed; top: 0; right: -400px; width: 350px; height: 100%; 
-            background: #1a1a1a; border-left: 1px solid #333; z-index: 150; transition: 0.4s ease-in-out; 
-            padding: 40px 20px; box-shadow: -5px 0 15px rgba(0,0,0,0.5);
-            display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
+            background: #1a1a1a; border-left: 1px solid #333; z-index: 150; 
+            transition: 0.4s ease-in-out; padding: 40px 20px; 
+            box-shadow: -5px 0 15px rgba(0,0,0,0.5);
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
         }
         #settings-menu.open { right: 0; }
-        
+
         .settings-group { width: 100%; margin-bottom: 30px; display: flex; flex-direction: column; align-items: center; }
         .settings-label { margin-bottom: 15px; font-size: 0.9em; color: #7f8c8d; }
-        
+
+        /* 공통 버튼 디자인 */
         .btn-row { display: flex; align-items: center; justify-content: center; gap: 5px; flex-wrap: wrap; }
         .separator { color: #555; margin: 0 5px; font-weight: 200; }
-        .settings-btn { padding: 8px 12px; font-size: 0.85em; cursor: pointer; border-radius: 4px; border: none; background: #333; color: white; transition: 0.2s; min-width: 60px; }
+        .settings-btn { 
+            padding: 8px 12px; font-size: 0.85em; cursor: pointer; border-radius: 4px; border: none; 
+            background: #333; color: white; transition: 0.2s; min-width: 60px; 
+        }
         .settings-btn.active { background: #3498db !important; }
-        
-        #close-btn { background: none; border: none; color: white; cursor: pointer; font-size: 0.9em; border-bottom: 1px solid white; padding: 2px 0; margin-top: 20px; }
-        #return-btn { background: none; border: none; color: white; cursor: pointer; font-size: 0.9em; border-bottom: 1px solid white; padding: 2px 0; margin-top: 20px; }
-        
+
+        #close-btn { background: none; border: none; color: white; cursor: pointer; border-bottom: 1px solid white; padding: 2px 0; margin-top: 20px; }
+        #return-btn { background: none; border: none; color: white; cursor: pointer; border-bottom: 1px solid white; padding: 2px 0; margin-top: 20px; display: block; margin-left: auto; margin-right: auto; }
+
         .upload-label { cursor: pointer; padding: 8px 12px; font-size: 0.85em; border-radius: 4px; background: #333; color: white; }
         #file-input { display: none; }
+
+        /* 메인 콘텐츠 */
+        .overlay-screen { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: #1a1a1a; z-index: 100; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+        }
         
-        .overlay-screen { position: fixed; top:0; left:0; width:100%; height:100%; background:#1a1a1a; z-index:100; display:flex; flex-direction:column; align-items:center; justify-content:center; }
-        
-        #display-area { position: relative; width: 600px; height: 300px; margin: 20px auto; background: #000; border: 4px solid #3498db; border-radius: 40px; display: flex; align-items: center; justify-content: center; overflow: hidden; box-shadow: 0 0 20px rgba(52, 152, 219, 0.3); }
+        #main-ui { display: flex; flex-direction: column; align-items: center; }
+        #display-area { 
+            position: relative; width: 600px; height: 300px; margin: 20px auto; 
+            background: #000; border: 4px solid #3498db; border-radius: 40px; 
+            display: flex; align-items: center; justify-content: center; overflow: hidden; 
+            box-shadow: 0 0 20px rgba(52, 152, 219, 0.3); 
+        }
         #rta-canvas { width: 100%; height: 100%; }
-        
+
         .action-row { display: flex; flex-direction: column; align-items: center; margin-top: 20px; }
-        .action-btns { display: flex; gap: 10px; }
-        .action-row button { padding: 12px 20px; font-size: 0.9em; cursor: pointer; border-radius: 8px; border: none; margin: 4px; background: #444; color: white; }
+        .action-btns { display: flex; gap: 10px; margin-top: 10px; }
+        .action-btns button { padding: 12px 20px; cursor: pointer; border-radius: 8px; border: none; background: #444; color: white; }
     </style>
 </head>
 <body>
 
+    <!-- 인증 화면 -->
     <div id="auth-overlay">
         <h2>AUTHENTICATION</h2>
         <input type="password" id="pw-input" placeholder="Password">
         <button onclick="checkPassword()" style="padding: 10px 30px;">ENTER</button>
     </div>
 
+    <!-- 설정 트리거 및 메뉴 -->
     <div id="settings-trigger" onclick="toggleSettings()">⚙️</div>
-    
     <div id="settings-menu">
         <div class="settings-group">
             <div class="settings-label">SOURCE</div>
@@ -81,6 +117,7 @@
         <button id="close-btn" onclick="toggleSettings()">CLOSE</button>
     </div>
 
+    <!-- 시작 메뉴 -->
     <div id="overlay" class="overlay-screen" style="display:none;">
         <h1>Classroom Trainer</h1>
         <div class="btn-row">
@@ -92,27 +129,27 @@
         </div>
     </div>
 
+    <!-- 메인 훈련 화면 -->
     <div id="main-ui" style="display:none;">
-        <h1 id="ui-title" style="text-align: center;">Training</h1>
+        <h1 id="ui-title">Training</h1>
         <div id="display-area"><canvas id="rta-canvas"></canvas></div>
         <div id="freq-controls" class="btn-row" style="margin: 20px 0; display:none;"></div>
-        <div id="status" style="font-size: 1.2em; font-weight:bold; margin-bottom: 10px; text-align: center;">Ready</div>
-        <div class="action-row">
-            <div class="action-btns">
-                <button id="start-btn" onclick="run()">START / NEXT</button>
-                <button onclick="listenAgain()">AGAIN</button>
-                <button onclick="stopAll()">STOP</button>
-            </div>
-            <button id="return-btn" onclick="goBack()">RETURN TO START</button>
+        <div id="status" style="font-size: 1.2em; font-weight:bold;">Ready</div>
+        <div class="action-btns">
+            <button id="start-btn" onclick="run()">START / NEXT</button>
+            <button onclick="listenAgain()">AGAIN</button>
+            <button onclick="stopAll()">STOP</button>
         </div>
+        <button id="return-btn" onclick="goBack()">RETURN TO START</button>
     </div>
 
     <script>
+        // 초기화 및 AudioContext
         const ctx = new AudioContext();
-        const master = ctx.createGain(); 
-        master.gain.value = 0.3; 
+        const master = ctx.createGain();
+        master.gain.value = 0.3;
         master.connect(ctx.destination);
-        
+
         const bands = [31.5, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
         let type, customBuffer = null, filter, source, timer, mode = 1;
 
@@ -130,17 +167,18 @@
         }
 
         async function handleFileUpload(e) { 
-            const file = e.target.files[0]; 
-            const arrayBuffer = await file.arrayBuffer(); 
-            customBuffer = await ctx.decodeAudioData(arrayBuffer); 
-            document.getElementById('file-name').innerText = file.name; 
+            const f = e.target.files[0]; 
+            if (!f) return;
+            const ab = await f.arrayBuffer(); 
+            customBuffer = await ctx.decodeAudioData(ab); 
+            document.getElementById('file-name').innerText = f.name; 
         }
 
-        function setSource(t, btn) { 
+        function setSource(t, b) { 
             customBuffer = null; 
             document.getElementById('file-name').innerText = "Pink Noise"; 
-            document.querySelectorAll('.settings-btn').forEach(b => b.classList.remove('active')); 
-            btn.classList.add('active'); 
+            document.querySelectorAll('.settings-btn').forEach(x => x.classList.remove('active')); 
+            b.classList.add('active'); 
         }
 
         function setMode(m) { 
@@ -168,12 +206,11 @@
             const container = document.getElementById('freq-controls');
             container.innerHTML = '';
             bands.forEach((f, index) => {
-                const btn = document.createElement('button');
-                btn.className = 'settings-btn';
-                btn.innerText = f + 'Hz';
-                btn.onclick = () => playFreq(f);
-                container.appendChild(btn);
-                
+                const b = document.createElement('button');
+                b.className = 'settings-btn';
+                b.innerText = f + 'Hz';
+                b.onclick = () => playFreq(f);
+                container.appendChild(b);
                 if (index < bands.length - 1) {
                     const sep = document.createElement('span');
                     sep.className = 'separator';
@@ -183,7 +220,7 @@
             });
         }
 
-        async function playFreq(f) {
+        function playFreq(f) {
             stopAll();
             source = createSource(f, 6);
             source.start();
@@ -246,12 +283,12 @@
                 rtaCtx.fillStyle = '#3498db';
                 rtaCtx.fillRect(i * 20, 300 - h, 15, h);
             }
-            requestAnimationFrame(drawRTA);
+            setTimeout(() => requestAnimationFrame(drawRTA), 50);
         }
         drawRTA();
 
-        function run() { /* 연습/문제 모드 로직 유지 */ }
-        function listenAgain() { /* 기존 로직 유지 */ }
+        function run() { /* 연습/문제 로직 위치 */ }
+        function listenAgain() { /* 기존 로직 위치 */ }
     </script>
 </body>
 </html>
