@@ -109,7 +109,6 @@
         let biquadFilter = null;
         let customBuffer = null;
         
-        // --- 모드 및 상태 변수 ---
         let currentMode = '';
         let currentRange = 'all'; 
         let currentPracticeFreq = null;
@@ -125,7 +124,7 @@
         let currentTestQuestion = 0;
         let isTestCompleted = false;
 
-        // 파일 시작 위치(초) 및 파형 캔버스
+        // 파일 시작 위치 및 파형 캔버스
         let fileStartTime = 0;
         let waveformCanvas = document.createElement('canvas');
         waveformCanvas.width = 600;
@@ -252,7 +251,7 @@
         }
         
         function generatePinkNoise() {
-            const bufferSize = audioCtx.sampleRate * 10; // 10초 무한루프
+            const bufferSize = audioCtx.sampleRate * 10;
             const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
             const output = noiseBuffer.getChannelData(0);
             let b0=0, b1=0, b2=0, b3=0, b4=0, b5=0, b6=0;
@@ -322,18 +321,15 @@
             return bands;
         }
 
-        // --- PRACTICE 모드: 랜덤 구간 설정 추가 ---
         function runPractice() {
             let availableBands = getAvailableBands();
             currentPracticeFreq = availableBands[Math.floor(Math.random() * availableBands.length)];
             
-            // 음원일 경우, 구간(fileStartTime)을 랜덤으로 변경 (시퀀스 길이 31초를 고려하여 안전하게 설정)
             if (customBuffer) {
                 const maxStart = Math.max(0, customBuffer.duration - 32);
                 fileStartTime = Math.random() * maxStart;
                 document.getElementById('file-time-display').innerText = Math.floor(fileStartTime) + "s";
             }
-            
             playSequence(currentPracticeFreq);
         }
 
@@ -348,18 +344,17 @@
             startTestSequence(0);
         }
 
+        // --- 이전 문제 처음으로 돌아가는 AGAIN 강력 복귀 기능 ---
         function listenAgain() {
             if (currentMode === 'practice') {
                 if (currentPracticeFreq) playSequence(currentPracticeFreq);
                 else alert("START 버튼을 먼저 눌러주세요.");
             } else if (currentMode === 'test') {
                 if (testAnswers.length === 5) {
-                    if (isTestCompleted) {
-                        currentTestQuestion = 0;
-                        startTestSequence(0);
-                    } else if (isPlaying || document.getElementById('status').innerText.includes("STOPPED")) {
-                        startTestSequence(currentTestQuestion);
-                    }
+                    // 무조건 현재 또는 지나간 문제의 '이전 번호'로 되돌림 (최소 0번 문제)
+                    let target = currentTestQuestion - 1;
+                    if (target < 0) target = 0; 
+                    startTestSequence(target);
                 }
                 else alert("START 버튼을 먼저 눌러주세요.");
             }
@@ -381,8 +376,6 @@
             }
         }
 
-        // --- PRACTICE 모드 시퀀스 로직 (총 31초) ---
-        // 5초(원본) - 3초(변화) - 3초(원본) - 3초(변화) - 3초(원본) - 3초(변화) - 3초(원본) - 3초(변화) - 5초(원본)
         function playSequence(freq) {
             stopAudio();
             document.getElementById('answer-display').style.display = 'none'; 
@@ -405,15 +398,15 @@
 
             document.getElementById('status').innerText = "PLAYING (Practice Mode)...";
 
-            function step1() { biquadFilter.gain.value = 0; sequenceTimer = setTimeout(step2, 5000); } // 원본 5s
-            function step2() { biquadFilter.gain.value = 6; sequenceTimer = setTimeout(step3, 3000); } // 변화 3s
-            function step3() { biquadFilter.gain.value = 0; sequenceTimer = setTimeout(step4, 3000); } // 원본 3s
-            function step4() { biquadFilter.gain.value = 6; sequenceTimer = setTimeout(step5, 3000); } // 변화 3s
-            function step5() { biquadFilter.gain.value = 0; sequenceTimer = setTimeout(step6, 3000); } // 원본 3s
-            function step6() { biquadFilter.gain.value = 6; sequenceTimer = setTimeout(step7, 3000); } // 변화 3s
-            function step7() { biquadFilter.gain.value = 0; sequenceTimer = setTimeout(step8, 3000); } // 원본 3s
-            function step8() { biquadFilter.gain.value = 6; sequenceTimer = setTimeout(step9, 3000); } // 변화 3s
-            function step9() { biquadFilter.gain.value = 0; sequenceTimer = setTimeout(stopAudio, 5000); } // 원본 5s 후 정지
+            function step1() { biquadFilter.gain.value = 0; sequenceTimer = setTimeout(step2, 5000); } 
+            function step2() { biquadFilter.gain.value = 6; sequenceTimer = setTimeout(step3, 3000); } 
+            function step3() { biquadFilter.gain.value = 0; sequenceTimer = setTimeout(step4, 3000); } 
+            function step4() { biquadFilter.gain.value = 6; sequenceTimer = setTimeout(step5, 3000); } 
+            function step5() { biquadFilter.gain.value = 0; sequenceTimer = setTimeout(step6, 3000); } 
+            function step6() { biquadFilter.gain.value = 6; sequenceTimer = setTimeout(step7, 3000); } 
+            function step7() { biquadFilter.gain.value = 0; sequenceTimer = setTimeout(step8, 3000); } 
+            function step8() { biquadFilter.gain.value = 6; sequenceTimer = setTimeout(step9, 3000); } 
+            function step9() { biquadFilter.gain.value = 0; sequenceTimer = setTimeout(stopAudio, 5000); } 
             
             step1(); 
         }
@@ -442,6 +435,7 @@
             nextTestStep();
         }
 
+        // --- TEST 모드: 14초 시퀀스 (원본 5초 -> 1차변화 3초 -> 원본 3초 -> 2차변화 3초) ---
         function nextTestStep() {
             if (currentTestQuestion >= 5) {
                 stopAudio();
@@ -451,18 +445,31 @@
             }
 
             biquadFilter.gain.value = 0; 
-            document.getElementById('status').innerText = `[문제 ${currentTestQuestion + 1}/5] 준비 중... (원본 5초)`;
+            document.getElementById('status').innerText = `[문제 ${currentTestQuestion + 1}/5] 원본 재생 중... (5s)`;
             
+            // 5초 원본
             sequenceTimer = setTimeout(() => {
                 biquadFilter.frequency.value = testAnswers[currentTestQuestion];
                 biquadFilter.gain.value = 6;
-                document.getElementById('status').innerText = `[문제 ${currentTestQuestion + 1}/5] 출제 중! (변화 적용)`;
+                document.getElementById('status').innerText = `[문제 ${currentTestQuestion + 1}/5] 첫 번째 변화 적용! (3s)`;
 
+                // 3초 첫 번째 변화
                 sequenceTimer = setTimeout(() => {
-                    currentTestQuestion++;
-                    nextTestStep(); 
-                }, 4000); 
-                
+                    biquadFilter.gain.value = 0;
+                    document.getElementById('status').innerText = `[문제 ${currentTestQuestion + 1}/5] 원본 재생 중... (3s)`;
+
+                    // 3초 원본
+                    sequenceTimer = setTimeout(() => {
+                        biquadFilter.gain.value = 6;
+                        document.getElementById('status').innerText = `[문제 ${currentTestQuestion + 1}/5] 두 번째 변화 적용! (3s)`;
+
+                        // 3초 두 번째 변화 후 다음 문제로
+                        sequenceTimer = setTimeout(() => {
+                            currentTestQuestion++;
+                            nextTestStep(); 
+                        }, 3000); 
+                    }, 3000); 
+                }, 3000); 
             }, 5000); 
         }
 
