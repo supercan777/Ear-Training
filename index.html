@@ -2,127 +2,198 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Pink Noise Ear Training</title>
+    <title>Classroom Trainer - Student</title>
     <style>
-        body { font-family: 'Pretendard', sans-serif; background: #f4f4f9; text-align: center; padding: 20px; }
-        .mode-select { margin: 30px 0; display: flex; justify-content: center; gap: 20px; }
-        .mode-select button { padding: 30px 50px; font-size: 1.2em; cursor: pointer; border-radius: 15px; border: none; background: #3498db; color: white; transition: 0.3s; }
-        .mode-select button:hover { background: #2980b9; transform: scale(1.05); }
-        .btn-group { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin: 20px 0; display: none; }
-        .stage-btn { padding: 15px; border: none; border-radius: 10px; background: #ddd; cursor: pointer; }
-        .stage-btn.active { background: #3498db; color: #fff; }
-        .eq-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin: 20px 0; display: none; }
-        .band-btn { padding: 20px; border: 1px solid #ccc; border-radius: 12px; background: #fff; cursor: pointer; }
-        #main-ui { display: none; }
+        body { margin: 0; min-height: 100vh; font-family: 'Pretendard', sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; background: #1a1a1a; overflow-y: auto; padding: 20px; box-sizing: border-box; }
+        
+        .overlay-screen { position: fixed; top:0; left:0; width:100%; height:100%; background:#1a1a1a; z-index:100; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+        
+        #main-ui { display: flex; flex-direction: column; align-items: center; width: 100%; }
+        #display-area { position: relative; width: 600px; height: 300px; margin: 20px auto; background: #000; border: 4px solid #3498db; border-radius: 40px; display: flex; align-items: center; justify-content: center; overflow: hidden; box-shadow: 0 0 20px rgba(52, 152, 219, 0.3); }
+        #rta-canvas { width: 100%; height: 100%; }
+        
+        .btn-row { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; margin-top: 20px; }
+        .settings-btn { padding: 15px 30px; font-size: 1.1em; cursor: pointer; border-radius: 8px; border: none; background: #333; color: white; transition: 0.2s; }
+        .freq-btn { padding: 12px 15px; font-size: 0.9em; min-width: 80px; }
+        
+        .action-btns { display: flex; gap: 10px; margin-top: 15px; }
+        .action-btns button { padding: 12px 20px; cursor: pointer; border-radius: 8px; border: none; background: #444; color: white; }
+        #return-btn { background: none; border: none; color: white; cursor: pointer; border-bottom: 1px solid white; padding: 2px 0; margin-top: 20px; }
     </style>
 </head>
 <body>
-    <div id="overlay">
-        <h1>Pink Noise Ear Training</h1>
-        <p>Choose your learning mode:</p>
-        <div class="mode-select">
-            <button onclick="initMode('training')">Training Mode<br><small>(Instant Feedback)</small></button>
-            <button onclick="initMode('test')">Test Mode<br><small>(20 Questions)</small></button>
+
+    <div id="overlay" class="overlay-screen">
+        <h1>Classroom Trainer</h1>
+        <div class="btn-row">
+            <button class="settings-btn" onclick="init('practice')">PRACTICE</button>
+            <button class="settings-btn" onclick="init('test')">TEST</button>
         </div>
     </div>
 
-    <div id="main-ui">
-        <h1><span id="modeTitle">Mode</span> Session</h1>
-        <div id="status" style="font-size: 1.2em; font-weight: bold; margin: 20px;">Select a stage to begin.</div>
-        <div class="btn-group" id="stages">
-            <button class="stage-btn" id="s1" onclick="setStage(1)">1. Boost</button>
-            <button class="stage-btn" id="s2" onclick="setStage(2)">2. Cut</button>
-            <button class="stage-btn" id="s3" onclick="setStage(3)">3. Mixed</button>
+    <div id="main-ui" style="display:none;">
+        <h1 id="ui-title">Training</h1>
+        <div id="display-area">
+            <canvas id="rta-canvas"></canvas>
+            <div id="answer-display" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); color:#ffeb3b; font-size:2em; font-weight:bold; flex-direction:column; align-items:center; justify-content:center; z-index:10; text-align:center;"></div>
         </div>
-        <div class="eq-grid" id="eq-controls"></div>
+        
+        <!-- 학생들이 정답을 누를 수 있는 10개 버튼 -->
+        <div id="freq-controls" class="btn-row"></div>
+        
+        <div id="status" style="font-size: 1.2em; font-weight:bold; margin-top:20px;">Ready</div>
+        <div id="action-btns" class="action-btns"></div>
+        <button id="return-btn" onclick="goBack()">RETURN TO MENU</button>
     </div>
 
     <script>
-        const ctx = new AudioContext();
-        const masterGain = ctx.createGain();
-        masterGain.gain.value = 0.2;
-        masterGain.connect(ctx.destination);
-
+        let audioCtx, masterGain, activeSource, biquadFilter, sequenceTimer;
+        let currentMode = '', currentFreq = null, isPlaying = false;
+        let testAnswers = [], currentTestQuestion = 0, isTestCompleted = false;
         const bands = [31.5, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
-        let stage = 1, questionIdx = 0, score = 0, timer, filter, source, currentGain, targetIdx, modeType;
 
-        function initMode(m) {
-            modeType = m;
-            document.getElementById('modeTitle').innerText = m === 'training' ? "TRAINING" : "TEST";
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                masterGain = audioCtx.createGain();
+                masterGain.gain.value = 0.3;
+                masterGain.connect(audioCtx.destination);
+            }
+        }
+
+        function goBack() {
+            stopAudio();
+            document.getElementById('main-ui').style.display='none';
+            document.getElementById('overlay').style.display='flex';
+        }
+
+        function init(mode) {
+            initAudio();
+            currentMode = mode;
             document.getElementById('overlay').style.display = 'none';
-            document.getElementById('main-ui').style.display = 'block';
-            document.getElementById('stages').style.display = 'grid';
-            document.getElementById('eq-controls').style.display = 'grid';
-            ctx.resume();
+            document.getElementById('main-ui').style.display = 'flex';
+            document.getElementById('ui-title').innerText = mode.toUpperCase();
+            
+            const controls = document.getElementById('freq-controls');
+            const actions = document.getElementById('action-btns');
+            controls.innerHTML = ''; actions.innerHTML = '';
+            
+            // 10개 주파수 버튼 생성
+            bands.forEach(f => {
+                controls.innerHTML += `<button class="settings-btn freq-btn" onclick="checkAnswer(${f})">${f}Hz</button>`;
+            });
+
+            actions.innerHTML = '<button onclick="startMode()">START</button><button onclick="listenAgain()">AGAIN</button><button onclick="stopAudio()">STOP</button>';
         }
 
-        function setStage(s) { 
-            stage = s; questionIdx = 0; score = 0; 
-            document.querySelectorAll('.stage-btn').forEach(b => b.classList.remove('active')); 
-            document.getElementById('s'+s).classList.add('active'); 
-            nextProblem(); 
+        function generatePinkNoise() {
+            const bufferSize = audioCtx.sampleRate * 10;
+            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const output = buffer.getChannelData(0);
+            let b0=0, b1=0, b2=0, b3=0, b4=0, b5=0, b6=0;
+            for (let i = 0; i < bufferSize; i++) {
+                let white = Math.random() * 2 - 1;
+                b0 = 0.99886 * b0 + white * 0.0555179;
+                b1 = 0.99332 * b1 + white * 0.0750759;
+                b2 = 0.96900 * b2 + white * 0.1538520;
+                b3 = 0.86650 * b3 + white * 0.3104856;
+                b4 = 0.55000 * b4 + white * 0.5329522;
+                b5 = -0.7616 * b5 - white * 0.0168980;
+                output[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.11;
+                b6 = white * 0.115926;
+            }
+            return buffer;
         }
 
-        function createNewSource() {
-            if(filter) filter.disconnect();
-            filter = ctx.createBiquadFilter();
-            filter.type = "peaking";
-            targetIdx = Math.floor(Math.random() * bands.length);
-            filter.frequency.value = bands[targetIdx];
-            currentGain = (stage === 1) ? 6 : ((stage === 2) ? -6 : (Math.random() > 0.5 ? 6 : -6));
-            filter.gain.value = 0; filter.Q.value = 1.4;
-            const b = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
-            const data = b.getChannelData(0);
-            for(let i=0; i<data.length; i++) data[i] = Math.random()*2-1;
-            const s = ctx.createBufferSource();
-            s.buffer = b; s.loop = true;
-            s.connect(filter).connect(masterGain);
-            return s;
+        // 학생이 버튼을 눌러 정답 체크
+        function checkAnswer(freq) {
+            const display = document.getElementById('answer-display');
+            if (currentMode === 'practice') {
+                display.innerText = (freq === currentFreq) ? "CORRECT!" : "WRONG! (" + currentFreq + "Hz)";
+                display.style.display = 'flex';
+                setTimeout(() => { display.style.display = 'none'; }, 2000);
+            }
         }
 
-        function playPattern() {
-            clearTimeout(timer);
-            filter.gain.value = 0;
-            document.getElementById('status').innerText = "Flat (3s)";
-            timer = setTimeout(() => {
-                filter.gain.value = currentGain;
-                document.getElementById('status').innerText = "Target (3s)";
-                timer = setTimeout(() => {
-                    filter.gain.value = 0;
-                    document.getElementById('status').innerText = "Flat (3s)";
-                    timer = setTimeout(() => {
-                        filter.gain.value = currentGain;
-                        document.getElementById('status').innerText = "Target (3s)";
-                        timer = setTimeout(() => { filter.gain.value = 0; source.stop(); document.getElementById('status').innerText = "Select your answer"; }, 3000);
+        function startMode() { currentMode === 'practice' ? runPractice() : runTest(); }
+
+        function runPractice() {
+            currentFreq = bands[Math.floor(Math.random() * bands.length)];
+            playSequence(currentFreq);
+        }
+
+        function runTest() {
+            testAnswers = [];
+            for (let i = 0; i < 5; i++) testAnswers.push(bands[Math.floor(Math.random() * bands.length)]);
+            currentTestQuestion = 0;
+            startTestSequence(0);
+        }
+
+        function listenAgain() {
+            if (currentMode === 'practice' && currentFreq) playSequence(currentFreq);
+            else if (currentMode === 'test') startTestSequence(Math.max(0, currentTestQuestion - 1));
+        }
+
+        function playSequence(freq) {
+            stopAudio();
+            biquadFilter = audioCtx.createBiquadFilter();
+            biquadFilter.type = "peaking";
+            biquadFilter.frequency.value = freq;
+            biquadFilter.Q.value = 1.4;
+            activeSource = audioCtx.createBufferSource();
+            activeSource.buffer = generatePinkNoise();
+            activeSource.loop = true;
+            activeSource.connect(biquadFilter).connect(masterGain);
+            activeSource.start();
+            
+            document.getElementById('status').innerText = "PLAYING...";
+            function seq() {
+                biquadFilter.gain.value = 0; setTimeout(() => { biquadFilter.gain.value = 6; setTimeout(() => { biquadFilter.gain.value = 0; setTimeout(() => { biquadFilter.gain.value = 6; setTimeout(() => { biquadFilter.gain.value = 0; setTimeout(() => { biquadFilter.gain.value = 6; setTimeout(() => { biquadFilter.gain.value = 0; setTimeout(() => { biquadFilter.gain.value = 6; setTimeout(stopAudio, 5000); }, 3000); }, 3000); }, 3000); }, 3000); }, 3000); }, 3000); }, 3000); }, 5000);
+            }
+            seq();
+        }
+
+        function startTestSequence(idx) {
+            stopAudio();
+            currentTestQuestion = idx;
+            biquadFilter = audioCtx.createBiquadFilter();
+            biquadFilter.type = "peaking";
+            biquadFilter.Q.value = 1.4;
+            activeSource = audioCtx.createBufferSource();
+            activeSource.buffer = generatePinkNoise();
+            activeSource.loop = true;
+            activeSource.connect(biquadFilter).connect(masterGain);
+            activeSource.start();
+            nextTestStep();
+        }
+
+        function nextTestStep() {
+            if (currentTestQuestion >= 5) { stopAudio(); document.getElementById('status').innerText = "TEST END"; return; }
+            biquadFilter.gain.value = 0;
+            document.getElementById('status').innerText = `[문제 ${currentTestQuestion + 1}/5] 원본 재생 중...`;
+            sequenceTimer = setTimeout(() => {
+                biquadFilter.frequency.value = testAnswers[currentTestQuestion];
+                biquadFilter.gain.value = 6;
+                setTimeout(() => { biquadFilter.gain.value = 0; 
+                    setTimeout(() => { biquadFilter.gain.value = 6; 
+                        setTimeout(() => { currentTestQuestion++; nextTestStep(); }, 3000);
                     }, 3000);
                 }, 3000);
-            }, 3000);
+            }, 5000);
         }
 
-        function nextProblem() {
-            if(modeType === 'test' && questionIdx >= 20) { alert(`Test Complete! Score: ${score}/20`); questionIdx = 0; score = 0; return; }
-            questionIdx++;
-            if(source) try { source.stop(); } catch(e){}
-            source = createNewSource(); source.start();
-            playPattern();
+        function stopAudio() {
+            clearTimeout(sequenceTimer);
+            if (activeSource) { activeSource.stop(); activeSource.disconnect(); }
+            activeSource = null; document.getElementById('status').innerText = "STOPPED";
         }
 
-        const container = document.getElementById('eq-controls');
-        bands.forEach((freq, i) => {
-            const btn = document.createElement('button');
-            btn.className = 'band-btn';
-            btn.innerText = freq + "Hz";
-            btn.onclick = () => {
-                if(modeType === 'training') {
-                    alert(i === targetIdx ? "Correct! " + bands[targetIdx] + "Hz" : "Wrong! Correct: " + bands[targetIdx] + "Hz");
-                    nextProblem();
-                } else {
-                    if(i === targetIdx) score++;
-                    nextProblem();
-                }
-            };
-            container.appendChild(btn);
-        });
+        function drawRTA() {
+            const canvas = document.getElementById('rta-canvas'), ctx = canvas.getContext('2d');
+            ctx.clearRect(0,0,600,300);
+            for(let i=0; i<30; i++) { ctx.fillStyle='#3498db'; ctx.fillRect(i*20, 300-(Math.random()*150+20), 15, Math.random()*150+20); }
+            setTimeout(() => requestAnimationFrame(drawRTA), 100);
+        } drawRTA();
     </script>
 </body>
 </html>
