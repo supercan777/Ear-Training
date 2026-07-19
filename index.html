@@ -18,12 +18,11 @@
 </head>
 <body>
 
-    <div id="overlay" class="overlay-screen" onclick="initAudio()">
+    <div id="overlay" class="overlay-screen">
         <h1>Classroom Trainer</h1>
-        <p style="color:#7f8c8d;">화면을 클릭하여 시작하세요</p>
         <div class="btn-row">
-            <button class="settings-btn" onclick="event.stopPropagation(); init('practice')">PRACTICE</button>
-            <button class="settings-btn" onclick="event.stopPropagation(); init('test')">TEST</button>
+            <button class="settings-btn" onclick="init('practice')">PRACTICE</button>
+            <button class="settings-btn" onclick="init('test')">TEST</button>
         </div>
     </div>
 
@@ -36,6 +35,7 @@
         <div id="freq-controls" class="btn-row"></div>
         <div id="status" style="font-size: 1.2em; font-weight:bold; margin-top:20px;">Ready</div>
         <div id="action-btns" class="action-btns"></div>
+        <button id="return-btn" onclick="location.reload()" style="background:none; border:none; color:white; border-bottom:1px solid white; margin-top:20px; cursor:pointer;">RETURN TO MENU</button>
     </div>
 
     <script>
@@ -43,7 +43,8 @@
         let currentMode = '', currentFreq = null, testAnswers = [], currentTestQuestion = 0;
         const bands = [31.5, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
 
-        function initAudio() {
+        // 1. 초기화 시점이 아니라 START 버튼을 누를 때 호출되도록 설계
+        function startAudioEngine() {
             if (!audioCtx) {
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                 masterGain = audioCtx.createGain();
@@ -59,13 +60,16 @@
             document.getElementById('ui-title').innerText = mode.toUpperCase();
             
             const controls = document.getElementById('freq-controls');
-            const actions = document.getElementById('action-btns');
-            controls.innerHTML = ''; actions.innerHTML = '';
-            
+            controls.innerHTML = '';
             bands.forEach(f => {
                 controls.innerHTML += `<button class="settings-btn freq-btn" onclick="checkAnswer(${f})">${f}Hz</button>`;
             });
-            actions.innerHTML = '<button onclick="startMode()">START</button><button onclick="listenAgain()">AGAIN</button><button onclick="stopAudio()">STOP</button>';
+            document.getElementById('action-btns').innerHTML = '<button onclick="startTraining()">START</button><button onclick="listenAgain()">AGAIN</button><button onclick="stopAudio()">STOP</button>';
+        }
+
+        function startTraining() {
+            startAudioEngine(); // START 누를 때 엔진 가동
+            currentMode === 'practice' ? runPractice() : runTest();
         }
 
         function generatePinkNoise() {
@@ -75,11 +79,11 @@
             let b = [0,0,0,0,0,0,0];
             for (let i = 0; i < bufferSize; i++) {
                 let w = Math.random() * 2 - 1;
-                b[0] = 0.99886*b[0] + w*0.0555179; b[1] = 0.99332*b[1] + w*0.0750759;
-                b[2] = 0.96900*b[2] + w*0.1538520; b[3] = 0.86650*b[3] + w*0.3104856;
-                b[4] = 0.55000*b[4] + w*0.5329522; b[5] = -0.7616*b[5] - w*0.0168980;
-                output[i] = (b[0]+b[1]+b[2]+b[3]+b[4]+b[5]+b[6] + w*0.5362) * 0.11;
-                b[6] = w*0.115926;
+                b[0]=0.99886*b[0]+w*0.0555179; b[1]=0.99332*b[1]+w*0.0750759;
+                b[2]=0.96900*b[2]+w*0.1538520; b[3]=0.86650*b[3]+w*0.3104856;
+                b[4]=0.55000*b[4]+w*0.5329522; b[5]=-0.7616*b[5]-w*0.0168980;
+                output[i]=(b[0]+b[1]+b[2]+b[3]+b[4]+b[5]+b[6]+w*0.5362)*0.11;
+                b[6]=w*0.115926;
             }
             return buffer;
         }
@@ -92,8 +96,6 @@
                 setTimeout(() => { display.style.display = 'none'; }, 2000);
             }
         }
-
-        function startMode() { currentMode === 'practice' ? runPractice() : runTest(); }
 
         function runPractice() {
             currentFreq = bands[Math.floor(Math.random() * bands.length)];
@@ -124,12 +126,16 @@
             activeSource.connect(biquadFilter).connect(masterGain);
             activeSource.start();
             document.getElementById('status').innerText = "PLAYING...";
-            function step(n) {
-                if(n > 8) { stopAudio(); return; }
-                biquadFilter.gain.value = (n % 2 !== 0) ? 6 : 0;
-                sequenceTimer = setTimeout(() => step(n + 1), (n === 0 || n === 8) ? 5000 : 3000);
+            
+            let seq = [0, 6, 0, 6, 0, 6, 0, 6, 0];
+            let timing = [5000, 3000, 3000, 3000, 3000, 3000, 3000, 3000, 5000];
+            let i = 0;
+            function next() {
+                if(i >= seq.length) { stopAudio(); return; }
+                biquadFilter.gain.value = seq[i];
+                sequenceTimer = setTimeout(() => { i++; next(); }, timing[i]);
             }
-            step(0);
+            next();
         }
 
         function startTestSequence(idx) {
