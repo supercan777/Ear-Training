@@ -18,17 +18,19 @@
         }
         #settings-menu.open { right: 0; }
         
-        .settings-group { width: 100%; margin-bottom: 30px; display: flex; flex-direction: column; align-items: center; }
-        .settings-label { margin-bottom: 15px; font-size: 0.9em; color: #7f8c8d; }
+        .settings-group { width: 100%; margin-bottom: 25px; display: flex; flex-direction: column; align-items: center; }
+        .settings-label { margin-bottom: 10px; font-size: 0.8em; color: #7f8c8d; }
         
-        /* 버튼 컨테이너를 가로로 고정 */
         .btn-row { display: flex; align-items: center; justify-content: center; gap: 4px; width: 100%; }
         .separator { color: #555; margin: 0 5px; font-weight: 200; }
-        .settings-btn { padding: 8px 10px; font-size: 0.8em; cursor: pointer; border-radius: 4px; border: none; background: #333; color: white; transition: 0.2s; min-width: 60px; text-align: center; }
+        .settings-btn { padding: 8px 10px; font-size: 0.8em; cursor: pointer; border-radius: 4px; border: none; background: #333; color: white; transition: 0.2s; min-width: 60px; }
         .settings-btn.active { background: #3498db !important; }
         
-        #close-btn { background: none; border: none; color: white; cursor: pointer; font-size: 0.9em; border-bottom: 1px solid white; padding: 2px 0; margin-top: 20px; }
+        #close-btn { background: none; border: none; color: white; cursor: pointer; font-size: 0.9em; border-bottom: 1px solid white; padding: 2px 0; margin-top: 10px; }
         #return-btn { background: none; border: none; color: #bdc3c7; cursor: pointer; font-size: 0.8em; border-bottom: 1px solid #bdc3c7; padding: 2px 0; margin-top: 40px; }
+        
+        #file-input { display: none; }
+        .upload-label { cursor: pointer; padding: 8px 10px; font-size: 0.8em; border-radius: 4px; background: #333; color: white; transition: 0.2s; min-width: 60px; }
         
         .overlay-screen { position: fixed; top:0; left:0; width:100%; height:100%; background:#1a1a1a; z-index:100; display:flex; flex-direction:column; align-items:center; justify-content:center; }
         
@@ -52,6 +54,16 @@
     <div id="settings-trigger" onclick="toggleSettings()">⚙️</div>
     
     <div id="settings-menu">
+        <div class="settings-group">
+            <div class="settings-label">SOURCE</div>
+            <div class="btn-row">
+                <button id="src-pn" class="settings-btn active" onclick="setSource('pn', this)">PN</button>
+                <span class="separator">|</span>
+                <label for="file-input" class="upload-label" id="file-btn">FILE</label>
+                <input type="file" id="file-input" accept="audio/*" onchange="handleFileUpload(event)">
+            </div>
+            <div id="file-name" style="font-size:0.7em; color:#3498db; margin-top:8px;">Pink Noise</div>
+        </div>
         <div class="settings-group">
             <div class="settings-label">MODE</div>
             <div class="btn-row">
@@ -113,6 +125,24 @@
         }
         function toggleSettings() { document.getElementById('settings-menu').classList.toggle('open'); }
 
+        let customBuffer = null;
+        async function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            document.getElementById('file-name').innerText = file.name;
+            document.getElementById('src-pn').classList.remove('active');
+            document.getElementById('file-btn').style.background = '#3498db';
+            const arrayBuffer = await file.arrayBuffer();
+            customBuffer = await ctx.decodeAudioData(arrayBuffer);
+        }
+        function setSource(type, btn) {
+            customBuffer = null;
+            document.getElementById('file-name').innerText = "Pink Noise";
+            document.getElementById('file-btn').style.background = '#333';
+            document.querySelectorAll('.settings-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        }
+
         const canvas = document.getElementById('rta-canvas');
         const rtaCtx = canvas.getContext('2d');
         let bars = new Array(30).fill(0);
@@ -149,23 +179,28 @@
             if(filter) filter.disconnect();
             filter = ctx.createBiquadFilter(); filter.type = "peaking";
             filter.frequency.value = f; filter.gain.value = g; filter.Q.value = 1.4;
-            const bufferSize = ctx.sampleRate * 2;
-            const b = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-            const data = b.getChannelData(0);
-            let b0=0, b1=0, b2=0, b3=0, b4=0, b5=0, b6=0;
-            for (let i = 0; i < bufferSize; i++) {
-                let white = Math.random() * 2 - 1;
-                b0 = 0.99886 * b0 + white * 0.0555179;
-                b1 = 0.99332 * b1 + white * 0.0750759;
-                b2 = 0.96900 * b2 + white * 0.1538520;
-                b3 = 0.86650 * b3 + white * 0.3104856;
-                b4 = 0.55000 * b4 + white * 0.5329522;
-                b5 = -0.7616 * b5 - white * 0.0168980;
-                data[i] = b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362;
-                data[i] *= 0.11;
-                b6 = white * 0.115926;
+
+            const s = ctx.createBufferSource();
+            if (customBuffer) {
+                s.buffer = customBuffer;
+            } else {
+                const buffer = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
+                const data = buffer.getChannelData(0);
+                let b = new Array(7).fill(0);
+                for (let i = 0; i < data.length; i++) {
+                    let white = Math.random() * 2 - 1;
+                    b[0] = 0.99886 * b[0] + white * 0.0555179;
+                    b[1] = 0.99332 * b[1] + white * 0.0750759;
+                    b[2] = 0.96900 * b[2] + white * 0.1538520;
+                    b[3] = 0.86650 * b[3] + white * 0.3104856;
+                    b[4] = 0.55000 * b[4] + white * 0.5329522;
+                    b[5] = -0.7616 * b[5] - white * 0.0168980;
+                    data[i] = (b[0] + b[1] + b[2] + b[3] + b[4] + b[5] + b[6] + white * 0.5362) * 0.11;
+                    b[6] = white * 0.115926;
+                }
+                s.buffer = buffer;
             }
-            const s = ctx.createBufferSource(); s.buffer = b; s.loop = true;
+            s.loop = true;
             s.connect(filter).connect(master); return s;
         }
 
