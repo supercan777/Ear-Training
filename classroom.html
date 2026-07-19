@@ -79,7 +79,6 @@
         
         <div id="display-area">
             <canvas id="rta-canvas"></canvas>
-            <!-- 정답을 띄워줄 오버레이 화면 (기본은 숨김 상태) -->
             <div id="answer-display" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); color:#ffeb3b; font-size:3em; font-weight:bold; flex-direction:column; align-items:center; justify-content:center; z-index:10;"></div>
         </div>
         
@@ -102,17 +101,15 @@
         let sequenceTimer = null;
         const bands = [31.5, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
 
-        // --- 오디오 시스템 초기화 ---
         function initAudio() {
             if (!audioCtx) {
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                 masterGain = audioCtx.createGain();
-                masterGain.gain.value = 0.3; // 기본 볼륨
+                masterGain.gain.value = 0.3; 
                 masterGain.connect(audioCtx.destination);
             }
         }
 
-        // --- 패스워드 및 기본 UI 제어 ---
         function checkPassword() { 
             if(document.getElementById('pw-input').value === "1234") { 
                 document.getElementById('auth-overlay').style.display='none'; 
@@ -147,12 +144,11 @@
             }
         }
 
-        // --- 모드별 화면 구성 ---
         function init(mode) {
             document.getElementById('overlay').style.display = 'none';
             document.getElementById('main-ui').style.display = 'flex';
             document.getElementById('ui-title').innerText = mode.toUpperCase();
-            document.getElementById('answer-display').style.display = 'none'; // 정답화면 초기화
+            document.getElementById('answer-display').style.display = 'none'; 
             
             const controls = document.getElementById('freq-controls');
             const actions = document.getElementById('action-btns');
@@ -165,12 +161,10 @@
                 });
             } else {
                 controls.style.display = 'none';
-                // 연습/테스트 모드용 버튼 세팅
                 actions.innerHTML = '<button onclick="runPractice()">START</button><button onclick="listenAgain()">AGAIN</button><button onclick="stopAudio()">STOP</button><button onclick="showAnswers()">ANSWERS</button>';
             }
         }
         
-        // --- 핑크 노이즈 생성 공통 함수 ---
         function generatePinkNoise() {
             const bufferSize = audioCtx.sampleRate * 2;
             const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
@@ -190,7 +184,6 @@
             return noiseBuffer;
         }
 
-        // --- LISTEN 모드: 선택한 주파수 단순 반복 재생 ---
         function playTone(freq) {
             stopAudio();
             document.getElementById('answer-display').style.display = 'none';
@@ -211,15 +204,12 @@
             document.getElementById('status').innerText = "PLAYING: " + freq + "Hz";
         }
 
-        // --- PRACTICE 모드: 훈련 로직 (START 버튼) ---
         function runPractice() {
-            // 랜덤 주파수 선정
             const randomIndex = Math.floor(Math.random() * bands.length);
             currentPracticeFreq = bands[randomIndex];
             playSequence(currentPracticeFreq);
         }
 
-        // --- PRACTICE 모드: 다시 듣기 (AGAIN 버튼) ---
         function listenAgain() {
             if (currentPracticeFreq) {
                 playSequence(currentPracticeFreq);
@@ -228,25 +218,23 @@
             }
         }
 
-        // --- PRACTICE 모드: 정답 확인 (ANSWERS 버튼) ---
         function showAnswers() {
             if (currentPracticeFreq) {
                 const display = document.getElementById('answer-display');
                 display.innerText = currentPracticeFreq + " Hz";
-                display.style.display = 'flex'; // 정답 화면 띄우기
+                display.style.display = 'flex'; 
             }
         }
 
-        // --- PRACTICE 모드: 3초 단위 시퀀스 재생 ---
         function playSequence(freq) {
             stopAudio();
-            document.getElementById('answer-display').style.display = 'none'; // 재생 시 정답 가림
+            document.getElementById('answer-display').style.display = 'none'; 
             
             biquadFilter = audioCtx.createBiquadFilter();
             biquadFilter.type = "peaking";
             biquadFilter.frequency.value = freq;
             biquadFilter.Q.value = 1.4;
-            biquadFilter.gain.value = 0; // 시작은 원본(Gain 0)
+            biquadFilter.gain.value = 0; 
 
             activeSource = audioCtx.createBufferSource();
             activeSource.buffer = customBuffer ? customBuffer : generatePinkNoise();
@@ -255,35 +243,32 @@
             biquadFilter.connect(masterGain);
             activeSource.start();
 
-            // 3초 단위 4단계 시퀀스 함수들
+            // 학생들에게 힌트가 되지 않도록 PLAYING... 으로만 통일했습니다.
+            document.getElementById('status').innerText = "PLAYING...";
+
             function step1() {
-                biquadFilter.gain.value = 0; // 원본
-                document.getElementById('status').innerText = "원본 재생 중... (1/4)";
+                biquadFilter.gain.value = 0; 
                 sequenceTimer = setTimeout(step2, 3000);
             }
             function step2() {
-                biquadFilter.gain.value = 6; // 변화(Boost)
-                document.getElementById('status').innerText = "변화 재생 중... (2/4)";
+                biquadFilter.gain.value = 6; 
                 sequenceTimer = setTimeout(step3, 3000);
             }
             function step3() {
-                biquadFilter.gain.value = 0; // 원본
-                document.getElementById('status').innerText = "원본 재생 중... (3/4)";
+                biquadFilter.gain.value = 0; 
                 sequenceTimer = setTimeout(step4, 3000);
             }
             function step4() {
-                biquadFilter.gain.value = 6; // 변화(Boost)
-                document.getElementById('status').innerText = "변화 재생 중... (4/4)";
+                biquadFilter.gain.value = 6; 
                 sequenceTimer = setTimeout(endSequence, 3000);
             }
             function endSequence() {
                 stopAudio();
             }
             
-            step1(); // 시퀀스 시작
+            step1(); 
         }
 
-        // --- 오디오 및 타이머 전체 정지 ---
         function stopAudio() {
             clearTimeout(sequenceTimer);
             if (activeSource) {
@@ -293,7 +278,6 @@
             document.getElementById('status').innerText = "STOPPED";
         }
 
-        // --- RTA 애니메이션 (시각적 안정성 100ms 유지) ---
         function drawRTA() {
             const canvas = document.getElementById('rta-canvas'); const ctx = canvas.getContext('2d'); canvas.width = 600; canvas.height = 300;
             ctx.clearRect(0,0,600,300);
