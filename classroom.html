@@ -4,95 +4,55 @@
     <meta charset="UTF-8">
     <title>Classroom Trainer</title>
     <style>
-        /* 기본 레이아웃 및 배경 설정 */
-        body { 
-            margin: 0; 
-            height: 100vh; 
-            font-family: 'Pretendard', sans-serif; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            justify-content: center; 
-            color: white; 
-            background: #1a1a1a; 
-            overflow: hidden; 
-        }
-
-        /* 인증 오버레이 */
-        #auth-overlay { 
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: #1a1a1a; z-index: 999; 
-            display: flex; flex-direction: column; align-items: center; justify-content: center; 
-        }
-        #pw-input { 
-            padding: 15px; font-size: 1.2em; border-radius: 8px; border: none; 
-            margin-bottom: 10px; width: 250px; text-align: center; 
-        }
-
-        /* 설정 메뉴 및 트리거 */
-        #settings-trigger { 
-            position: fixed; top: 20px; right: 20px; font-size: 2em; cursor: pointer; z-index: 200; 
-        }
-
+        body { margin: 0; height: 100vh; font-family: 'Pretendard', sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; background: #1a1a1a; overflow: hidden; }
+        
+        #auth-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:#1a1a1a; z-index:999; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+        #pw-input { padding: 15px; font-size: 1.2em; border-radius: 8px; border: none; margin-bottom: 10px; width: 250px; text-align: center; }
+        
+        #settings-trigger { position: fixed; top: 20px; right: 20px; font-size: 2em; cursor: pointer; z-index: 200; }
+        
         #settings-menu { 
             position: fixed; top: 0; right: -400px; width: 350px; height: 100%; 
-            background: #1a1a1a; border-left: 1px solid #333; z-index: 150; 
-            transition: 0.4s ease-in-out; padding: 40px 20px; 
-            box-shadow: -5px 0 15px rgba(0,0,0,0.5);
-            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            background: #1a1a1a; border-left: 1px solid #333; z-index: 150; transition: 0.4s ease-in-out; 
+            padding: 40px 20px; box-shadow: -5px 0 15px rgba(0,0,0,0.5);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
         }
         #settings-menu.open { right: 0; }
-
-        .settings-group { width: 100%; margin-bottom: 30px; display: flex; flex-direction: column; align-items: center; }
-        .settings-label { margin-bottom: 15px; font-size: 0.9em; color: #7f8c8d; }
-
-        /* 공통 버튼 디자인 */
+        
+        .settings-group { width: 100%; margin-bottom: 25px; display: flex; flex-direction: column; align-items: center; }
+        .settings-label { margin-bottom: 10px; font-size: 0.8em; color: #7f8c8d; }
+        
         .btn-row { display: flex; align-items: center; justify-content: center; gap: 5px; flex-wrap: wrap; }
         .separator { color: #555; margin: 0 5px; font-weight: 200; }
-        .settings-btn { 
-            padding: 8px 12px; font-size: 0.85em; cursor: pointer; border-radius: 4px; border: none; 
-            background: #333; color: white; transition: 0.2s; min-width: 60px; 
-        }
+        .settings-btn { padding: 8px 12px; font-size: 0.85em; cursor: pointer; border-radius: 4px; border: none; background: #333; color: white; transition: 0.2s; min-width: 60px; }
         .settings-btn.active { background: #3498db !important; }
-
+        
         #close-btn { background: none; border: none; color: white; cursor: pointer; border-bottom: 1px solid white; padding: 2px 0; margin-top: 20px; }
         #return-btn { background: none; border: none; color: white; cursor: pointer; border-bottom: 1px solid white; padding: 2px 0; margin-top: 20px; display: block; margin-left: auto; margin-right: auto; }
-
+        
         .upload-label { cursor: pointer; padding: 8px 12px; font-size: 0.85em; border-radius: 4px; background: #333; color: white; }
         #file-input { display: none; }
-
-        /* 메인 콘텐츠 */
-        .overlay-screen { 
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: #1a1a1a; z-index: 100; 
-            display: flex; flex-direction: column; align-items: center; justify-content: center; 
-        }
+        
+        .overlay-screen { position: fixed; top:0; left:0; width:100%; height:100%; background:#1a1a1a; z-index:100; display:flex; flex-direction:column; align-items:center; justify-content:center; }
         
         #main-ui { display: flex; flex-direction: column; align-items: center; }
-        #display-area { 
-            position: relative; width: 600px; height: 300px; margin: 20px auto; 
-            background: #000; border: 4px solid #3498db; border-radius: 40px; 
-            display: flex; align-items: center; justify-content: center; overflow: hidden; 
-            box-shadow: 0 0 20px rgba(52, 152, 219, 0.3); 
-        }
+        #display-area { position: relative; width: 600px; height: 300px; margin: 20px auto; background: #000; border: 4px solid #3498db; border-radius: 40px; display: flex; align-items: center; justify-content: center; overflow: hidden; box-shadow: 0 0 20px rgba(52, 152, 219, 0.3); }
         #rta-canvas { width: 100%; height: 100%; }
-
-        .action-row { display: flex; flex-direction: column; align-items: center; margin-top: 20px; }
-        .action-btns { display: flex; gap: 10px; margin-top: 10px; }
+        
+        .action-btns { display: flex; gap: 10px; margin-top: 20px; }
         .action-btns button { padding: 12px 20px; cursor: pointer; border-radius: 8px; border: none; background: #444; color: white; }
     </style>
 </head>
 <body>
 
-    <!-- 인증 화면 -->
     <div id="auth-overlay">
         <h2>AUTHENTICATION</h2>
         <input type="password" id="pw-input" placeholder="Password">
         <button onclick="checkPassword()" style="padding: 10px 30px;">ENTER</button>
     </div>
 
-    <!-- 설정 트리거 및 메뉴 -->
     <div id="settings-trigger" onclick="toggleSettings()">⚙️</div>
+    
     <div id="settings-menu">
         <div class="settings-group">
             <div class="settings-label">SOURCE</div>
@@ -103,6 +63,18 @@
                 <input type="file" id="file-input" accept="audio/*" onchange="handleFileUpload(event)">
             </div>
             <div id="file-name" style="font-size:0.7em; color:#3498db; margin-top:8px;">Pink Noise</div>
+        </div>
+        <div class="settings-group">
+            <div class="settings-label">FREQUENCY RANGE</div>
+            <div class="btn-row">
+                <button class="settings-btn range-btn active" onclick="setRange('all', this)">ALL</button>
+                <span class="separator">|</span>
+                <button class="settings-btn range-btn" onclick="setRange('low', this)">LOW</button>
+                <span class="separator">|</span>
+                <button class="settings-btn range-btn" onclick="setRange('mid', this)">MID</button>
+                <span class="separator">|</span>
+                <button class="settings-btn range-btn" onclick="setRange('high', this)">HIGH</button>
+            </div>
         </div>
         <div class="settings-group">
             <div class="settings-label">MODE</div>
@@ -117,7 +89,6 @@
         <button id="close-btn" onclick="toggleSettings()">CLOSE</button>
     </div>
 
-    <!-- 시작 메뉴 -->
     <div id="overlay" class="overlay-screen" style="display:none;">
         <h1>Classroom Trainer</h1>
         <div class="btn-row">
@@ -129,166 +100,70 @@
         </div>
     </div>
 
-    <!-- 메인 훈련 화면 -->
     <div id="main-ui" style="display:none;">
         <h1 id="ui-title">Training</h1>
         <div id="display-area"><canvas id="rta-canvas"></canvas></div>
         <div id="freq-controls" class="btn-row" style="margin: 20px 0; display:none;"></div>
         <div id="status" style="font-size: 1.2em; font-weight:bold;">Ready</div>
         <div class="action-btns">
-            <button id="start-btn" onclick="run()">START / NEXT</button>
-            <button onclick="listenAgain()">AGAIN</button>
+            <button id="start-btn" onclick="run()">START</button>
             <button onclick="stopAll()">STOP</button>
         </div>
         <button id="return-btn" onclick="goBack()">RETURN TO START</button>
     </div>
 
     <script>
-        // 초기화 및 AudioContext
         const ctx = new AudioContext();
-        const master = ctx.createGain();
-        master.gain.value = 0.3;
-        master.connect(ctx.destination);
-
+        const master = ctx.createGain(); master.gain.value = 0.3; master.connect(ctx.destination);
         const bands = [31.5, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
-        let type, customBuffer = null, filter, source, timer, mode = 1;
+        let type, customBuffer = null, filter, source, timer, mode = 1, currentRange = 'all';
 
-        function checkPassword() { 
-            if(document.getElementById('pw-input').value === "1234") { 
-                document.getElementById('auth-overlay').style.display = 'none'; 
-                document.getElementById('overlay').style.display = 'flex'; 
-            } else { 
-                alert("Wrong Password"); 
-            } 
-        }
-
-        function toggleSettings() { 
-            document.getElementById('settings-menu').classList.toggle('open'); 
-        }
-
-        async function handleFileUpload(e) { 
-            const f = e.target.files[0]; 
-            if (!f) return;
-            const ab = await f.arrayBuffer(); 
-            customBuffer = await ctx.decodeAudioData(ab); 
-            document.getElementById('file-name').innerText = f.name; 
-        }
-
-        function setSource(t, b) { 
-            customBuffer = null; 
-            document.getElementById('file-name').innerText = "Pink Noise"; 
-            document.querySelectorAll('.settings-btn').forEach(x => x.classList.remove('active')); 
-            b.classList.add('active'); 
-        }
-
-        function setMode(m) { 
-            mode = m; 
-            document.querySelectorAll('.settings-btn').forEach(b => b.classList.remove('active')); 
-            document.getElementById('m' + m).classList.add('active'); 
-        }
-
+        function checkPassword() { if(document.getElementById('pw-input').value === "1234") { document.getElementById('auth-overlay').style.display='none'; document.getElementById('overlay').style.display='flex'; } else alert("Wrong Password"); }
+        function toggleSettings() { document.getElementById('settings-menu').classList.toggle('open'); }
+        async function handleFileUpload(e) { const f = e.target.files[0]; const ab = await f.arrayBuffer(); customBuffer = await ctx.decodeAudioData(ab); document.getElementById('file-name').innerText = f.name; }
+        function setSource(t, b) { customBuffer = null; document.getElementById('file-name').innerText = "Pink Noise"; document.querySelectorAll('.settings-btn').forEach(x => x.classList.remove('active')); b.classList.add('active'); }
+        function setMode(m) { mode = m; document.querySelectorAll('.settings-btn').forEach(b => b.classList.remove('active')); document.getElementById('m' + m).classList.add('active'); }
+        function setRange(r, b) { currentRange = r; document.querySelectorAll('.range-btn').forEach(x => x.classList.remove('active')); b.classList.add('active'); }
+        
         function init(t) {
-            type = t; 
-            document.getElementById('overlay').style.display = 'none'; 
-            document.getElementById('main-ui').style.display = 'flex';
-            
+            type = t; document.getElementById('overlay').style.display='none'; document.getElementById('main-ui').style.display='flex';
             if(type === 'listen') {
                 document.getElementById('freq-controls').style.display = 'flex';
                 document.getElementById('start-btn').style.display = 'none';
                 renderListenButtons();
-            } else {
-                document.getElementById('freq-controls').style.display = 'none';
-                document.getElementById('start-btn').style.display = 'inline-block';
-            }
+            } else { document.getElementById('freq-controls').style.display = 'none'; document.getElementById('start-btn').style.display = 'inline-block'; }
         }
 
         function renderListenButtons() {
-            const container = document.getElementById('freq-controls');
-            container.innerHTML = '';
-            bands.forEach((f, index) => {
-                const b = document.createElement('button');
-                b.className = 'settings-btn';
-                b.innerText = f + 'Hz';
-                b.onclick = () => playFreq(f);
-                container.appendChild(b);
-                if (index < bands.length - 1) {
-                    const sep = document.createElement('span');
-                    sep.className = 'separator';
-                    sep.innerText = '|';
-                    container.appendChild(sep);
-                }
+            const container = document.getElementById('freq-controls'); container.innerHTML = '';
+            let filtered = (currentRange === 'low') ? bands.slice(0, 5) : (currentRange === 'mid') ? bands.slice(2, 7) : (currentRange === 'high') ? bands.slice(5) : bands;
+            filtered.forEach((f, i) => {
+                const b = document.createElement('button'); b.className = 'settings-btn'; b.innerText = f+'Hz';
+                b.onclick = () => playFreq(f); container.appendChild(b);
+                if(i < filtered.length-1) container.appendChild(Object.assign(document.createElement('span'), {className:'separator', innerText:'|'}));
             });
         }
 
-        function playFreq(f) {
-            stopAll();
-            source = createSource(f, 6);
-            source.start();
-            document.getElementById('status').innerText = "PLAYING " + f + "Hz";
-            timer = setTimeout(stopAll, 3000);
-        }
-
+        async function playFreq(f) { stopAll(); source = createSource(f, 6); source.start(); document.getElementById('status').innerText = "PLAYING " + f + "Hz"; timer = setTimeout(stopAll, 3000); }
         function createSource(f, g) {
-            if(filter) filter.disconnect();
-            filter = ctx.createBiquadFilter();
-            filter.type = "peaking";
-            filter.frequency.value = f;
-            filter.gain.value = g;
-            filter.Q.value = 1.4;
-
+            if(filter) filter.disconnect(); filter = ctx.createBiquadFilter(); filter.type = "peaking"; filter.frequency.value = f; filter.gain.value = g; filter.Q.value = 1.4;
             const s = ctx.createBufferSource();
-            if(customBuffer) {
-                s.buffer = customBuffer;
-            } else {
-                const b = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
-                const d = b.getChannelData(0);
-                let n = new Array(7).fill(0);
-                for(let i = 0; i < d.length; i++) {
-                    let w = Math.random() * 2 - 1;
-                    n[0] = 0.99886 * n[0] + w * 0.0555179;
-                    n[1] = 0.99332 * n[1] + w * 0.0750759;
-                    n[2] = 0.96900 * n[2] + w * 0.1538520;
-                    n[3] = 0.86650 * n[3] + w * 0.3104856;
-                    n[4] = 0.55000 * n[4] + w * 0.5329522;
-                    n[5] = -0.7616 * n[5] - w * 0.0168980;
-                    d[i] = (n[0] + n[1] + n[2] + n[3] + n[4] + n[5] + n[6] + w * 0.5362) * 0.11;
-                    n[6] = w * 0.115926;
-                }
+            if(customBuffer) s.buffer = customBuffer;
+            else {
+                const b = ctx.createBuffer(1, ctx.sampleRate*2, ctx.sampleRate); const d = b.getChannelData(0); let n = new Array(7).fill(0);
+                for(let i=0; i<d.length; i++) { let w = Math.random()*2-1; n[0]=0.99886*n[0]+w*0.0555179; n[1]=0.99332*n[1]+w*0.0750759; n[2]=0.96900*n[2]+w*0.1538520; n[3]=0.86650*n[3]+w*0.3104856; n[4]=0.55000*n[4]+w*0.5329522; n[5]=-0.7616*n[5]-w*0.0168980; d[i]=(n[0]+n[1]+n[2]+n[3]+n[4]+n[5]+n[6]+w*0.5362)*0.11; n[6]=w*0.115926; }
                 s.buffer = b;
             }
-            s.loop = true;
-            s.connect(filter).connect(master);
-            return s;
+            s.loop = true; s.connect(filter).connect(master); return s;
         }
-
-        function stopAll() { 
-            clearTimeout(timer); 
-            try { source.stop(); source.disconnect(); } catch(e) {} 
-            document.getElementById('status').innerText = "STOPPED"; 
-        }
-
-        function goBack() { 
-            stopAll(); 
-            document.getElementById('main-ui').style.display = 'none'; 
-            document.getElementById('overlay').style.display = 'flex'; 
-        }
-
+        function stopAll() { clearTimeout(timer); try { source.stop(); source.disconnect(); } catch(e){} document.getElementById('status').innerText = "STOPPED"; }
+        function goBack() { stopAll(); document.getElementById('main-ui').style.display='none'; document.getElementById('overlay').style.display='flex'; }
         function drawRTA() {
-            const canvas = document.getElementById('rta-canvas');
-            const rtaCtx = canvas.getContext('2d');
-            canvas.width = 600; canvas.height = 300;
-            rtaCtx.clearRect(0, 0, 600, 300);
-            for(let i = 0; i < 30; i++) {
-                let h = Math.random() * 150 + 20;
-                rtaCtx.fillStyle = '#3498db';
-                rtaCtx.fillRect(i * 20, 300 - h, 15, h);
-            }
+            const canvas = document.getElementById('rta-canvas'); const ctxRTA = canvas.getContext('2d'); canvas.width = 600; canvas.height = 300;
+            ctxRTA.clearRect(0,0,600,300);
+            for(let i=0; i<30; i++) { let h = Math.random()*150+20; ctxRTA.fillStyle='#3498db'; ctxRTA.fillRect(i*20, 300-h, 15, h); }
             setTimeout(() => requestAnimationFrame(drawRTA), 50);
-        }
-        drawRTA();
-
-        function run() { /* 연습/문제 로직 위치 */ }
-        function listenAgain() { /* 기존 로직 위치 */ }
+        } drawRTA();
     </script>
 </body>
 </html>
