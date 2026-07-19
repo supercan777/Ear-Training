@@ -43,16 +43,6 @@
         let currentMode = '', currentFreq = null, testAnswers = [], currentTestQuestion = 0;
         const bands = [31.5, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
 
-        // 1. 초기화 시점이 아니라 START 버튼을 누를 때 호출되도록 설계
-        function startAudioEngine() {
-            if (!audioCtx) {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                masterGain = audioCtx.createGain();
-                masterGain.gain.value = 0.3;
-                masterGain.connect(audioCtx.destination);
-            }
-        }
-
         function init(mode) {
             currentMode = mode;
             document.getElementById('overlay').style.display = 'none';
@@ -67,8 +57,16 @@
             document.getElementById('action-btns').innerHTML = '<button onclick="startTraining()">START</button><button onclick="listenAgain()">AGAIN</button><button onclick="stopAudio()">STOP</button>';
         }
 
+        // 오디오 엔진과 핑크 노이즈 생성을 통합
         function startTraining() {
-            startAudioEngine(); // START 누를 때 엔진 가동
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                masterGain = audioCtx.createGain();
+                masterGain.gain.value = 0.3;
+                masterGain.connect(audioCtx.destination);
+            }
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            
             currentMode === 'practice' ? runPractice() : runTest();
         }
 
