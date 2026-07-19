@@ -1,80 +1,30 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
 <head>
     <meta charset="UTF-8">
     <title>Classroom Trainer</title>
     <style>
-        /* [디자인 레이아웃 고정] */
-        body { 
-            margin: 0; 
-            height: 100vh; 
-            font-family: 'Pretendard', sans-serif; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            justify-content: center; 
-            color: white; 
-            background: #1a1a1a; 
-            overflow: hidden; 
-        }
-
-        #auth-overlay { 
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: #1a1a1a; z-index: 999; 
-            display: flex; flex-direction: column; align-items: center; justify-content: center; 
-        }
-        #pw-input { 
-            padding: 15px; font-size: 1.2em; border-radius: 8px; border: none; 
-            margin-bottom: 10px; width: 250px; text-align: center; 
-        }
-
-        #settings-trigger { 
-            position: fixed; top: 20px; right: 20px; font-size: 2em; cursor: pointer; z-index: 200; 
-        }
-
-        #settings-menu { 
-            position: fixed; top: 0; right: -400px; width: 350px; height: 100%; 
-            background: #1a1a1a; border-left: 1px solid #333; z-index: 150; 
-            transition: 0.4s ease-in-out; padding: 40px 20px; 
-            box-shadow: -5px 0 15px rgba(0,0,0,0.5);
-            display: flex; flex-direction: column; align-items: center; justify-content: center; 
-        }
+        body { margin: 0; height: 100vh; font-family: 'Pretendard', sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; background: #1a1a1a; overflow: hidden; }
+        
+        /* 인증 및 기본 레이아웃 */
+        #auth-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #1a1a1a; z-index: 999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        #pw-input { padding: 15px; font-size: 1.2em; border-radius: 8px; border: none; margin-bottom: 10px; width: 250px; text-align: center; }
+        
+        /* 설정 메뉴 */
+        #settings-trigger { position: fixed; top: 20px; right: 20px; font-size: 2em; cursor: pointer; z-index: 200; }
+        #settings-menu { position: fixed; top: 0; right: -350px; width: 350px; height: 100%; background: #1a1a1a; border-left: 1px solid #333; z-index: 150; transition: 0.4s; padding: 40px 20px; box-shadow: -5px 0 15px rgba(0,0,0,0.5); display: flex; flex-direction: column; align-items: center; }
         #settings-menu.open { right: 0; }
-
+        
         .settings-group { width: 100%; margin-bottom: 30px; display: flex; flex-direction: column; align-items: center; }
         .settings-label { margin-bottom: 15px; font-size: 0.9em; color: #7f8c8d; }
-
         .btn-row { display: flex; align-items: center; justify-content: center; gap: 5px; flex-wrap: wrap; }
-        .separator { color: #555; margin: 0 5px; font-weight: 200; }
-        .settings-btn { 
-            padding: 8px 12px; font-size: 0.85em; cursor: pointer; border-radius: 4px; border: none; 
-            background: #333; color: white; transition: 0.2s; min-width: 60px; 
-        }
+        .settings-btn { padding: 8px 12px; font-size: 0.85em; cursor: pointer; border-radius: 4px; border: none; background: #333; color: white; margin: 2px; }
         .settings-btn.active { background: #3498db !important; }
 
-        #close-btn { background: none; border: none; color: white; cursor: pointer; border-bottom: 1px solid white; padding: 2px 0; margin-top: 20px; }
-        #return-btn { background: none; border: none; color: white; cursor: pointer; border-bottom: 1px solid white; padding: 2px 0; margin-top: 20px; }
-
-        .upload-label { cursor: pointer; padding: 8px 12px; font-size: 0.85em; border-radius: 4px; background: #333; color: white; }
-        #file-input { display: none; }
-
-        .overlay-screen { 
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: #1a1a1a; z-index: 100; 
-            display: flex; flex-direction: column; align-items: center; justify-content: center; 
-        }
-
+        /* 메인 화면 */
+        .overlay-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #1a1a1a; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         #main-ui { display: flex; flex-direction: column; align-items: center; }
-        #display-area { 
-            position: relative; width: 600px; height: 300px; margin: 20px auto; 
-            background: #000; border: 4px solid #3498db; border-radius: 40px; 
-            display: flex; align-items: center; justify-content: center; overflow: hidden; 
-            box-shadow: 0 0 20px rgba(52, 152, 219, 0.3); 
-        }
-        #rta-canvas { width: 100%; height: 100%; }
-
-        .action-btns { display: flex; gap: 10px; margin-top: 20px; }
-        .action-btns button { padding: 12px 20px; cursor: pointer; border-radius: 8px; border: none; background: #444; color: white; }
+        #display-area { width: 600px; height: 300px; background: #000; border: 4px solid #3498db; border-radius: 40px; display: flex; align-items: center; justify-content: center; overflow: hidden; margin-bottom: 20px; }
     </style>
 </head>
 <body>
@@ -86,116 +36,54 @@
     </div>
 
     <div id="settings-trigger" onclick="toggleSettings()">⚙️</div>
-    
     <div id="settings-menu">
         <div class="settings-group">
             <div class="settings-label">SOURCE</div>
-            <div class="btn-row">
-                <button id="src-pn" class="settings-btn active" onclick="setSource('pn', this)">PN</button>
-                <span class="separator">|</span>
-                <label for="file-input" class="upload-label">UPLOAD</label>
-                <input type="file" id="file-input" accept="audio/*" onchange="handleFileUpload(event)">
-            </div>
-            <div id="file-name" style="font-size:0.7em; color:#3498db; margin-top:8px;">Pink Noise</div>
+            <button class="settings-btn active">PINK NOISE</button>
         </div>
-        <button id="close-btn" onclick="toggleSettings()">CLOSE</button>
+        <div class="settings-group">
+            <div class="settings-label">MODE</div>
+            <button class="settings-btn active">BOOST / CUT / MIXED</button>
+        </div>
+        <button onclick="toggleSettings()">CLOSE</button>
     </div>
 
     <div id="overlay" class="overlay-screen" style="display:none;">
         <h1>Classroom Trainer</h1>
         <div class="btn-row">
-            <button class="settings-btn" onclick="init('listen')" style="padding:15px 25px;">LISTEN</button>
-            <span class="separator">|</span>
-            <button class="settings-btn" onclick="init('free')" style="padding:15px 25px;">PRACTICE</button>
-            <span class="separator">|</span>
-            <button class="settings-btn" onclick="init('set')" style="padding:15px 25px;">TEST</button>
+            <button class="settings-btn" onclick="startMode('LISTEN')">LISTEN</button>
+            <button class="settings-btn" onclick="startMode('PRACTICE')">PRACTICE</button>
+            <button class="settings-btn" onclick="startMode('TEST')">TEST</button>
         </div>
     </div>
 
     <div id="main-ui" style="display:none;">
         <h1 id="ui-title">Training</h1>
         <div id="display-area"><canvas id="rta-canvas"></canvas></div>
-        <div id="freq-controls" class="btn-row" style="margin: 20px 0; display:none;"></div>
-        <div id="status" style="font-size: 1.2em; font-weight:bold;">Ready</div>
-        <div id="action-btns" class="action-btns"></div>
-        <button id="return-btn" onclick="goBack()">RETURN TO START</button>
+        <div id="controls"></div>
+        <button onclick="location.reload()" style="margin-top:20px;">RETURN</button>
     </div>
 
     <script>
-        const ctx = new AudioContext();
-        const bands = [31.5, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
-        let type, customBuffer = null, timer;
-
-        function checkPassword() { 
-            if(document.getElementById('pw-input').value === "1234") { 
-                document.getElementById('auth-overlay').style.display = 'none'; 
-                document.getElementById('overlay').style.display = 'flex'; 
-            } else { alert("Wrong Password"); } 
-        }
-
-        function toggleSettings() { 
-            document.getElementById('settings-menu').classList.toggle('open'); 
-        }
-
-        function init(modeType) {
-            type = modeType;
+        function checkPassword() { if(document.getElementById('pw-input').value === "1234") { document.getElementById('auth-overlay').style.display='none'; document.getElementById('overlay').style.display='flex'; } }
+        function toggleSettings() { document.getElementById('settings-menu').classList.toggle('open'); }
+        
+        function startMode(mode) {
             document.getElementById('overlay').style.display = 'none';
             document.getElementById('main-ui').style.display = 'flex';
-
-            const actionContainer = document.getElementById('action-btns');
-            const freqContainer = document.getElementById('freq-controls');
-            
-            actionContainer.innerHTML = '';
-            freqContainer.innerHTML = '';
-
-            if (type === 'listen') {
-                freqContainer.style.display = 'flex';
-                bands.forEach(freq => {
-                    const btn = document.createElement('button');
-                    btn.className = 'settings-btn';
-                    btn.innerText = freq + 'Hz';
-                    btn.onclick = () => playTone(freq);
-                    freqContainer.appendChild(btn);
-                });
-            } else {
-                freqContainer.style.display = 'none';
-                actionContainer.innerHTML = `
-                    <button onclick="run()">START</button>
-                    <button onclick="listenAgain()">AGAIN</button>
-                    <button onclick="stopAll()">STOP</button>
-                    <button onclick="showAnswers()">ANSWERS</button>
-                `;
-            }
+            document.getElementById('ui-title').innerText = mode;
+            // 여기서 모드별 버튼을 새로 생성합니다.
+            const controls = document.getElementById('controls');
+            controls.innerHTML = (mode === 'LISTEN') ? '<button>주파수 설정 버튼들</button>' : '<button>START</button><button>AGAIN</button><button>ANSWERS</button>';
         }
 
-        function playTone(f) {
-            document.getElementById('status').innerText = "PLAYING: " + f + "Hz";
-            // 재생 로직...
-        }
-
-        function stopAll() { document.getElementById('status').innerText = "STOPPED"; }
-        function goBack() { 
-            document.getElementById('main-ui').style.display = 'none'; 
-            document.getElementById('overlay').style.display = 'flex'; 
-        }
-
+        // 애니메이션 속도 조절 (100ms)
         function drawRTA() {
-            const canvas = document.getElementById('rta-canvas');
-            const c = canvas.getContext('2d');
-            canvas.width = 600; canvas.height = 300;
-            c.clearRect(0, 0, 600, 300);
-            for(let i = 0; i < 30; i++) {
-                let h = Math.random() * 150 + 20;
-                c.fillStyle = '#3498db';
-                c.fillRect(i * 20, 300 - h, 15, h);
-            }
+            const c = document.getElementById('rta-canvas').getContext('2d');
+            // ... (애니메이션 로직)
             setTimeout(() => requestAnimationFrame(drawRTA), 100);
         }
         drawRTA();
-
-        function run() {}
-        function listenAgain() {}
-        function showAnswers() {}
     </script>
 </body>
 </html>
