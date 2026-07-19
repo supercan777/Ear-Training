@@ -1,30 +1,42 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>Classroom Trainer</title>
     <style>
         body { margin: 0; height: 100vh; font-family: 'Pretendard', sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; background: #1a1a1a; overflow: hidden; }
         
-        /* 인증 및 기본 레이아웃 */
-        #auth-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #1a1a1a; z-index: 999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        #auth-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:#1a1a1a; z-index:999; display:flex; flex-direction:column; align-items:center; justify-content:center; }
         #pw-input { padding: 15px; font-size: 1.2em; border-radius: 8px; border: none; margin-bottom: 10px; width: 250px; text-align: center; }
         
-        /* 설정 메뉴 */
-        #settings-trigger { position: fixed; top: 20px; right: 20px; font-size: 2em; cursor: pointer; z-index: 200; }
-        #settings-menu { position: fixed; top: 0; right: -350px; width: 350px; height: 100%; background: #1a1a1a; border-left: 1px solid #333; z-index: 150; transition: 0.4s; padding: 40px 20px; box-shadow: -5px 0 15px rgba(0,0,0,0.5); display: flex; flex-direction: column; align-items: center; }
+        #settings-trigger { position: fixed; top: 20px; right: 20px; font-size: 2em; cursor: pointer; z-index: 200; background: #1a1a1a; padding: 10px; border-radius: 50%; }
+        
+        #settings-menu { 
+            position: fixed; top: 0; right: -400px; width: 350px; height: 100%; 
+            background: #1a1a1a; border-left: 1px solid #333; z-index: 150; transition: 0.4s ease-in-out; padding: 40px 20px; box-shadow: -5px 0 15px rgba(0,0,0,0.5);
+            display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
+        }
         #settings-menu.open { right: 0; }
         
-        .settings-group { width: 100%; margin-bottom: 30px; display: flex; flex-direction: column; align-items: center; }
-        .settings-label { margin-bottom: 15px; font-size: 0.9em; color: #7f8c8d; }
-        .btn-row { display: flex; align-items: center; justify-content: center; gap: 5px; flex-wrap: wrap; }
-        .settings-btn { padding: 8px 12px; font-size: 0.85em; cursor: pointer; border-radius: 4px; border: none; background: #333; color: white; margin: 2px; }
+        .settings-group { width: 100%; margin-bottom: 25px; display: flex; flex-direction: column; align-items: center; }
+        .settings-label { margin-bottom: 10px; font-size: 0.8em; color: #7f8c8d; }
+        
+        .btn-row { display: flex; align-items: center; justify-content: center; gap: 4px; width: 100%; }
+        .separator { color: #555; margin: 0 5px; font-weight: 200; }
+        .settings-btn { padding: 8px 10px; font-size: 0.8em; cursor: pointer; border-radius: 4px; border: none; background: #333; color: white; transition: 0.2s; min-width: 60px; }
         .settings-btn.active { background: #3498db !important; }
-
-        /* 메인 화면 */
-        .overlay-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #1a1a1a; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        #main-ui { display: flex; flex-direction: column; align-items: center; }
-        #display-area { width: 600px; height: 300px; background: #000; border: 4px solid #3498db; border-radius: 40px; display: flex; align-items: center; justify-content: center; overflow: hidden; margin-bottom: 20px; }
+        
+        #close-btn { background: none; border: none; color: white; cursor: pointer; font-size: 0.9em; border-bottom: 1px solid white; padding: 2px 0; margin-top: 10px; }
+        #return-btn { background: none; border: none; color: #bdc3c7; cursor: pointer; font-size: 0.8em; border-bottom: 1px solid #bdc3c7; padding: 2px 0; margin-top: 40px; }
+        
+        .overlay-screen { position: fixed; top:0; left:0; width:100%; height:100%; background:#1a1a1a; z-index:100; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+        
+        #display-area { position: relative; width: 600px; height: 300px; margin: 20px auto; background: #000; border: 4px solid #3498db; border-radius: 40px; display: flex; align-items: center; justify-content: center; overflow: hidden; box-shadow: 0 0 20px rgba(52, 152, 219, 0.3); }
+        #rta-canvas { width: 100%; height: 100%; }
+        
+        .action-row { display: flex; flex-direction: column; align-items: center; margin-top: 20px; }
+        .action-btns { display: flex; gap: 10px; }
+        .action-row button { padding: 12px 20px; font-size: 0.9em; cursor: pointer; border-radius: 8px; border: none; margin: 4px; background: #444; color: white; }
     </style>
 </head>
 <body>
@@ -36,54 +48,74 @@
     </div>
 
     <div id="settings-trigger" onclick="toggleSettings()">⚙️</div>
+    
     <div id="settings-menu">
         <div class="settings-group">
             <div class="settings-label">SOURCE</div>
-            <button class="settings-btn active">PINK NOISE</button>
+            <div class="btn-row">
+                <button id="src-pn" class="settings-btn active" onclick="setSource('pn', this)">PN</button>
+                <span class="separator">|</span>
+                <button id="src-file" class="settings-btn" onclick="setSource('file', this)">FILE</button>
+            </div>
         </div>
         <div class="settings-group">
             <div class="settings-label">MODE</div>
-            <button class="settings-btn active">BOOST / CUT / MIXED</button>
+            <div class="btn-row">
+                <button id="m1" class="settings-btn active" onclick="setMode(1)">BOOST</button>
+                <span class="separator">|</span>
+                <button id="m2" class="settings-btn" onclick="setMode(2)">CUT</button>
+                <span class="separator">|</span>
+                <button id="m3" class="settings-btn" onclick="setMode(3)">MIXED</button>
+            </div>
         </div>
-        <button onclick="toggleSettings()">CLOSE</button>
+        <button id="close-btn" onclick="toggleSettings()">CLOSE</button>
     </div>
 
     <div id="overlay" class="overlay-screen" style="display:none;">
         <h1>Classroom Trainer</h1>
         <div class="btn-row">
-            <button class="settings-btn" onclick="startMode('LISTEN')">LISTEN</button>
-            <button class="settings-btn" onclick="startMode('PRACTICE')">PRACTICE</button>
-            <button class="settings-btn" onclick="startMode('TEST')">TEST</button>
+            <button class="settings-btn" onclick="init('free')" style="padding:15px 25px;">Free Practice</button>
+            <span class="separator" style="font-size:1.5em;">|</span>
+            <button class="settings-btn" onclick="init('set')" style="padding:15px 25px;">5-Question Set</button>
         </div>
     </div>
 
     <div id="main-ui" style="display:none;">
-        <h1 id="ui-title">Training</h1>
-        <div id="display-area"><canvas id="rta-canvas"></canvas></div>
-        <div id="controls"></div>
-        <button onclick="location.reload()" style="margin-top:20px;">RETURN</button>
+        <h1 id="ui-title" style="text-align: center;">Training</h1>
+        <div id="display-area">
+            <canvas id="rta-canvas"></canvas>
+        </div>
+        <div id="status" style="font-size: 1.2em; font-weight:bold; margin-bottom: 10px; text-align: center;">Ready</div>
+        <div class="action-row">
+            <div class="action-btns">
+                <button onclick="run()">START / NEXT</button>
+                <button onclick="listenAgain()">AGAIN</button>
+                <button onclick="stopAll()">STOP</button>
+            </div>
+            <button id="return-btn" onclick="goBack()">RETURN TO START</button>
+        </div>
     </div>
 
     <script>
-        function checkPassword() { if(document.getElementById('pw-input').value === "1234") { document.getElementById('auth-overlay').style.display='none'; document.getElementById('overlay').style.display='flex'; } }
+        function checkPassword() { if (document.getElementById('pw-input').value === "1234") { document.getElementById('auth-overlay').style.display = 'none'; document.getElementById('overlay').style.display = 'flex'; } }
         function toggleSettings() { document.getElementById('settings-menu').classList.toggle('open'); }
         
-        function startMode(mode) {
-            document.getElementById('overlay').style.display = 'none';
-            document.getElementById('main-ui').style.display = 'flex';
-            document.getElementById('ui-title').innerText = mode;
-            // 여기서 모드별 버튼을 새로 생성합니다.
-            const controls = document.getElementById('controls');
-            controls.innerHTML = (mode === 'LISTEN') ? '<button>주파수 설정 버튼들</button>' : '<button>START</button><button>AGAIN</button><button>ANSWERS</button>';
-        }
-
-        // 애니메이션 속도 조절 (100ms)
         function drawRTA() {
-            const c = document.getElementById('rta-canvas').getContext('2d');
-            // ... (애니메이션 로직)
+            const canvas = document.getElementById('rta-canvas');
+            const rtaCtx = canvas.getContext('2d');
+            canvas.width = 600; canvas.height = 300;
+            rtaCtx.clearRect(0, 0, 600, 300);
+            for(let i=0; i<30; i++) {
+                let h = Math.random() * 150 + 20;
+                rtaCtx.fillStyle = '#3498db';
+                rtaCtx.fillRect(i * 20, 300 - h, 15, h);
+            }
             setTimeout(() => requestAnimationFrame(drawRTA), 100);
-        }
-        drawRTA();
+        } drawRTA();
+
+        function init(t) { document.getElementById('overlay').style.display = 'none'; document.getElementById('main-ui').style.display = 'flex'; }
+        function goBack() { document.getElementById('main-ui').style.display = 'none'; document.getElementById('overlay').style.display = 'flex'; }
+        function stopAll() {} function run() {} function listenAgain() {}
     </script>
 </body>
 </html>
