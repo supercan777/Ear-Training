@@ -57,7 +57,10 @@
         <div class="settings-group">
             <div class="settings-label">FREQ RANGE</div>
             <div class="btn-row">
-                <button class="settings-btn active">ALL</button><span class="separator">|</span><button class="settings-btn">LOW</button><span class="separator">|</span><button class="settings-btn">MID</button><span class="separator">|</span><button class="settings-btn">HIGH</button>
+                <button class="settings-btn range-btn active" onclick="setRange('all', this)">ALL</button><span class="separator">|</span>
+                <button class="settings-btn range-btn" onclick="setRange('low', this)">LOW</button><span class="separator">|</span>
+                <button class="settings-btn range-btn" onclick="setRange('mid', this)">MID</button><span class="separator">|</span>
+                <button class="settings-btn range-btn" onclick="setRange('high', this)">HIGH</button>
             </div>
         </div>
         <button id="close-btn" onclick="toggleSettings()">CLOSE</button>
@@ -95,6 +98,9 @@
         let activeSource = null;
         let biquadFilter = null;
         let customBuffer = null;
+        
+        // --- 설정 관련 변수 ---
+        let currentRange = 'all'; 
         
         // --- 연습 모드 관련 변수 ---
         let currentPracticeFreq = null;
@@ -142,6 +148,12 @@
                 customBuffer = null;
                 document.getElementById('file-name').innerText = "Pink Noise";
             }
+        }
+
+        function setRange(range, btn) {
+            currentRange = range;
+            document.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
         }
 
         function init(mode) {
@@ -205,8 +217,18 @@
         }
 
         function runPractice() {
-            const randomIndex = Math.floor(Math.random() * bands.length);
-            currentPracticeFreq = bands[randomIndex];
+            // 교수님께서 지정해주신 대역폭으로 정확히 분리 (겹치는 구간 포함)
+            let availableBands = bands;
+            if (currentRange === 'low') {
+                availableBands = [31.5, 63, 125, 250, 500];
+            } else if (currentRange === 'mid') {
+                availableBands = [250, 500, 1000, 2000, 4000];
+            } else if (currentRange === 'high') {
+                availableBands = [1000, 2000, 4000, 8000, 16000];
+            }
+
+            const randomIndex = Math.floor(Math.random() * availableBands.length);
+            currentPracticeFreq = availableBands[randomIndex];
             playSequence(currentPracticeFreq);
         }
 
@@ -243,7 +265,6 @@
             biquadFilter.connect(masterGain);
             activeSource.start();
 
-            // 학생들에게 힌트가 되지 않도록 PLAYING... 으로만 통일했습니다.
             document.getElementById('status').innerText = "PLAYING...";
 
             function step1() {
