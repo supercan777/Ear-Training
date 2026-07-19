@@ -102,7 +102,6 @@
     </div>
 
     <script>
-        // --- 오디오 관련 전역 변수 ---
         let audioCtx;
         let masterGain;
         let activeSource = null;
@@ -115,16 +114,13 @@
         let sequenceTimer = null;
         const bands = [31.5, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
 
-        // LISTEN 모드
         let currentListenFreq = null; 
         let isPlaying = false; 
 
-        // TEST 모드 (5문제)
         let testAnswers = [];
         let currentTestQuestion = 0;
         let isTestCompleted = false;
 
-        // 파일 시작 위치 및 파형 캔버스
         let fileStartTime = 0;
         let waveformCanvas = document.createElement('canvas');
         waveformCanvas.width = 600;
@@ -339,19 +335,25 @@
             for (let i = 0; i < 5; i++) {
                 testAnswers.push(availableBands[Math.floor(Math.random() * availableBands.length)]);
             }
+
+            // TEST 모드 랜덤 위치 배정 추가 (14초 * 5문제 = 70초 소요 대비 75초 여유 확보)
+            if (customBuffer) {
+                const maxStart = Math.max(0, customBuffer.duration - 75);
+                fileStartTime = Math.random() * maxStart;
+                document.getElementById('file-time-display').innerText = Math.floor(fileStartTime) + "s";
+            }
+
             isTestCompleted = false;
             currentTestQuestion = 0;
             startTestSequence(0);
         }
 
-        // --- 이전 문제 처음으로 돌아가는 AGAIN 강력 복귀 기능 ---
         function listenAgain() {
             if (currentMode === 'practice') {
                 if (currentPracticeFreq) playSequence(currentPracticeFreq);
                 else alert("START 버튼을 먼저 눌러주세요.");
             } else if (currentMode === 'test') {
                 if (testAnswers.length === 5) {
-                    // 무조건 현재 또는 지나간 문제의 '이전 번호'로 되돌림 (최소 0번 문제)
                     let target = currentTestQuestion - 1;
                     if (target < 0) target = 0; 
                     startTestSequence(target);
@@ -435,7 +437,6 @@
             nextTestStep();
         }
 
-        // --- TEST 모드: 14초 시퀀스 (원본 5초 -> 1차변화 3초 -> 원본 3초 -> 2차변화 3초) ---
         function nextTestStep() {
             if (currentTestQuestion >= 5) {
                 stopAudio();
@@ -447,23 +448,19 @@
             biquadFilter.gain.value = 0; 
             document.getElementById('status').innerText = `[문제 ${currentTestQuestion + 1}/5] 원본 재생 중... (5s)`;
             
-            // 5초 원본
             sequenceTimer = setTimeout(() => {
                 biquadFilter.frequency.value = testAnswers[currentTestQuestion];
                 biquadFilter.gain.value = 6;
                 document.getElementById('status').innerText = `[문제 ${currentTestQuestion + 1}/5] 첫 번째 변화 적용! (3s)`;
 
-                // 3초 첫 번째 변화
                 sequenceTimer = setTimeout(() => {
                     biquadFilter.gain.value = 0;
                     document.getElementById('status').innerText = `[문제 ${currentTestQuestion + 1}/5] 원본 재생 중... (3s)`;
 
-                    // 3초 원본
                     sequenceTimer = setTimeout(() => {
                         biquadFilter.gain.value = 6;
                         document.getElementById('status').innerText = `[문제 ${currentTestQuestion + 1}/5] 두 번째 변화 적용! (3s)`;
 
-                        // 3초 두 번째 변화 후 다음 문제로
                         sequenceTimer = setTimeout(() => {
                             currentTestQuestion++;
                             nextTestStep(); 
