@@ -192,7 +192,7 @@
             </div>
             
             <div id="track-input-group" style="display:none; margin-top:15px; width:100%;">
-                <div class="settings-label" style="text-align: center; margin-bottom: 10px;">Select Track (Dropbox)</div>
+                <div class="settings-label" style="text-align: center; margin-bottom: 10px;">Select Track (1~5.mp3)</div>
                 <div class="row" style="justify-content:center;">
                     <button class="btn primary" style="flex:1; padding:10px;" onclick="loadTrack('1')">1</button>
                     <button class="btn primary" style="flex:1; padding:10px;" onclick="loadTrack('2')">2</button>
@@ -203,7 +203,7 @@
             </div>
 
             <div id="url-input-group" style="display:none; margin-top:15px; flex-direction:column;">
-                <input type="text" id="url-input" placeholder="Enter Direct WAV/MP3 Link">
+                <input type="text" id="url-input" placeholder="Enter Direct MP3/WAV Link">
                 <button class="btn" onclick="loadFromUrl()" style="background:#27ae60;">LOAD AUDIO</button>
             </div>
             
@@ -354,17 +354,9 @@
         reader.readAsArrayBuffer(file);
     }
 
-    // 완전히 정리된 드롭박스 다이렉트 링크 객체
-    const dropboxLinks = {
-        '1': 'https://dl.dropboxusercontent.com/scl/fi/0rnmd0n7zzkypct0ebzdp/1.wav?rlkey=tamnml28i0uzsobtmdjbht9nr',
-        '2': 'https://dl.dropboxusercontent.com/scl/fi/lrnn9foz3d9qqwqwqzl3t/2.wav?rlkey=nnwd2zwizqwc44my6pbfnd200',
-        '3': 'https://dl.dropboxusercontent.com/scl/fi/vll9k3op29f9shap7gr1o/3.wav?rlkey=ysxd4eaya8yxebszm0c4vkykz',
-        '4': 'https://dl.dropboxusercontent.com/scl/fi/9nmp6zny41o6dca4fivau/4.wav?rlkey=7x6t5nniryqct7awiykc3k4ki',
-        '5': 'https://dl.dropboxusercontent.com/scl/fi/v99h1hy85pq2urz12sza7/5.wav?rlkey=t9a658f7id0r6d6eizjyrwybk'
-    };
-
+    // GitHub에 올라간 1.mp3 ~ 5.mp3 파일을 자동으로 불러오는 함수
     async function loadTrack(trackNum) {
-        const url = dropboxLinks[trackNum];
+        const url = `https://supercan777.github.io/Ear-Training/${trackNum}.mp3`;
         document.getElementById('file-name').innerText = `Loading Track ${trackNum}...`;
         
         try {
@@ -374,10 +366,10 @@
             customBuffer = await audioCtx.decodeAudioData(arrayBuffer);
             fileStartTime = 0; 
             document.getElementById('file-time-display').innerText = "0s";
-            document.getElementById('file-name').innerText = `Loaded: Track ${trackNum} (WAV)`;
+            document.getElementById('file-name').innerText = `Loaded: Track ${trackNum} (MP3)`;
             renderWaveform();
         } catch (error) {
-            alert(`Track ${trackNum} 로드에 실패했습니다.\n네트워크 연결 상태나 링크를 다시 확인해주세요.`);
+            alert(`'${trackNum}.mp3' 파일을 찾을 수 없습니다.\nGitHub 최상위 폴더에 파일이 제대로 업로드되었는지 확인해주세요.`);
             document.getElementById('file-name').innerText = "Load Failed";
             setSource('pn');
         }
