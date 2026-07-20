@@ -354,13 +354,13 @@
         reader.readAsArrayBuffer(file);
     }
 
-    // ★ 여기에 교수님의 드롭박스 '직접 링크(dl.dropboxusercontent.com...)' 5개를 각각 넣어주세요!
+    // 완전히 정리된 드롭박스 다이렉트 링크 객체
     const dropboxLinks = {
-        '1': 'https://dl.dropboxusercontent.com/scl/fi/0rnmd0n7zzkypct0ebzdp/1.wav?rlkey=tamnml28i0uzsobtmdjbht9nr](https://dl.dropboxusercontent.com/scl/fi/0rnmd0n7zzkypct0ebzdp/1.wav?rlkey=tamnml28i0uzsobtmdjbht9nr',
-        '2': 'https://dl.dropboxusercontent.com/scl/fi/lrnn9foz3d9qqwqwqzl3t/2.wav?rlkey=nnwd2zwizqwc44my6pbfnd200&dl=0,
-        '3': 'https://dl.dropboxusercontent.com/scl/fi/vll9k3op29f9shap7gr1o/3.wav?rlkey=ysxd4eaya8yxebszm0c4vkykz&dl=0',
-        '4': 'https://dl.dropboxusercontent.com/scl/fi/9nmp6zny41o6dca4fivau/4.wav?rlkey=7x6t5nniryqct7awiykc3k4ki&dl=0',
-        '5': 'https://dl.dropboxusercontent.com/scl/fi/v99h1hy85pq2urz12sza7/5.wav?rlkey=t9a658f7id0r6d6eizjyrwybk&st=w9yeq8br&dl=0'
+        '1': 'https://dl.dropboxusercontent.com/scl/fi/0rnmd0n7zzkypct0ebzdp/1.wav?rlkey=tamnml28i0uzsobtmdjbht9nr',
+        '2': 'https://dl.dropboxusercontent.com/scl/fi/lrnn9foz3d9qqwqwqzl3t/2.wav?rlkey=nnwd2zwizqwc44my6pbfnd200',
+        '3': 'https://dl.dropboxusercontent.com/scl/fi/vll9k3op29f9shap7gr1o/3.wav?rlkey=ysxd4eaya8yxebszm0c4vkykz',
+        '4': 'https://dl.dropboxusercontent.com/scl/fi/9nmp6zny41o6dca4fivau/4.wav?rlkey=7x6t5nniryqct7awiykc3k4ki',
+        '5': 'https://dl.dropboxusercontent.com/scl/fi/v99h1hy85pq2urz12sza7/5.wav?rlkey=t9a658f7id0r6d6eizjyrwybk'
     };
 
     async function loadTrack(trackNum) {
@@ -377,7 +377,7 @@
             document.getElementById('file-name').innerText = `Loaded: Track ${trackNum} (WAV)`;
             renderWaveform();
         } catch (error) {
-            alert(`Track ${trackNum} 로드에 실패했습니다.\n코드 내의 드롭박스 링크(dl.dropboxusercontent.com)가 올바른지 확인해주세요.`);
+            alert(`Track ${trackNum} 로드에 실패했습니다.\n네트워크 연결 상태나 링크를 다시 확인해주세요.`);
             document.getElementById('file-name').innerText = "Load Failed";
             setSource('pn');
         }
