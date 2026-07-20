@@ -125,7 +125,7 @@
         .settings-label { margin-bottom: 10px; font-size: 0.8em; color: #aaa; font-weight: bold; text-align: left; }
         .row { display: flex; gap: 10px; }
         
-        #pw-input, #url-input { 
+        #url-input { 
             padding: 15px; border-radius: 10px; border: none; font-size: 1em; 
             background: #2a2a2a; color: white; width: 100%; box-sizing: border-box; margin-bottom: 15px; text-align: center;
         }
@@ -135,10 +135,11 @@
 
 <div id="app-container">
     
-    <div id="auth-overlay" class="full-overlay" style="z-index: 999;">
-        <h2 style="margin-bottom: 30px;">Classroom Trainer</h2>
-        <input type="password" id="pw-input" placeholder="Password (1234)">
-        <button class="btn primary" onclick="checkPassword()" style="width: 250px;">ENTER</button>
+    <!-- 비밀번호 입력란을 없애고 시작 버튼만 남김 (오디오 권한 획득용) -->
+    <div id="welcome-overlay" class="full-overlay" style="z-index: 999;">
+        <h2 style="margin-bottom: 10px;">Classroom Trainer</h2>
+        <p style="margin-bottom: 40px; color: #aaa;">Student Edition</p>
+        <button class="btn primary" onclick="startApp()" style="width: 250px;">START</button>
     </div>
 
     <div class="header">
@@ -250,21 +251,15 @@
     waveformCanvas.width = 600;
     waveformCanvas.height = 300;
 
-    function initAudio() {
+    // 시작 버튼을 누르면 오디오 컨텍스트를 활성화하고 메인 메뉴를 보여줌
+    function startApp() {
+        document.getElementById('welcome-overlay').style.display = 'none';
+        
         if (!audioCtx) {
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             masterGain = audioCtx.createGain();
             updateGainSettings(); 
             masterGain.connect(audioCtx.destination);
-        }
-    }
-
-    function checkPassword() { 
-        if(document.getElementById('pw-input').value === "1234" || document.getElementById('pw-input').value === "") { 
-            document.getElementById('auth-overlay').style.display='none'; 
-            initAudio();
-        } else {
-            alert("Incorrect password.");
         }
     }
     
@@ -664,7 +659,6 @@
                 ctx.fillRect(i*20, 300-h, 15, h); 
             }
         }
-        // 아날라이저(RTA)의 갱신 속도를 늦춰서 훨씬 부드럽게 보이도록 설정 (150ms 딜레이)
         setTimeout(() => requestAnimationFrame(drawRTA), 150);
     } 
     drawRTA();
