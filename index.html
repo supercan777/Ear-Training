@@ -192,7 +192,7 @@
             </div>
             
             <div id="track-input-group" style="display:none; margin-top:15px; width:100%;">
-                <div class="settings-label" style="text-align: center; margin-bottom: 10px;">Select Track (1~5.wav)</div>
+                <div class="settings-label" style="text-align: center; margin-bottom: 10px;">Select Track (Dropbox)</div>
                 <div class="row" style="justify-content:center;">
                     <button class="btn primary" style="flex:1; padding:10px;" onclick="loadTrack('1')">1</button>
                     <button class="btn primary" style="flex:1; padding:10px;" onclick="loadTrack('2')">2</button>
@@ -354,9 +354,17 @@
         reader.readAsArrayBuffer(file);
     }
 
+    // ★ 여기에 교수님의 드롭박스 '직접 링크(dl.dropboxusercontent.com...)' 5개를 각각 넣어주세요!
+    const dropboxLinks = {
+        '1': 'https://dl.dropboxusercontent.com/scl/fi/0rnmd0n7zzkypct0ebzdp/1.wav?rlkey=tamnml28i0uzsobtmdjbht9nr](https://dl.dropboxusercontent.com/scl/fi/0rnmd0n7zzkypct0ebzdp/1.wav?rlkey=tamnml28i0uzsobtmdjbht9nr',
+        '2': 'https://dl.dropboxusercontent.com/scl/fi/lrnn9foz3d9qqwqwqzl3t/2.wav?rlkey=nnwd2zwizqwc44my6pbfnd200&dl=0,
+        '3': 'https://dl.dropboxusercontent.com/scl/fi/vll9k3op29f9shap7gr1o/3.wav?rlkey=ysxd4eaya8yxebszm0c4vkykz&dl=0',
+        '4': 'https://dl.dropboxusercontent.com/scl/fi/9nmp6zny41o6dca4fivau/4.wav?rlkey=7x6t5nniryqct7awiykc3k4ki&dl=0',
+        '5': 'https://dl.dropboxusercontent.com/scl/fi/v99h1hy85pq2urz12sza7/5.wav?rlkey=t9a658f7id0r6d6eizjyrwybk&st=w9yeq8br&dl=0'
+    };
+
     async function loadTrack(trackNum) {
-        // .mp3 대신 .wav 파일을 불러오도록 수정
-        const url = `https://supercan777.github.io/Ear-Training/${trackNum}.wav`;
+        const url = dropboxLinks[trackNum];
         document.getElementById('file-name').innerText = `Loading Track ${trackNum}...`;
         
         try {
@@ -369,7 +377,7 @@
             document.getElementById('file-name').innerText = `Loaded: Track ${trackNum} (WAV)`;
             renderWaveform();
         } catch (error) {
-            alert(`'${trackNum}.wav' 파일을 찾을 수 없습니다.\nGitHub 최상위 폴더에 .wav 확장자로 업로드되었는지 확인해주세요.`);
+            alert(`Track ${trackNum} 로드에 실패했습니다.\n코드 내의 드롭박스 링크(dl.dropboxusercontent.com)가 올바른지 확인해주세요.`);
             document.getElementById('file-name').innerText = "Load Failed";
             setSource('pn');
         }
