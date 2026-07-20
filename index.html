@@ -104,7 +104,6 @@
 
         .action-btns { display: flex; gap: 10px; width: 100%; margin-bottom: 15px; }
 
-        /* 주파수 그리드 버튼 대형화 (화면 꽉 차게) */
         .freq-grid {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
@@ -113,7 +112,7 @@
             margin-bottom: 20px;
         }
         .freq-grid .btn { 
-            padding: 20px 2px; /* 위아래 패딩을 늘려 버튼을 키움 */
+            padding: 20px 2px;
             font-size: 0.95em; 
             border-radius: 12px; 
             display: flex;
@@ -131,7 +130,7 @@
         
         .settings-group { margin-bottom: 25px; width: 100%; }
         .settings-label { margin-bottom: 10px; font-size: 0.8em; color: #aaa; font-weight: bold; text-align: left; }
-        .row { display: flex; gap: 10px; }
+        .row { display: flex; gap: 8px; flex-wrap: wrap; }
         
         #url-input { 
             padding: 15px; border-radius: 10px; border: none; font-size: 1em; 
@@ -185,17 +184,30 @@
         <div class="settings-group">
             <div class="settings-label">AUDIO SOURCE</div>
             <div class="row">
-                <button id="btn-src-pn" class="btn active" onclick="setSource('pn')">PN</button>
-                <button id="btn-src-file" class="btn" onclick="setSource('file')">FILE</button>
-                <button id="btn-src-url" class="btn" onclick="setSource('url')">URL</button>
+                <button id="btn-src-pn" class="btn active" style="flex:1; padding:10px;" onclick="setSource('pn')">PN</button>
+                <button id="btn-src-file" class="btn" style="flex:1; padding:10px;" onclick="setSource('file')">FILE</button>
+                <button id="btn-src-track" class="btn" style="flex:1; padding:10px;" onclick="setSource('track')">TRACKS</button>
+                <button id="btn-src-url" class="btn" style="flex:1; padding:10px;" onclick="setSource('url')">URL</button>
                 <input type="file" id="file-input" style="display:none;" accept="audio/*" onchange="handleFileUpload(event)">
             </div>
             
+            <div id="track-input-group" style="display:none; margin-top:15px; width:100%;">
+                <div class="settings-label" style="text-align: center; margin-bottom: 10px;">Select Track (1~5.wav)</div>
+                <div class="row" style="justify-content:center;">
+                    <button class="btn primary" style="flex:1; padding:10px;" onclick="loadTrack('1')">1</button>
+                    <button class="btn primary" style="flex:1; padding:10px;" onclick="loadTrack('2')">2</button>
+                    <button class="btn primary" style="flex:1; padding:10px;" onclick="loadTrack('3')">3</button>
+                    <button class="btn primary" style="flex:1; padding:10px;" onclick="loadTrack('4')">4</button>
+                    <button class="btn primary" style="flex:1; padding:10px;" onclick="loadTrack('5')">5</button>
+                </div>
+            </div>
+
             <div id="url-input-group" style="display:none; margin-top:15px; flex-direction:column;">
-                <input type="text" id="url-input" placeholder="Enter Direct MP3/WAV Link">
+                <input type="text" id="url-input" placeholder="Enter Direct WAV/MP3 Link">
                 <button class="btn" onclick="loadFromUrl()" style="background:#27ae60;">LOAD AUDIO</button>
             </div>
-            <div id="file-name" style="font-size:0.8em; color:var(--primary-color); margin-top:10px; text-align:center; word-break: break-all;">Pink Noise</div>
+            
+            <div id="file-name" style="font-size:0.8em; color:var(--primary-color); margin-top:15px; text-align:center; word-break: break-all;">Pink Noise</div>
         </div>
         
         <div class="settings-group" id="file-time-group" style="display:none;">
@@ -210,16 +222,16 @@
         <div class="settings-group">
             <div class="settings-label">GAIN AMOUNT (Difficulty)</div>
             <div class="row">
-                <button class="btn gain-btn" onclick="setGainAmount(6, this)">6 dB</button>
-                <button class="btn gain-btn active" onclick="setGainAmount(12, this)">12 dB</button>
+                <button class="btn gain-btn" onclick="setGainAmount(6, this)" style="flex:1;">6 dB</button>
+                <button class="btn gain-btn active" onclick="setGainAmount(12, this)" style="flex:1;">12 dB</button>
             </div>
         </div>
 
         <div class="settings-group">
             <div class="settings-label">EQ MODE</div>
             <div class="row">
-                <button class="btn eq-btn active" onclick="setEqMode('boost', this)">BOOST</button>
-                <button class="btn eq-btn" onclick="setEqMode('cut', this)">CUT</button>
+                <button class="btn eq-btn active" onclick="setEqMode('boost', this)" style="flex:1;">BOOST</button>
+                <button class="btn eq-btn" onclick="setEqMode('cut', this)" style="flex:1;">CUT</button>
             </div>
         </div>
 
@@ -237,7 +249,7 @@
     
     let currentMode = '';
     let totalTestQuestions = 5; 
-    let isPracticeActive = false; // 프랙티스 진행 상태 체크 변수
+    let isPracticeActive = false;
     
     let currentEqMode = 'boost';
     let currentGainAmount = 12; 
@@ -302,8 +314,9 @@
     }
 
     function setSource(type) {
-        document.querySelectorAll('#btn-src-pn, #btn-src-file, #btn-src-url').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('#btn-src-pn, #btn-src-file, #btn-src-url, #btn-src-track').forEach(b => b.classList.remove('active'));
         document.getElementById('url-input-group').style.display = 'none';
+        document.getElementById('track-input-group').style.display = 'none';
         
         if(type === 'pn') {
             document.getElementById('btn-src-pn').classList.add('active');
@@ -317,6 +330,10 @@
         } else if (type === 'url') {
             document.getElementById('btn-src-url').classList.add('active');
             document.getElementById('url-input-group').style.display = 'flex';
+            document.getElementById('file-time-group').style.display = 'flex'; 
+        } else if (type === 'track') {
+            document.getElementById('btn-src-track').classList.add('active');
+            document.getElementById('track-input-group').style.display = 'block';
             document.getElementById('file-time-group').style.display = 'flex'; 
         }
     }
@@ -335,6 +352,27 @@
             });
         };
         reader.readAsArrayBuffer(file);
+    }
+
+    async function loadTrack(trackNum) {
+        // .mp3 대신 .wav 파일을 불러오도록 수정
+        const url = `https://supercan777.github.io/Ear-Training/${trackNum}.wav`;
+        document.getElementById('file-name').innerText = `Loading Track ${trackNum}...`;
+        
+        try {
+            const response = await fetch(url);
+            if(!response.ok) throw new Error("File not found");
+            const arrayBuffer = await response.arrayBuffer();
+            customBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+            fileStartTime = 0; 
+            document.getElementById('file-time-display').innerText = "0s";
+            document.getElementById('file-name').innerText = `Loaded: Track ${trackNum} (WAV)`;
+            renderWaveform();
+        } catch (error) {
+            alert(`'${trackNum}.wav' 파일을 찾을 수 없습니다.\nGitHub 최상위 폴더에 .wav 확장자로 업로드되었는지 확인해주세요.`);
+            document.getElementById('file-name').innerText = "Load Failed";
+            setSource('pn');
+        }
     }
 
     async function loadFromUrl() {
@@ -386,7 +424,6 @@
             currentListenFreq = null; 
             if (biquadFilter) biquadFilter.gain.value = 0;
         } else if(mode === 'practice') {
-            // 프랙티스 모드: 버튼 항상 표시
             controls.style.display = 'grid'; 
             actions.innerHTML = '<button class="btn primary" onclick="runPractice()">START QUIZ</button>';
         } else if(mode === 'test') {
@@ -417,7 +454,6 @@
                 return;
             }
             
-            // 문제 도중 정답 선택 시 즉시 오디오 중지 및 결과 표시
             stopAudio(); 
             isPracticeActive = false;
             
@@ -452,7 +488,6 @@
         else document.getElementById('status').innerText = "PLAYING: FLAT (Original)";
     }
 
-    // 프랙티스 정지 및 초기화 함수
     function cancelPractice() {
         stopAudio();
         isPracticeActive = false;
@@ -473,7 +508,6 @@
         isPracticeActive = true;
         document.getElementById('answer-display').style.display = 'none';
         
-        // 정지 버튼에 cancelPractice() 연결
         document.getElementById('action-btns').innerHTML = '<button class="btn" onclick="cancelPractice()" style="background:#e74c3c;">STOP (Cancel)</button>';
         
         playPracticeSequence(currentPracticeFreq);
