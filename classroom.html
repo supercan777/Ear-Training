@@ -74,6 +74,17 @@
                 <button class="settings-btn range-btn" onclick="setRange('high', this)">HIGH</button>
             </div>
         </div>
+
+        <!-- 새롭게 추가된 EQ MODE 설정 -->
+        <div class="settings-group">
+            <div class="settings-label">EQ MODE</div>
+            <div class="btn-row">
+                <button class="settings-btn eq-btn active" onclick="setEqMode('boost', this)">BOOST</button>
+                <span class="separator">|</span>
+                <button class="settings-btn eq-btn" onclick="setEqMode('cut', this)">CUT</button>
+            </div>
+        </div>
+
         <button id="close-btn" onclick="toggleSettings()">CLOSE</button>
     </div>
 
@@ -112,6 +123,7 @@
         
         let currentMode = '';
         let currentRange = 'all'; 
+        let targetGain = 6; // 기본 EQ 모드는 Boost (+6dB)
         let currentPracticeFreq = null;
         let sequenceTimer = null;
         const bands = [31.5, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
@@ -149,6 +161,18 @@
             stopAudio();
             document.getElementById('main-ui').style.display='none'; 
             document.getElementById('overlay').style.display='flex'; 
+        }
+
+        // 설정(EQ Mode) 변경 함수
+        function setEqMode(mode, btn) {
+            targetGain = mode === 'boost' ? 6 : -6;
+            document.querySelectorAll('.eq-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            
+            // Listen 모드 중에 설정을 바꾸면 실시간 반영
+            if (currentMode === 'listen' && currentListenFreq && biquadFilter) {
+                biquadFilter.gain.value = targetGain;
+            }
         }
 
         function handleFileUpload(event) {
@@ -288,8 +312,9 @@
             } else {
                 currentListenFreq = freq;
                 document.getElementById(`btn-freq-${freq}`).classList.add('active'); 
-                createOrUpdateFilter(freq, 6); 
-                document.getElementById('status').innerText = isPlaying ? `PLAYING: ${freq}Hz` : `READY (적용대기: ${freq}Hz)`;
+                // 이제 6 대신 targetGain 적용
+                createOrUpdateFilter(freq, targetGain); 
+                document.getElementById('status').innerText = isPlaying ? `PLAYING: ${freq}Hz (${targetGain > 0 ? '+' : ''}${targetGain}dB)` : `READY (적용대기: ${freq}Hz)`;
             }
         }
 
@@ -308,7 +333,7 @@
             activeSource.start(0, offset);
             isPlaying = true;
             
-            if (currentListenFreq) document.getElementById('status').innerText = `PLAYING: ${currentListenFreq}Hz`;
+            if (currentListenFreq) document.getElementById('status').innerText = `PLAYING: ${currentListenFreq}Hz (${targetGain > 0 ? '+' : ''}${targetGain}dB)`;
             else document.getElementById('status').innerText = "PLAYING: FLAT (원본)";
         }
 
@@ -401,14 +426,15 @@
 
             document.getElementById('status').innerText = "PLAYING (Practice Mode)...";
 
+            // 기존에 하드코딩되었던 6을 targetGain으로 변경했습니다.
             function step1() { biquadFilter.gain.value = 0; sequenceTimer = setTimeout(step2, 5000); } 
-            function step2() { biquadFilter.gain.value = 6; sequenceTimer = setTimeout(step3, 3000); } 
+            function step2() { biquadFilter.gain.value = targetGain; sequenceTimer = setTimeout(step3, 3000); } 
             function step3() { biquadFilter.gain.value = 0; sequenceTimer = setTimeout(step4, 3000); } 
-            function step4() { biquadFilter.gain.value = 6; sequenceTimer = setTimeout(step5, 3000); } 
+            function step4() { biquadFilter.gain.value = targetGain; sequenceTimer = setTimeout(step5, 3000); } 
             function step5() { biquadFilter.gain.value = 0; sequenceTimer = setTimeout(step6, 3000); } 
-            function step6() { biquadFilter.gain.value = 6; sequenceTimer = setTimeout(step7, 3000); } 
+            function step6() { biquadFilter.gain.value = targetGain; sequenceTimer = setTimeout(step7, 3000); } 
             function step7() { biquadFilter.gain.value = 0; sequenceTimer = setTimeout(step8, 3000); } 
-            function step8() { biquadFilter.gain.value = 6; sequenceTimer = setTimeout(step9, 3000); } 
+            function step8() { biquadFilter.gain.value = targetGain; sequenceTimer = setTimeout(step9, 3000); } 
             function step9() { biquadFilter.gain.value = 0; sequenceTimer = setTimeout(stopAudio, 5000); } 
             
             step1(); 
@@ -451,7 +477,8 @@
             
             sequenceTimer = setTimeout(() => {
                 biquadFilter.frequency.value = testAnswers[currentTestQuestion];
-                biquadFilter.gain.value = 6;
+                // 기존 6을 targetGain으로 변경
+                biquadFilter.gain.value = targetGain;
                 document.getElementById('status').innerText = `[문제 ${currentTestQuestion + 1}/5] 첫 번째 변화 적용! (3s)`;
 
                 sequenceTimer = setTimeout(() => {
@@ -459,7 +486,8 @@
                     document.getElementById('status').innerText = `[문제 ${currentTestQuestion + 1}/5] 원본 재생 중... (3s)`;
 
                     sequenceTimer = setTimeout(() => {
-                        biquadFilter.gain.value = 6;
+                        // 기존 6을 targetGain으로 변경
+                        biquadFilter.gain.value = targetGain;
                         document.getElementById('status').innerText = `[문제 ${currentTestQuestion + 1}/5] 두 번째 변화 적용! (3s)`;
 
                         sequenceTimer = setTimeout(() => {
