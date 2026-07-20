@@ -4,14 +4,13 @@
     <meta charset="UTF-8">
     <title>Classroom Trainer</title>
     <style>
-        /* 화면이 작을 경우 스크롤이 생기도록 overflow-y: auto 와 min-height 로 수정했습니다 */
         body { margin: 0; min-height: 100vh; font-family: 'Pretendard', sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; background: #1a1a1a; overflow-y: auto; padding: 20px 0; box-sizing: border-box; }
         
         #auth-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:#1a1a1a; z-index:999; display:flex; flex-direction:column; align-items:center; justify-content:center; }
         #pw-input { padding: 15px; font-size: 1.2em; border-radius: 8px; border: none; margin-bottom: 10px; width: 250px; text-align: center; }
         
         #settings-trigger { position: fixed; top: 20px; right: 20px; font-size: 2em; cursor: pointer; z-index: 200; }
-        #settings-menu { position: fixed; top: 0; right: -400px; width: 350px; height: 100%; background: #1a1a1a; border-left: 1px solid #333; z-index: 150; transition: 0.4s; padding: 40px 20px; box-shadow: -5px 0 15px rgba(0,0,0,0.5); display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        #settings-menu { position: fixed; top: 0; right: -400px; width: 350px; height: 100%; background: #1a1a1a; border-left: 1px solid #333; z-index: 150; transition: 0.4s; padding: 40px 20px; box-shadow: -5px 0 15px rgba(0,0,0,0.5); display: flex; flex-direction: column; align-items: center; justify-content: center; overflow-y: auto; }
         #settings-menu.open { right: 0; }
         
         .settings-group { width: 100%; margin-bottom: 25px; display: flex; flex-direction: column; align-items: center; }
@@ -75,7 +74,17 @@
             </div>
         </div>
 
-        <!-- 새롭게 추가된 EQ MODE 설정 -->
+        <!-- 6dB / 12dB 선택을 위한 GAIN AMOUNT 설정 추가 -->
+        <div class="settings-group">
+            <div class="settings-label">GAIN AMOUNT</div>
+            <div class="btn-row">
+                <button class="settings-btn gain-btn" onclick="setGainAmount(6, this)">6 dB</button>
+                <span class="separator">|</span>
+                <!-- 기본값을 12dB로 설정 -->
+                <button class="settings-btn gain-btn active" onclick="setGainAmount(12, this)">12 dB</button>
+            </div>
+        </div>
+
         <div class="settings-group">
             <div class="settings-label">EQ MODE</div>
             <div class="btn-row">
@@ -110,7 +119,6 @@
         <div id="freq-controls" class="btn-row" style="margin: 20px 0; display:none;"></div>
         <div id="status" style="font-size: 1.2em; font-weight:bold;">Ready</div>
         <div id="action-btns" class="action-btns"></div>
-        <!-- RETURN 버튼은 항상 여기에 위치합니다 -->
         <button id="return-btn" onclick="goBack()">RETURN TO START</button>
     </div>
 
@@ -123,7 +131,12 @@
         
         let currentMode = '';
         let currentRange = 'all'; 
-        let targetGain = 12; // 6에서 12로 변경 (기본 EQ 모드는 Boost +12dB)
+        
+        // 게인 선택 기능을 위한 상태 변수 추가
+        let currentEqMode = 'boost';
+        let currentGainAmount = 12; // 6 또는 12
+        let targetGain = 12;        // 최종 적용될 값 (+12, -12, +6, -6)
+
         let currentPracticeFreq = null;
         let sequenceTimer = null;
         const bands = [31.5, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
@@ -144,7 +157,7 @@
             if (!audioCtx) {
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                 masterGain = audioCtx.createGain();
-                masterGain.gain.value = 0.15; // 12dB 부스트 시 디스토션 방지를 위해 초기값을 0.15로 설정 (헤드룸 확보)
+                updateGainSettings(); // 초기 볼륨 셋팅
                 masterGain.connect(audioCtx.destination);
             }
         }
@@ -163,21 +176,38 @@
             document.getElementById('overlay').style.display='flex'; 
         }
 
-        // 설정(EQ Mode) 변경 함수
-        function setEqMode(mode, btn) {
-            targetGain = mode === 'boost' ? 12 : -12; // 6과 -6에서 12와 -12로 변경
-            document.querySelectorAll('.eq-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
+        // 통합된 게인 업데이트 로직 (디스토션 방지 포함)
+        function updateGainSettings() {
+            targetGain = currentEqMode === 'boost' ? currentGainAmount : -currentGainAmount;
             
-            // EQ 모드에 따른 볼륨 보상 추가 (디스토션 방지)
             if (masterGain) {
-                masterGain.gain.value = mode === 'boost' ? 0.15 : 0.3;
+                if (currentEqMode === 'boost') {
+                    // Boost 모드일 때 12dB면 0.15, 6dB면 0.3으로 헤드룸 확보
+                    masterGain.gain.value = currentGainAmount === 12 ? 0.15 : 0.3;
+                } else {
+                    // Cut 모드일 때는 깎는 것이므로 기본 볼륨(0.3) 유지
+                    masterGain.gain.value = 0.3; 
+                }
             }
             
-            // Listen 모드 중에 설정을 바꾸면 실시간 반영
+            // Listen 모드 중에 설정을 바꾸면 실시간으로 바로 필터에 적용
             if (currentMode === 'listen' && currentListenFreq && biquadFilter) {
                 biquadFilter.gain.value = targetGain;
             }
+        }
+
+        function setEqMode(mode, btn) {
+            currentEqMode = mode;
+            document.querySelectorAll('.eq-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            updateGainSettings();
+        }
+
+        function setGainAmount(amount, btn) {
+            currentGainAmount = amount;
+            document.querySelectorAll('.gain-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            updateGainSettings();
         }
 
         function handleFileUpload(event) {
@@ -318,7 +348,7 @@
                 currentListenFreq = freq;
                 document.getElementById(`btn-freq-${freq}`).classList.add('active'); 
                 createOrUpdateFilter(freq, targetGain); 
-                document.getElementById('status').innerText = isPlaying ? `PLAYING: ${freq}Hz (${targetGain > 0 ? '+' : ''}${targetGain}dB)` : `READY (적용대기: ${freq}Hz)`;
+                document.getElementById('status').innerText = isPlaying ? `PLAYING: ${freq}Hz (${targetGain > 0 ? '+' : ''}${Math.abs(targetGain)}dB)` : `READY (적용대기: ${freq}Hz)`;
             }
         }
 
@@ -337,7 +367,7 @@
             activeSource.start(0, offset);
             isPlaying = true;
             
-            if (currentListenFreq) document.getElementById('status').innerText = `PLAYING: ${currentListenFreq}Hz (${targetGain > 0 ? '+' : ''}${targetGain}dB)`;
+            if (currentListenFreq) document.getElementById('status').innerText = `PLAYING: ${currentListenFreq}Hz (${targetGain > 0 ? '+' : ''}${Math.abs(targetGain)}dB)`;
             else document.getElementById('status').innerText = "PLAYING: FLAT (원본)";
         }
 
