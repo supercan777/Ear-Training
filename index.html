@@ -100,18 +100,26 @@
             box-sizing: border-box; line-height: 1.4;
         }
 
-        #status { font-size: 1em; font-weight: 600; text-align: center; margin-bottom: 20px; min-height: 24px; color: #aaa;}
+        #status { font-size: 0.95em; font-weight: 600; text-align: center; margin-bottom: 20px; min-height: 24px; color: #aaa;}
 
         .action-btns { display: flex; gap: 10px; width: 100%; margin-bottom: 15px; }
 
+        /* 주파수 그리드 버튼 대형화 (화면 꽉 차게) */
         .freq-grid {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
-            gap: 8px;
+            gap: 10px;
             width: 100%;
             margin-bottom: 20px;
         }
-        .freq-grid .btn { padding: 10px 5px; font-size: 0.8em; border-radius: 8px; }
+        .freq-grid .btn { 
+            padding: 20px 2px; /* 위아래 패딩을 늘려 버튼을 키움 */
+            font-size: 0.95em; 
+            border-radius: 12px; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
 
         #settings-menu { 
             position: absolute; top: 0; right: -100%; width: 85%; height: 100%; 
@@ -135,7 +143,6 @@
 
 <div id="app-container">
     
-    <!-- 비밀번호 입력란을 없애고 시작 버튼만 남김 (오디오 권한 획득용) -->
     <div id="welcome-overlay" class="full-overlay" style="z-index: 999;">
         <h2 style="margin-bottom: 10px;">Classroom Trainer</h2>
         <p style="margin-bottom: 40px; color: #aaa;">Student Edition</p>
@@ -230,6 +237,7 @@
     
     let currentMode = '';
     let totalTestQuestions = 5; 
+    let isPracticeActive = false; // 프랙티스 진행 상태 체크 변수
     
     let currentEqMode = 'boost';
     let currentGainAmount = 12; 
@@ -251,10 +259,8 @@
     waveformCanvas.width = 600;
     waveformCanvas.height = 300;
 
-    // 시작 버튼을 누르면 오디오 컨텍스트를 활성화하고 메인 메뉴를 보여줌
     function startApp() {
         document.getElementById('welcome-overlay').style.display = 'none';
-        
         if (!audioCtx) {
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             masterGain = audioCtx.createGain();
@@ -359,9 +365,12 @@
     function init(mode, testQs = 5) {
         currentMode = mode;
         totalTestQuestions = testQs;
+        isPracticeActive = false;
+        
         document.getElementById('overlay').style.display = 'none';
         document.getElementById('header-title').innerText = mode.toUpperCase() + (mode === 'test' ? ` (${testQs} Qs)` : '');
         document.getElementById('answer-display').style.display = 'none'; 
+        document.getElementById('status').innerText = "Ready";
         
         const controls = document.getElementById('freq-controls');
         const actions = document.getElementById('action-btns');
@@ -377,8 +386,9 @@
             currentListenFreq = null; 
             if (biquadFilter) biquadFilter.gain.value = 0;
         } else if(mode === 'practice') {
-            controls.style.display = 'none'; 
-            actions.innerHTML = '<button class="btn primary" onclick="runPractice()">START QUIZ</button><button class="btn" onclick="stopAudio()" style="background:#e74c3c;">STOP</button>';
+            // 프랙티스 모드: 버튼 항상 표시
+            controls.style.display = 'grid'; 
+            actions.innerHTML = '<button class="btn primary" onclick="runPractice()">START QUIZ</button>';
         } else if(mode === 'test') {
             controls.style.display = 'none';
             actions.innerHTML = '<button class="btn primary" onclick="runTest()">START EXAM</button><button class="btn" onclick="listenAgain()">AGAIN</button><button class="btn" onclick="stopAudio()" style="background:#e74c3c;">STOP</button><button class="btn" onclick="showAnswers()">ANSWERS</button>';
@@ -402,6 +412,15 @@
                 document.getElementById('status').innerText = isPlaying ? `PLAYING: ${freq}Hz (${targetGain > 0 ? '+' : ''}${Math.abs(targetGain)}dB)` : `READY (Pending: ${freq}Hz)`;
             }
         } else if (currentMode === 'practice') {
+            if (!isPracticeActive) {
+                alert("Please press 'START QUIZ' first.");
+                return;
+            }
+            
+            // 문제 도중 정답 선택 시 즉시 오디오 중지 및 결과 표시
+            stopAudio(); 
+            isPracticeActive = false;
+            
             const display = document.getElementById('answer-display');
             if (freq === currentPracticeFreq) {
                 display.innerHTML = `<span style="color:var(--success-color)">Correct!</span><br>${currentPracticeFreq} Hz`;
@@ -409,7 +428,8 @@
                 display.innerHTML = `<span style="color:var(--danger-color)">Incorrect!</span><br>Answer: ${currentPracticeFreq} Hz<br><span style="font-size:0.6em; color:#ccc;">(Your choice: ${freq} Hz)</span>`;
             }
             display.style.display = 'flex';
-            document.getElementById('freq-controls').style.display = 'none'; 
+            
+            document.getElementById('status').innerText = "Quiz Completed.";
             document.getElementById('action-btns').innerHTML = '<button class="btn primary" onclick="runPractice()">NEXT QUESTION</button><button class="btn" onclick="listenPracticeAgain()">LISTEN AGAIN</button>';
         }
     }
@@ -432,6 +452,15 @@
         else document.getElementById('status').innerText = "PLAYING: FLAT (Original)";
     }
 
+    // 프랙티스 정지 및 초기화 함수
+    function cancelPractice() {
+        stopAudio();
+        isPracticeActive = false;
+        document.getElementById('answer-display').style.display = 'none';
+        document.getElementById('status').innerText = "Canceled. Ready to start.";
+        document.getElementById('action-btns').innerHTML = '<button class="btn primary" onclick="runPractice()">START QUIZ</button>';
+    }
+
     function runPractice() {
         currentPracticeFreq = bands[Math.floor(Math.random() * bands.length)];
         
@@ -441,15 +470,19 @@
             document.getElementById('file-time-display').innerText = Math.floor(fileStartTime) + "s";
         }
         
-        document.getElementById('freq-controls').style.display = 'none'; 
-        document.getElementById('action-btns').innerHTML = '<button class="btn" onclick="stopAudio()" style="background:#e74c3c;">STOP</button>';
+        isPracticeActive = true;
+        document.getElementById('answer-display').style.display = 'none';
+        
+        // 정지 버튼에 cancelPractice() 연결
+        document.getElementById('action-btns').innerHTML = '<button class="btn" onclick="cancelPractice()" style="background:#e74c3c;">STOP (Cancel)</button>';
         
         playPracticeSequence(currentPracticeFreq);
     }
     
     function listenPracticeAgain() {
-        document.getElementById('freq-controls').style.display = 'none';
-        document.getElementById('action-btns').innerHTML = '<button class="btn" onclick="stopAudio()" style="background:#e74c3c;">STOP</button>';
+        isPracticeActive = true;
+        document.getElementById('answer-display').style.display = 'none';
+        document.getElementById('action-btns').innerHTML = '<button class="btn" onclick="cancelPractice()" style="background:#e74c3c;">STOP (Cancel)</button>';
         playPracticeSequence(currentPracticeFreq);
     }
 
@@ -464,7 +497,7 @@
         biquadFilter.gain.value = 0; 
         startAudioSource();
         
-        document.getElementById('status').innerText = "Listen carefully... (Playing question)";
+        document.getElementById('status').innerText = "Listen carefully... (Select answer anytime!)";
 
         function step1() { biquadFilter.gain.value = 0; sequenceTimer = setTimeout(step2, 3000); } 
         function step2() { biquadFilter.gain.value = targetGain; sequenceTimer = setTimeout(step3, 3000); } 
@@ -477,9 +510,8 @@
     
     function finishPracticeSeq() {
         stopAudio();
-        document.getElementById('status').innerText = "Which frequency changed? Select the answer!";
-        document.getElementById('freq-controls').style.display = 'grid'; 
-        document.getElementById('action-btns').innerHTML = '<button class="btn" onclick="listenPracticeAgain()">LISTEN AGAIN</button>';
+        document.getElementById('status').innerText = "Audio finished. Select your answer!";
+        document.getElementById('action-btns').innerHTML = '<button class="btn primary" onclick="listenPracticeAgain()">LISTEN AGAIN</button><button class="btn" onclick="cancelPractice()" style="background:#e74c3c;">STOP</button>';
     }
 
     function runTest() {
