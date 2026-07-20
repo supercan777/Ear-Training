@@ -1,182 +1,697 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>Classroom Trainer - Student</title>
+    <!-- 모바일 환경에서 앱처럼 보이도록 뷰포트 고정 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Classroom Trainer - Student Edition</title>
     <style>
-        body { margin: 0; min-height: 100vh; font-family: 'Pretendard', sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; background: #1a1a1a; overflow-y: auto; padding: 20px; box-sizing: border-box; }
-        .overlay-screen { position: fixed; top:0; left:0; width:100%; height:100%; background:#1a1a1a; z-index:100; display:flex; flex-direction:column; align-items:center; justify-content:center; }
-        #main-ui { display: flex; flex-direction: column; align-items: center; width: 100%; }
-        #display-area { position: relative; width: 600px; height: 300px; margin: 20px auto; background: #000; border: 4px solid #3498db; border-radius: 40px; display: flex; align-items: center; justify-content: center; overflow: hidden; box-shadow: 0 0 20px rgba(52, 152, 219, 0.3); }
-        #rta-canvas { width: 100%; height: 100%; }
-        .btn-row { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; margin-top: 20px; }
-        .settings-btn { padding: 15px 30px; font-size: 1.1em; cursor: pointer; border-radius: 8px; border: none; background: #333; color: white; transition: 0.2s; }
-        .freq-btn { padding: 12px 15px; font-size: 0.9em; min-width: 80px; background: #444; }
-        .action-btns { display: flex; gap: 10px; margin-top: 15px; }
-        .action-btns button { padding: 12px 20px; cursor: pointer; border-radius: 8px; border: none; background: #444; color: white; }
+        :root {
+            --bg-color: #121212;
+            --surface-color: #1e1e1e;
+            --primary-color: #3498db;
+            --danger-color: #e74c3c;
+            --success-color: #2ecc71;
+            --text-color: #ffffff;
+        }
+
+        body { 
+            margin: 0; 
+            min-height: 100vh; 
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif; 
+            display: flex; 
+            justify-content: center; 
+            background: var(--bg-color); 
+            color: var(--text-color); 
+            overscroll-behavior-y: none; /* 모바일 스크롤 바운스 방지 */
+        }
+        
+        /* 모바일 앱 컨테이너 (최대 너비 제한) */
+        #app-container {
+            width: 100%;
+            max-width: 500px; /* 패드/웹에서는 500px로 제한하여 폰 앱처럼 보이게 함 */
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow-y: auto;
+            background: var(--bg-color);
+            box-sizing: border-box;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            background: var(--surface-color);
+            border-bottom: 1px solid #333;
+        }
+        
+        .header h1 { margin: 0; font-size: 1.2em; }
+        #settings-trigger { font-size: 1.5em; cursor: pointer; }
+
+        /* 터치 친화적 공통 버튼 스타일 */
+        .btn {
+            padding: 15px;
+            border-radius: 12px;
+            border: none;
+            background: #333;
+            color: white;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            text-align: center;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .btn:active { transform: scale(0.97); }
+        .btn.active { background: var(--primary-color); }
+        .btn.primary { background: var(--primary-color); }
+
+        /* 메인 메뉴 오버레이 */
+        .full-overlay { 
+            position: absolute; top:0; left:0; width:100%; height:100%; 
+            background: var(--bg-color); z-index:100; 
+            display:flex; flex-direction:column; align-items:center; justify-content:center; 
+            padding: 20px; box-sizing: border-box;
+        }
+        
+        .menu-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            width: 100%;
+            max-width: 300px;
+        }
+
+        /* 디스플레이 및 캔버스 */
+        .content-area { padding: 20px; display: flex; flex-direction: column; align-items: center; flex: 1; }
+        
+        #display-area { 
+            position: relative; width: 100%; aspect-ratio: 2 / 1; 
+            background: #000; border: 3px solid var(--primary-color); 
+            border-radius: 20px; overflow: hidden; margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.2);
+        }
+        #rta-canvas { width: 100%; height: 100%; display: block; }
+        
+        #answer-display {
+            position: absolute; top:0; left:0; width:100%; height:100%; 
+            background: rgba(0,0,0,0.9); display: none; flex-direction: column; 
+            align-items: center; justify-content: center; z-index: 10; 
+            text-align: center; font-size: 1.5em; font-weight: bold; padding: 10px;
+            box-sizing: border-box; line-height: 1.4;
+        }
+
+        #status { font-size: 1em; font-weight: 600; text-align: center; margin-bottom: 20px; min-height: 24px; color: #aaa;}
+
+        /* 하단 액션 버튼 그룹 */
+        .action-btns { display: flex; gap: 10px; width: 100%; margin-bottom: 15px; }
+
+        /* 주파수 10개 선택 그리드 (Practice 모드용) */
+        .freq-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        .freq-grid .btn { padding: 10px 5px; font-size: 0.8em; border-radius: 8px; }
+
+        /* 설정 메뉴 (슬라이드) */
+        #settings-menu { 
+            position: absolute; top: 0; right: -100%; width: 85%; height: 100%; 
+            background: var(--surface-color); z-index: 150; transition: right 0.3s ease; 
+            padding: 20px; box-shadow: -5px 0 20px rgba(0,0,0,0.5); 
+            overflow-y: auto; box-sizing: border-box;
+        }
+        #settings-menu.open { right: 0; }
+        
+        .settings-group { margin-bottom: 25px; width: 100%; }
+        .settings-label { margin-bottom: 10px; font-size: 0.8em; color: #aaa; font-weight: bold; text-align: left; }
+        .row { display: flex; gap: 10px; }
+        
+        #pw-input, #url-input { 
+            padding: 15px; border-radius: 10px; border: none; font-size: 1em; 
+            background: #2a2a2a; color: white; width: 100%; box-sizing: border-box; margin-bottom: 15px; text-align: center;
+        }
     </style>
 </head>
 <body>
 
-    <div id="overlay" class="overlay-screen">
-        <h1>Classroom Trainer</h1>
-        <div class="btn-row">
-            <button class="settings-btn" onclick="init('practice')">PRACTICE</button>
-            <button class="settings-btn" onclick="init('test')">TEST</button>
+<div id="app-container">
+    
+    <!-- 인증 화면 -->
+    <div id="auth-overlay" class="full-overlay" style="z-index: 999;">
+        <h2 style="margin-bottom: 30px;">Classroom Trainer</h2>
+        <input type="password" id="pw-input" placeholder="Password (1234)">
+        <button class="btn primary" onclick="checkPassword()" style="width: 250px;">ENTER</button>
+    </div>
+
+    <!-- 헤더 -->
+    <div class="header">
+        <h1 id="header-title">Ear Training</h1>
+        <div id="settings-trigger" onclick="toggleSettings()">⚙️</div>
+    </div>
+
+    <!-- 메인 메뉴 (오버레이) -->
+    <div id="overlay" class="full-overlay">
+        <h2 style="margin-bottom: 40px; color: var(--primary-color);">Select Mode</h2>
+        <div class="menu-grid">
+            <button class="btn" onclick="init('listen')">🎧 LISTEN (자유 듣기)</button>
+            <button class="btn" onclick="init('practice')">🎯 PRACTICE (10지선다 퀴즈)</button>
+            <button class="btn" onclick="init('test', 2)">📝 TEST (2문제 모드)</button>
+            <button class="btn" onclick="init('test', 5)">📝 TEST (5문제 모드)</button>
         </div>
     </div>
 
-    <div id="main-ui" style="display:none;">
-        <h1 id="ui-title">Training</h1>
+    <!-- 트레이닝 UI -->
+    <div class="content-area">
         <div id="display-area">
-            <canvas id="rta-canvas"></canvas>
-            <div id="answer-display" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); color:#ffeb3b; font-size:2em; font-weight:bold; flex-direction:column; align-items:center; justify-content:center; z-index:10; text-align:center;"></div>
+            <canvas id="rta-canvas" width="600" height="300"></canvas>
+            <div id="answer-display"></div>
         </div>
-        <div id="freq-controls" class="btn-row"></div>
-        <div id="status" style="font-size: 1.2em; font-weight:bold; margin-top:20px;">Ready</div>
+        
+        <div id="status">Ready</div>
+        
+        <!-- 조작 버튼 영역 -->
         <div id="action-btns" class="action-btns"></div>
-        <button id="return-btn" onclick="location.reload()" style="background:none; border:none; color:white; border-bottom:1px solid white; margin-top:20px; cursor:pointer;">RETURN TO MENU</button>
+
+        <!-- 10 주파수 그리드 (Listen 및 Practice용) -->
+        <div id="freq-controls" class="freq-grid" style="display:none;"></div>
+        
+        <button class="btn" onclick="goBack()" style="background: transparent; border: 1px solid #555; margin-top: auto;">← 메인 메뉴로 돌아가기</button>
     </div>
 
-    <script>
-        let audioCtx, masterGain, activeSource, biquadFilter, sequenceTimer;
-        let currentMode = '', currentFreq = null, testAnswers = [], currentTestQuestion = 0;
-        const bands = [31.5, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
-
-        function init(mode) {
-            currentMode = mode;
-            document.getElementById('overlay').style.display = 'none';
-            document.getElementById('main-ui').style.display = 'flex';
-            document.getElementById('ui-title').innerText = mode.toUpperCase();
+    <!-- 설정 메뉴 -->
+    <div id="settings-menu">
+        <h2 style="margin-top: 0; color: var(--primary-color);">SETTINGS</h2>
+        
+        <div class="settings-group">
+            <div class="settings-label">AUDIO SOURCE</div>
+            <div class="row">
+                <button id="btn-src-pn" class="btn active" onclick="setSource('pn')">PN</button>
+                <button id="btn-src-file" class="btn" onclick="setSource('file')">FILE</button>
+                <button id="btn-src-url" class="btn" onclick="setSource('url')">URL</button>
+                <input type="file" id="file-input" style="display:none;" accept="audio/*" onchange="handleFileUpload(event)">
+            </div>
             
-            const controls = document.getElementById('freq-controls');
-            controls.innerHTML = '';
-            bands.forEach(f => {
-                controls.innerHTML += `<button class="settings-btn freq-btn" onclick="checkAnswer(${f})">${f}Hz</button>`;
+            <div id="url-input-group" style="display:none; margin-top:15px; flex-direction:column;">
+                <input type="text" id="url-input" placeholder="mp3/wav 직접 링크(URL)">
+                <button class="btn" onclick="loadFromUrl()" style="background:#27ae60;">LOAD URL AUDIO</button>
+            </div>
+            <div id="file-name" style="font-size:0.8em; color:var(--primary-color); margin-top:10px; text-align:center; word-break: break-all;">Pink Noise</div>
+        </div>
+        
+        <div class="settings-group" id="file-time-group" style="display:none;">
+            <div class="settings-label">FILE START TIME</div>
+            <div class="row" style="align-items: center;">
+                <button class="btn" onclick="adjustFileTime(-10)">-10s</button>
+                <div id="file-time-display" style="flex:1; text-align:center; font-weight:bold; color:var(--primary-color);">0s</div>
+                <button class="btn" onclick="adjustFileTime(10)">+10s</button>
+            </div>
+        </div>
+
+        <div class="settings-group">
+            <div class="settings-label">GAIN AMOUNT (난이도)</div>
+            <div class="row">
+                <button class="btn gain-btn" onclick="setGainAmount(6, this)">6 dB</button>
+                <button class="btn gain-btn active" onclick="setGainAmount(12, this)">12 dB</button>
+            </div>
+        </div>
+
+        <div class="settings-group">
+            <div class="settings-label">EQ MODE</div>
+            <div class="row">
+                <button class="btn eq-btn active" onclick="setEqMode('boost', this)">BOOST</button>
+                <button class="btn eq-btn" onclick="setEqMode('cut', this)">CUT</button>
+            </div>
+        </div>
+
+        <button class="btn" onclick="toggleSettings()" style="margin-top: 20px; background: transparent; border: 1px solid white;">CLOSE</button>
+    </div>
+
+</div>
+
+<script>
+    let audioCtx;
+    let masterGain;
+    let activeSource = null;
+    let biquadFilter = null;
+    let customBuffer = null;
+    
+    let currentMode = '';
+    let totalTestQuestions = 5; // 테스트 문항 수 설정 변수
+    
+    let currentEqMode = 'boost';
+    let currentGainAmount = 12; 
+    let targetGain = 12;        
+
+    let currentPracticeFreq = null;
+    let sequenceTimer = null;
+    const bands = [31.5, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
+
+    let currentListenFreq = null; 
+    let isPlaying = false; 
+
+    let testAnswers = [];
+    let currentTestQuestion = 0;
+    let isTestCompleted = false;
+
+    let fileStartTime = 0;
+    let waveformCanvas = document.createElement('canvas');
+    waveformCanvas.width = 600;
+    waveformCanvas.height = 300;
+
+    function initAudio() {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            masterGain = audioCtx.createGain();
+            updateGainSettings(); 
+            masterGain.connect(audioCtx.destination);
+        }
+    }
+
+    function checkPassword() { 
+        if(document.getElementById('pw-input').value === "1234" || document.getElementById('pw-input').value === "") { 
+            document.getElementById('auth-overlay').style.display='none'; 
+            initAudio();
+        } else {
+            alert("비밀번호가 틀렸습니다.");
+        }
+    }
+    
+    function toggleSettings() { document.getElementById('settings-menu').classList.toggle('open'); }
+    
+    function goBack() { 
+        stopAudio();
+        document.getElementById('overlay').style.display='flex'; 
+        document.getElementById('header-title').innerText = "Ear Training";
+    }
+
+    function updateGainSettings() {
+        targetGain = currentEqMode === 'boost' ? currentGainAmount : -currentGainAmount;
+        if (masterGain) {
+            masterGain.gain.value = currentEqMode === 'boost' && currentGainAmount === 12 ? 0.15 : 0.3;
+        }
+        if (currentMode === 'listen' && currentListenFreq && biquadFilter) {
+            biquadFilter.gain.value = targetGain;
+        }
+    }
+
+    function setEqMode(mode, btn) {
+        currentEqMode = mode;
+        document.querySelectorAll('.eq-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        updateGainSettings();
+    }
+
+    function setGainAmount(amount, btn) {
+        currentGainAmount = amount;
+        document.querySelectorAll('.gain-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        updateGainSettings();
+    }
+
+    function setSource(type) {
+        document.querySelectorAll('#btn-src-pn, #btn-src-file, #btn-src-url').forEach(b => b.classList.remove('active'));
+        document.getElementById('url-input-group').style.display = 'none';
+        
+        if(type === 'pn') {
+            document.getElementById('btn-src-pn').classList.add('active');
+            customBuffer = null;
+            document.getElementById('file-name').innerText = "Pink Noise";
+            document.getElementById('file-time-group').style.display = 'none'; 
+        } else if (type === 'file') {
+            document.getElementById('btn-src-file').classList.add('active');
+            document.getElementById('file-input').click();
+            document.getElementById('file-time-group').style.display = 'flex'; 
+        } else if (type === 'url') {
+            document.getElementById('btn-src-url').classList.add('active');
+            document.getElementById('url-input-group').style.display = 'flex';
+            document.getElementById('file-time-group').style.display = 'flex'; 
+        }
+    }
+
+    function handleFileUpload(event) {
+        const file = event.target.files[0];
+        if (!file) { setSource('pn'); return; }
+        document.getElementById('file-name').innerText = file.name;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            audioCtx.decodeAudioData(e.target.result, function(buffer) {
+                customBuffer = buffer;
+                fileStartTime = 0; 
+                document.getElementById('file-time-display').innerText = fileStartTime + "s";
+                renderWaveform();
             });
-            document.getElementById('action-btns').innerHTML = '<button onclick="startTraining()">START</button><button onclick="listenAgain()">AGAIN</button><button onclick="stopAudio()">STOP</button>';
-        }
+        };
+        reader.readAsArrayBuffer(file);
+    }
 
-        // 오디오 엔진과 핑크 노이즈 생성을 통합
-        function startTraining() {
-            if (!audioCtx) {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                masterGain = audioCtx.createGain();
-                masterGain.gain.value = 0.3;
-                masterGain.connect(audioCtx.destination);
+    async function loadFromUrl() {
+        const url = document.getElementById('url-input').value;
+        if(!url) return alert("URL을 입력해주세요.");
+        document.getElementById('file-name').innerText = "Loading...";
+        try {
+            const response = await fetch(url);
+            const arrayBuffer = await response.arrayBuffer();
+            customBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+            fileStartTime = 0; 
+            document.getElementById('file-time-display').innerText = "0s";
+            document.getElementById('file-name').innerText = "Loaded: " + url.split('/').pop().substring(0, 20) + "...";
+            renderWaveform();
+        } catch (error) {
+            alert("오디오 로드 실패. 링크 및 CORS 정책을 확인하세요.");
+            setSource('pn');
+        }
+    }
+
+    function adjustFileTime(sec) {
+        fileStartTime += sec;
+        if (fileStartTime < 0) fileStartTime = 0;
+        if (customBuffer && fileStartTime >= customBuffer.duration) fileStartTime = Math.floor(customBuffer.duration) - 5;
+        document.getElementById('file-time-display').innerText = fileStartTime + "s";
+    }
+
+    // 모드 초기화 (LISTEN, PRACTICE, TEST)
+    function init(mode, testQs = 5) {
+        currentMode = mode;
+        totalTestQuestions = testQs;
+        document.getElementById('overlay').style.display = 'none';
+        document.getElementById('header-title').innerText = mode.toUpperCase() + (mode === 'test' ? ` (${testQs} Qs)` : '');
+        document.getElementById('answer-display').style.display = 'none'; 
+        
+        const controls = document.getElementById('freq-controls');
+        const actions = document.getElementById('action-btns');
+        controls.innerHTML = ''; actions.innerHTML = '';
+        
+        // 주파수 그리드 생성
+        bands.forEach(f => {
+            controls.innerHTML += `<button id="btn-freq-${f}" class="btn freq-item" onclick="handleFreqClick(${f})">${f}</button>`;
+        });
+
+        if(mode === 'listen') {
+            controls.style.display = 'grid';
+            actions.innerHTML = '<button class="btn primary" onclick="playListenAudio()">PLAY</button><button class="btn" onclick="stopAudio()" style="background:#e74c3c;">STOP</button>';
+            currentListenFreq = null; 
+            if (biquadFilter) biquadFilter.gain.value = 0;
+        } else if(mode === 'practice') {
+            controls.style.display = 'none'; // 재생 끝나면 보이게 함
+            actions.innerHTML = '<button class="btn primary" onclick="runPractice()">START QUIZ</button><button class="btn" onclick="stopAudio()" style="background:#e74c3c;">STOP</button>';
+        } else if(mode === 'test') {
+            controls.style.display = 'none';
+            actions.innerHTML = '<button class="btn primary" onclick="runTest()">START EXAM</button><button class="btn" onclick="listenAgain()">AGAIN</button><button class="btn" onclick="stopAudio()" style="background:#e74c3c;">STOP</button><button class="btn" onclick="showAnswers()">ANSWERS</button>';
+        }
+    }
+
+    // 주파수 버튼 클릭 핸들러 (Listen / Practice 공용)
+    function handleFreqClick(freq) {
+        if (currentMode === 'listen') {
+            const allBtns = document.querySelectorAll('.freq-item');
+            allBtns.forEach(btn => btn.classList.remove('active'));
+
+            if (currentListenFreq === freq) {
+                currentListenFreq = null;
+                if (biquadFilter) biquadFilter.gain.value = 0; 
+                document.getElementById('status').innerText = isPlaying ? "PLAYING: FLAT (원본)" : "READY";
+            } else {
+                currentListenFreq = freq;
+                document.getElementById(`btn-freq-${freq}`).classList.add('active'); 
+                if(!biquadFilter) createOrUpdateFilter(freq, targetGain);
+                else { biquadFilter.frequency.value = freq; biquadFilter.gain.value = targetGain; }
+                document.getElementById('status').innerText = isPlaying ? `PLAYING: ${freq}Hz (${targetGain > 0 ? '+' : ''}${Math.abs(targetGain)}dB)` : `READY (적용대기: ${freq}Hz)`;
             }
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-            
-            currentMode === 'practice' ? runPractice() : runTest();
-        }
-
-        function generatePinkNoise() {
-            const bufferSize = audioCtx.sampleRate * 10;
-            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-            const output = buffer.getChannelData(0);
-            let b = [0,0,0,0,0,0,0];
-            for (let i = 0; i < bufferSize; i++) {
-                let w = Math.random() * 2 - 1;
-                b[0]=0.99886*b[0]+w*0.0555179; b[1]=0.99332*b[1]+w*0.0750759;
-                b[2]=0.96900*b[2]+w*0.1538520; b[3]=0.86650*b[3]+w*0.3104856;
-                b[4]=0.55000*b[4]+w*0.5329522; b[5]=-0.7616*b[5]-w*0.0168980;
-                output[i]=(b[0]+b[1]+b[2]+b[3]+b[4]+b[5]+b[6]+w*0.5362)*0.11;
-                b[6]=w*0.115926;
-            }
-            return buffer;
-        }
-
-        function checkAnswer(freq) {
+        } else if (currentMode === 'practice') {
+            // 프랙티스 모드 정답 체크
             const display = document.getElementById('answer-display');
-            if (currentMode === 'practice') {
-                display.innerText = (freq === currentFreq) ? "CORRECT!" : "WRONG! (" + currentFreq + "Hz)";
-                display.style.display = 'flex';
-                setTimeout(() => { display.style.display = 'none'; }, 2000);
+            if (freq === currentPracticeFreq) {
+                display.innerHTML = `<span style="color:var(--success-color)">정답입니다!</span><br>${currentPracticeFreq} Hz`;
+            } else {
+                display.innerHTML = `<span style="color:var(--danger-color)">오답!</span><br>정답: ${currentPracticeFreq} Hz<br><span style="font-size:0.6em; color:#ccc;">(내가 선택한 답: ${freq} Hz)</span>`;
             }
+            display.style.display = 'flex';
+            document.getElementById('freq-controls').style.display = 'none'; // 선택 후 감추기
+            document.getElementById('action-btns').innerHTML = '<button class="btn primary" onclick="runPractice()">NEXT QUESTION</button><button class="btn" onclick="listenPracticeAgain()">LISTEN AGAIN</button>';
         }
+    }
 
-        function runPractice() {
-            currentFreq = bands[Math.floor(Math.random() * bands.length)];
-            playSequence(currentFreq);
-        }
-
-        function runTest() {
-            testAnswers = [];
-            for (let i = 0; i < 5; i++) testAnswers.push(bands[Math.floor(Math.random() * bands.length)]);
-            currentTestQuestion = 0;
-            startTestSequence(0);
-        }
-
-        function listenAgain() {
-            if (currentMode === 'practice' && currentFreq) playSequence(currentFreq);
-            else if (currentMode === 'test') startTestSequence(Math.max(0, currentTestQuestion - 1));
-        }
-
-        function playSequence(freq) {
-            stopAudio();
+    function createOrUpdateFilter(freq, gain) {
+        if (!biquadFilter) {
             biquadFilter = audioCtx.createBiquadFilter();
             biquadFilter.type = "peaking";
-            biquadFilter.frequency.value = freq;
             biquadFilter.Q.value = 1.4;
-            activeSource = audioCtx.createBufferSource();
-            activeSource.buffer = generatePinkNoise();
-            activeSource.loop = true;
-            activeSource.connect(biquadFilter).connect(masterGain);
-            activeSource.start();
-            document.getElementById('status').innerText = "PLAYING...";
+        }
+        biquadFilter.frequency.value = freq;
+        biquadFilter.gain.value = gain;
+    }
+
+    // Listen 재생
+    function playListenAudio() {
+        if (isPlaying) return; 
+        if (!biquadFilter) createOrUpdateFilter(1000, 0); 
+        startAudioSource();
+        if (currentListenFreq) document.getElementById('status').innerText = `PLAYING: ${currentListenFreq}Hz (${targetGain > 0 ? '+' : ''}${Math.abs(targetGain)}dB)`;
+        else document.getElementById('status').innerText = "PLAYING: FLAT (원본)";
+    }
+
+    // Practice 시작 (퀴즈)
+    function runPractice() {
+        currentPracticeFreq = bands[Math.floor(Math.random() * bands.length)];
+        
+        if (customBuffer) {
+            const maxStart = Math.max(0, customBuffer.duration - 32);
+            fileStartTime = Math.random() * maxStart;
+            document.getElementById('file-time-display').innerText = Math.floor(fileStartTime) + "s";
+        }
+        
+        document.getElementById('freq-controls').style.display = 'none'; // 버튼 숨김
+        document.getElementById('action-btns').innerHTML = '<button class="btn" onclick="stopAudio()" style="background:#e74c3c;">STOP (듣기 취소)</button>';
+        
+        playPracticeSequence(currentPracticeFreq);
+    }
+    
+    function listenPracticeAgain() {
+        document.getElementById('freq-controls').style.display = 'none';
+        document.getElementById('action-btns').innerHTML = '<button class="btn" onclick="stopAudio()" style="background:#e74c3c;">STOP (듣기 취소)</button>';
+        playPracticeSequence(currentPracticeFreq);
+    }
+
+    function playPracticeSequence(freq) {
+        stopAudio();
+        document.getElementById('answer-display').style.display = 'none'; 
+        
+        biquadFilter = audioCtx.createBiquadFilter();
+        biquadFilter.type = "peaking";
+        biquadFilter.frequency.value = freq;
+        biquadFilter.Q.value = 1.4;
+        biquadFilter.gain.value = 0; 
+        startAudioSource();
+        
+        document.getElementById('status').innerText = "집중해서 들어보세요... (문제 재생 중)";
+
+        // 짧은 시퀀스 재생 (Flat 3s -> EQ 3s -> Flat 3s -> EQ 3s -> Flat 2s -> 종료 후 문제 풀기)
+        function step1() { biquadFilter.gain.value = 0; sequenceTimer = setTimeout(step2, 3000); } 
+        function step2() { biquadFilter.gain.value = targetGain; sequenceTimer = setTimeout(step3, 3000); } 
+        function step3() { biquadFilter.gain.value = 0; sequenceTimer = setTimeout(step4, 3000); } 
+        function step4() { biquadFilter.gain.value = targetGain; sequenceTimer = setTimeout(step5, 3000); } 
+        function step5() { biquadFilter.gain.value = 0; sequenceTimer = setTimeout(finishPracticeSeq, 2000); } 
+        
+        step1(); 
+    }
+    
+    function finishPracticeSeq() {
+        stopAudio();
+        document.getElementById('status').innerText = "어떤 주파수가 변했나요? 정답을 골라주세요!";
+        document.getElementById('freq-controls').style.display = 'grid'; // 문제 다 듣고 10개 버튼 표시
+        document.getElementById('action-btns').innerHTML = '<button class="btn" onclick="listenPracticeAgain()">다시 듣기</button>';
+    }
+
+    // Test 모드 로직
+    function runTest() {
+        testAnswers = [];
+        for (let i = 0; i < totalTestQuestions; i++) {
+            testAnswers.push(bands[Math.floor(Math.random() * bands.length)]);
+        }
+
+        if (customBuffer) {
+            const maxStart = Math.max(0, customBuffer.duration - 75);
+            fileStartTime = Math.random() * maxStart;
+            document.getElementById('file-time-display').innerText = Math.floor(fileStartTime) + "s";
+        }
+
+        isTestCompleted = false;
+        currentTestQuestion = 0;
+        startTestSequence(0);
+    }
+
+    function listenAgain() {
+        if (currentMode === 'test') {
+            if (testAnswers.length > 0) {
+                let target = currentTestQuestion - 1;
+                if (target < 0) target = 0; 
+                startTestSequence(target);
+            }
+            else alert("START EXAM 버튼을 먼저 눌러주세요.");
+        }
+    }
+
+    function showAnswers() {
+        const display = document.getElementById('answer-display');
+        if (currentMode === 'test') {
+            if (testAnswers.length > 0) {
+                display.innerHTML = '<div style="font-size:0.6em; color:#ccc; margin-bottom:15px;">[ TEST 정답 ]</div>' + 
+                                    testAnswers.map((ans, i) => `${i+1}번: <span style="color:var(--primary-color)">${ans} Hz</span>`).join('<br>');
+                display.style.display = 'flex'; 
+            }
+        }
+    }
+
+    function startTestSequence(questionIndex) {
+        stopAudio();
+        document.getElementById('answer-display').style.display = 'none'; 
+        isTestCompleted = false;
+        currentTestQuestion = questionIndex;
+        
+        biquadFilter = audioCtx.createBiquadFilter();
+        biquadFilter.type = "peaking";
+        biquadFilter.Q.value = 1.4;
+        biquadFilter.gain.value = 0; 
+        startAudioSource();
+
+        nextTestStep();
+    }
+
+    function nextTestStep() {
+        if (currentTestQuestion >= totalTestQuestions) {
+            biquadFilter.gain.value = 0; 
+            document.getElementById('status').innerText = "모든 문제 완료! 원본 소스 재생 중... (3s)";
             
-            let seq = [0, 6, 0, 6, 0, 6, 0, 6, 0];
-            let timing = [5000, 3000, 3000, 3000, 3000, 3000, 3000, 3000, 5000];
-            let i = 0;
-            function next() {
-                if(i >= seq.length) { stopAudio(); return; }
-                biquadFilter.gain.value = seq[i];
-                sequenceTimer = setTimeout(() => { i++; next(); }, timing[i]);
-            }
-            next();
-        }
-
-        function startTestSequence(idx) {
-            stopAudio();
-            currentTestQuestion = idx;
-            biquadFilter = audioCtx.createBiquadFilter();
-            biquadFilter.type = "peaking";
-            biquadFilter.Q.value = 1.4;
-            activeSource = audioCtx.createBufferSource();
-            activeSource.buffer = generatePinkNoise();
-            activeSource.loop = true;
-            activeSource.connect(biquadFilter).connect(masterGain);
-            activeSource.start();
-            nextTestStep();
-        }
-
-        function nextTestStep() {
-            if (currentTestQuestion >= 5) { stopAudio(); document.getElementById('status').innerText = "TEST END"; return; }
-            biquadFilter.gain.value = 0;
-            document.getElementById('status').innerText = `[문제 ${currentTestQuestion + 1}/5] 원본 재생 중...`;
             sequenceTimer = setTimeout(() => {
-                biquadFilter.frequency.value = testAnswers[currentTestQuestion];
-                biquadFilter.gain.value = 6;
-                setTimeout(() => { biquadFilter.gain.value = 0; 
-                    setTimeout(() => { biquadFilter.gain.value = 6; 
-                        setTimeout(() => { currentTestQuestion++; nextTestStep(); }, 3000);
-                    }, 3000);
-                }, 3000);
-            }, 5000);
+                stopAudio();
+                isTestCompleted = true;
+                document.getElementById('status').innerText = "TEST COMPLETED! 정답(ANSWERS)을 확인하세요.";
+            }, 3000);
+            return;
         }
 
-        function stopAudio() {
-            clearTimeout(sequenceTimer);
-            if (activeSource) { activeSource.stop(); activeSource.disconnect(); }
-            activeSource = null; document.getElementById('status').innerText = "STOPPED";
-        }
+        biquadFilter.gain.value = 0; 
+        document.getElementById('status').innerText = `[문제 ${currentTestQuestion + 1}/${totalTestQuestions}] 원본 재생 중... (5s)`;
+        
+        sequenceTimer = setTimeout(() => {
+            biquadFilter.frequency.value = testAnswers[currentTestQuestion];
+            biquadFilter.gain.value = targetGain;
+            document.getElementById('status').innerText = `[문제 ${currentTestQuestion + 1}/${totalTestQuestions}] 첫 번째 변화 적용! (3s)`;
 
-        function drawRTA() {
-            const canvas = document.getElementById('rta-canvas'), ctx = canvas.getContext('2d');
-            ctx.clearRect(0,0,600,300);
-            for(let i=0; i<30; i++) { ctx.fillStyle='#3498db'; ctx.fillRect(i*20, 300-(Math.random()*150+20), 15, Math.random()*150+20); }
-            setTimeout(() => requestAnimationFrame(drawRTA), 100);
-        } drawRTA();
-    </script>
+            sequenceTimer = setTimeout(() => {
+                biquadFilter.gain.value = 0;
+                document.getElementById('status').innerText = `[문제 ${currentTestQuestion + 1}/${totalTestQuestions}] 원본 재생 중... (3s)`;
+
+                sequenceTimer = setTimeout(() => {
+                    biquadFilter.gain.value = targetGain;
+                    document.getElementById('status').innerText = `[문제 ${currentTestQuestion + 1}/${totalTestQuestions}] 두 번째 변화 적용! (3s)`;
+
+                    sequenceTimer = setTimeout(() => {
+                        currentTestQuestion++;
+                        nextTestStep(); 
+                    }, 3000); 
+                }, 3000); 
+            }, 3000); 
+        }, 5000); 
+    }
+    
+    // 오디오 소스 공통 시작/정지 로직
+    function startAudioSource() {
+        activeSource = audioCtx.createBufferSource();
+        
+        if (customBuffer) {
+            activeSource.buffer = customBuffer;
+        } else {
+            // Noise Generation
+            const bufferSize = audioCtx.sampleRate * 10;
+            const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const output = noiseBuffer.getChannelData(0);
+            let b0=0, b1=0, b2=0, b3=0, b4=0, b5=0, b6=0;
+            for (let i = 0; i < bufferSize; i++) {
+                let white = Math.random() * 2 - 1;
+                b0 = 0.99886 * b0 + white * 0.0555179;
+                b1 = 0.99332 * b1 + white * 0.0750759;
+                b2 = 0.96900 * b2 + white * 0.1538520;
+                b3 = 0.86650 * b3 + white * 0.3104856;
+                b4 = 0.55000 * b4 + white * 0.5329522;
+                b5 = -0.7616 * b5 - white * 0.0168980;
+                output[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.11;
+                b6 = white * 0.115926;
+            }
+            activeSource.buffer = noiseBuffer;
+        }
+        
+        activeSource.loop = true;
+        activeSource.connect(biquadFilter);
+        biquadFilter.connect(masterGain);
+        
+        let offset = customBuffer ? fileStartTime : 0;
+        activeSource.start(0, offset);
+        isPlaying = true;
+    }
+
+    function stopAudio() {
+        clearTimeout(sequenceTimer);
+        if (activeSource) {
+            try { activeSource.stop(); activeSource.disconnect(); } catch(e) {}
+            activeSource = null;
+        }
+        isPlaying = false;
+        document.getElementById('status').innerText = "STOPPED";
+        
+        if (currentMode === 'listen') {
+            document.querySelectorAll('.freq-item').forEach(b => b.classList.remove('active'));
+            currentListenFreq = null;
+        }
+    }
+
+    function renderWaveform() {
+        const ctx = waveformCanvas.getContext('2d');
+        ctx.clearRect(0,0,600,300);
+        if(!customBuffer) return;
+        const data = customBuffer.getChannelData(0);
+        const step = Math.ceil(data.length / 600);
+        ctx.fillStyle = '#3498db'; 
+        for (let i = 0; i < 600; i++) {
+            let min = 1.0, max = -1.0;
+            for (let j = 0; j < step; j++) {
+                let datum = data[i * step + j];
+                if (datum < min) min = datum;
+                if (datum > max) max = datum;
+            }
+            let y = (1 + min) * 150;
+            let h = Math.max(1, (max - min) * 150);
+            ctx.fillRect(i, y, 1, h);
+        }
+    }
+
+    function drawRTA() {
+        const canvas = document.getElementById('rta-canvas'); 
+        const ctx = canvas.getContext('2d'); 
+        ctx.clearRect(0,0,600,300);
+
+        if (customBuffer) {
+            ctx.drawImage(waveformCanvas, 0, 0, 600, 300);
+            const startX = (fileStartTime / customBuffer.duration) * 600;
+            ctx.fillStyle = '#ffeb3b';
+            ctx.fillRect(startX, 0, 3, 300);
+        } else {
+            for(let i=0; i<30; i++) { 
+                let h = Math.random()*150+20; 
+                ctx.fillStyle='#3498db'; 
+                ctx.fillRect(i*20, 300-h, 15, h); 
+            }
+        }
+        requestAnimationFrame(drawRTA);
+    } 
+    drawRTA();
+</script>
 </body>
 </html>
