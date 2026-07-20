@@ -271,13 +271,17 @@
     waveformCanvas.width = 600;
     waveformCanvas.height = 300;
 
-    function startApp() {
+    async function startApp() {
         document.getElementById('welcome-overlay').style.display = 'none';
         if (!audioCtx) {
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             masterGain = audioCtx.createGain();
             updateGainSettings(); 
             masterGain.connect(audioCtx.destination);
+        }
+        // 브라우저의 오디오 잠금 해제를 위한 확실한 복구 명령
+        if (audioCtx.state === 'suspended') {
+            await audioCtx.resume();
         }
     }
     
@@ -354,8 +358,17 @@
         reader.readAsArrayBuffer(file);
     }
 
-    // GitHub에 올라간 1.mp3 ~ 5.mp3 파일을 자동으로 불러오는 함수
     async function loadTrack(trackNum) {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            masterGain = audioCtx.createGain();
+            updateGainSettings(); 
+            masterGain.connect(audioCtx.destination);
+        }
+        if (audioCtx.state === 'suspended') {
+            await audioCtx.resume();
+        }
+
         const url = `https://supercan777.github.io/Ear-Training/${trackNum}.mp3`;
         document.getElementById('file-name').innerText = `Loading Track ${trackNum}...`;
         
@@ -480,8 +493,11 @@
         biquadFilter.gain.value = gain;
     }
 
-    function playListenAudio() {
+    async function playListenAudio() {
         if (isPlaying) return; 
+        if (audioCtx && audioCtx.state === 'suspended') {
+            await audioCtx.resume();
+        }
         if (!biquadFilter) createOrUpdateFilter(1000, 0); 
         startAudioSource();
         if (currentListenFreq) document.getElementById('status').innerText = `PLAYING: ${currentListenFreq}Hz (${targetGain > 0 ? '+' : ''}${Math.abs(targetGain)}dB)`;
@@ -496,7 +512,10 @@
         document.getElementById('action-btns').innerHTML = '<button class="btn primary" onclick="runPractice()">START QUIZ</button>';
     }
 
-    function runPractice() {
+    async function runPractice() {
+        if (audioCtx && audioCtx.state === 'suspended') {
+            await audioCtx.resume();
+        }
         currentPracticeFreq = bands[Math.floor(Math.random() * bands.length)];
         
         if (customBuffer) {
@@ -513,7 +532,10 @@
         playPracticeSequence(currentPracticeFreq);
     }
     
-    function listenPracticeAgain() {
+    async function listenPracticeAgain() {
+        if (audioCtx && audioCtx.state === 'suspended') {
+            await audioCtx.resume();
+        }
         isPracticeActive = true;
         document.getElementById('answer-display').style.display = 'none';
         document.getElementById('action-btns').innerHTML = '<button class="btn" onclick="cancelPractice()" style="background:#e74c3c;">STOP (Cancel)</button>';
@@ -548,7 +570,10 @@
         document.getElementById('action-btns').innerHTML = '<button class="btn primary" onclick="listenPracticeAgain()">LISTEN AGAIN</button><button class="btn" onclick="cancelPractice()" style="background:#e74c3c;">STOP</button>';
     }
 
-    function runTest() {
+    async function runTest() {
+        if (audioCtx && audioCtx.state === 'suspended') {
+            await audioCtx.resume();
+        }
         testAnswers = [];
         for (let i = 0; i < totalTestQuestions; i++) {
             testAnswers.push(bands[Math.floor(Math.random() * bands.length)]);
@@ -565,7 +590,10 @@
         startTestSequence(0);
     }
 
-    function listenAgain() {
+    async function listenAgain() {
+        if (audioCtx && audioCtx.state === 'suspended') {
+            await audioCtx.resume();
+        }
         if (currentMode === 'test') {
             if (testAnswers.length > 0) {
                 let target = currentTestQuestion - 1;
@@ -641,6 +669,7 @@
     }
     
     function startAudioSource() {
+        if (!audioCtx) return;
         activeSource = audioCtx.createBufferSource();
         
         if (customBuffer) {
