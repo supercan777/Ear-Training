@@ -123,7 +123,7 @@
         
         let currentMode = '';
         let currentRange = 'all'; 
-        let targetGain = 6; // 기본 EQ 모드는 Boost (+6dB)
+        let targetGain = 12; // 6에서 12로 변경 (기본 EQ 모드는 Boost +12dB)
         let currentPracticeFreq = null;
         let sequenceTimer = null;
         const bands = [31.5, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
@@ -144,7 +144,7 @@
             if (!audioCtx) {
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                 masterGain = audioCtx.createGain();
-                masterGain.gain.value = 0.3; 
+                masterGain.gain.value = 0.15; // 12dB 부스트 시 디스토션 방지를 위해 초기값을 0.15로 설정 (헤드룸 확보)
                 masterGain.connect(audioCtx.destination);
             }
         }
@@ -165,9 +165,14 @@
 
         // 설정(EQ Mode) 변경 함수
         function setEqMode(mode, btn) {
-            targetGain = mode === 'boost' ? 6 : -6;
+            targetGain = mode === 'boost' ? 12 : -12; // 6과 -6에서 12와 -12로 변경
             document.querySelectorAll('.eq-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
+            
+            // EQ 모드에 따른 볼륨 보상 추가 (디스토션 방지)
+            if (masterGain) {
+                masterGain.gain.value = mode === 'boost' ? 0.15 : 0.3;
+            }
             
             // Listen 모드 중에 설정을 바꾸면 실시간 반영
             if (currentMode === 'listen' && currentListenFreq && biquadFilter) {
@@ -312,7 +317,6 @@
             } else {
                 currentListenFreq = freq;
                 document.getElementById(`btn-freq-${freq}`).classList.add('active'); 
-                // 이제 6 대신 targetGain 적용
                 createOrUpdateFilter(freq, targetGain); 
                 document.getElementById('status').innerText = isPlaying ? `PLAYING: ${freq}Hz (${targetGain > 0 ? '+' : ''}${targetGain}dB)` : `READY (적용대기: ${freq}Hz)`;
             }
@@ -426,7 +430,6 @@
 
             document.getElementById('status').innerText = "PLAYING (Practice Mode)...";
 
-            // 기존에 하드코딩되었던 6을 targetGain으로 변경했습니다.
             function step1() { biquadFilter.gain.value = 0; sequenceTimer = setTimeout(step2, 5000); } 
             function step2() { biquadFilter.gain.value = targetGain; sequenceTimer = setTimeout(step3, 3000); } 
             function step3() { biquadFilter.gain.value = 0; sequenceTimer = setTimeout(step4, 3000); } 
@@ -477,7 +480,6 @@
             
             sequenceTimer = setTimeout(() => {
                 biquadFilter.frequency.value = testAnswers[currentTestQuestion];
-                // 기존 6을 targetGain으로 변경
                 biquadFilter.gain.value = targetGain;
                 document.getElementById('status').innerText = `[문제 ${currentTestQuestion + 1}/5] 첫 번째 변화 적용! (3s)`;
 
@@ -486,7 +488,6 @@
                     document.getElementById('status').innerText = `[문제 ${currentTestQuestion + 1}/5] 원본 재생 중... (3s)`;
 
                     sequenceTimer = setTimeout(() => {
-                        // 기존 6을 targetGain으로 변경
                         biquadFilter.gain.value = targetGain;
                         document.getElementById('status').innerText = `[문제 ${currentTestQuestion + 1}/5] 두 번째 변화 적용! (3s)`;
 
