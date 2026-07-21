@@ -79,6 +79,9 @@
             box-shadow: 0 6px 15px rgba(74, 144, 226, 0.3); 
         }
 
+        /* 1개짜리 버튼이 가로 전체를 차지하게 만드는 클래스 */
+        .btn-full { grid-column: span 2; }
+
         .full-overlay { 
             position: absolute; top:0; left:0; width:100%; height:100%; 
             background: var(--bg-color); z-index:100; 
@@ -141,11 +144,13 @@
 
         .content-area { padding: 25px; display: flex; flex-direction: column; align-items: center; flex: 1; }
         
+        /* 기본 디스플레이(2:1 비율). 자바스크립트에서 모드에 따라 크기를 동적으로 바꿈 */
         #display-area { 
             position: relative; width: 100%; aspect-ratio: 2 / 1; 
             background: #1e272e; border: none; cursor: pointer;
             border-radius: 20px; overflow: hidden; margin-bottom: 25px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            transition: aspect-ratio 0.3s ease; /* 부드러운 크기 변환 */
         }
         #rta-canvas { width: 100%; height: 100%; display: block; }
         
@@ -153,14 +158,21 @@
             position: absolute; top:0; left:0; width:100%; height:100%; 
             background: rgba(30, 39, 46, 0.95); display: none; flex-direction: column; 
             align-items: center; justify-content: center; z-index: 10; 
-            text-align: center; font-size: 1.5em; font-weight: bold; padding: 10px;
-            box-sizing: border-box; line-height: 1.4; color: white;
+            text-align: center; padding: 10px;
+            box-sizing: border-box; color: white;
             cursor: default;
         }
 
         #status { font-size: 0.95em; font-weight: 600; text-align: center; margin-bottom: 25px; min-height: 24px; color: var(--text-muted);}
 
-        .action-btns { display: flex; gap: 12px; width: 100%; margin-bottom: 20px; }
+        /* 버튼이 2개/4개일 때 바둑판처럼 깔끔하게 배열되도록 Grid 적용 */
+        .action-btns { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 12px; 
+            width: 100%; 
+            margin-bottom: 20px; 
+        }
 
         .freq-grid {
             display: grid;
@@ -191,12 +203,12 @@
         .settings-label { margin-bottom: 12px; font-size: 0.85em; color: var(--text-muted); font-weight: 700; text-align: left; letter-spacing: 0.5px; }
         .row { display: flex; gap: 10px; flex-wrap: wrap; }
         
-        #pw-input { 
+        #pw-input, #url-input { 
             padding: 18px; border-radius: 14px; border: 1px solid var(--border-color); font-size: 1em; 
             background: #f8f9fa; color: var(--text-color); width: 100%; box-sizing: border-box; margin-bottom: 15px; text-align: center;
             transition: all 0.2s; outline: none;
         }
-        #pw-input:focus {
+        #pw-input:focus, #url-input:focus {
             border-color: var(--primary-color);
             background: #fff;
             box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2);
@@ -255,11 +267,12 @@
         
         <div id="status">Ready</div>
         
+        <!-- 그리드 정렬이 적용된 버튼 영역 -->
         <div id="action-btns" class="action-btns"></div>
 
         <div id="freq-controls" class="freq-grid" style="display:none;"></div>
         
-        <button class="btn" onclick="goBack()" style="background: #e4e9f0; color: var(--text-muted); margin-top: auto;">← Return to Main Menu</button>
+        <button class="btn btn-full" onclick="goBack()" style="background: #e4e9f0; color: var(--text-muted); margin-top: auto; grid-column: span 2;">← Return to Main Menu</button>
     </div>
 
     <div id="settings-menu">
@@ -268,7 +281,6 @@
         <div class="settings-group">
             <div class="settings-label">AUDIO SOURCE</div>
             <div class="row">
-                <!-- FILE 버튼 부활 -->
                 <button id="btn-src-pn" class="btn active" style="flex:1; padding:12px;" onclick="setSource('pn')">PN</button>
                 <button id="btn-src-file" class="btn" style="flex:1; padding:12px;" onclick="setSource('file')">FILE</button>
                 <button id="btn-src-track" class="btn" style="flex:1; padding:12px;" onclick="setSource('track')">TRACKS</button>
@@ -365,6 +377,7 @@
         stopAudio();
         document.getElementById('overlay').style.display='flex'; 
         document.getElementById('header-title').innerText = "Ear Training";
+        document.getElementById('display-area').style.aspectRatio = '2 / 1'; // 뒤로가기 시 비율 원상복구
     }
 
     function updateGainSettings() {
@@ -391,7 +404,6 @@
         updateGainSettings();
     }
 
-    // 소스 설정 시 file 버튼 로직 추가 복구
     function setSource(type) {
         document.querySelectorAll('#btn-src-pn, #btn-src-file, #btn-src-track').forEach(b => b.classList.remove('active'));
         document.getElementById('track-input-group').style.display = 'none';
@@ -466,23 +478,41 @@
         
         const controls = document.getElementById('freq-controls');
         const actions = document.getElementById('action-btns');
+        const displayArea = document.getElementById('display-area');
+        
         controls.innerHTML = ''; actions.innerHTML = '';
         
         bands.forEach(f => {
             controls.innerHTML += `<button id="btn-freq-${f}" class="btn freq-item" onclick="handleFreqClick(${f})">${f}</button>`;
         });
 
-        if(mode === 'listen') {
-            controls.style.display = 'grid';
-            actions.innerHTML = '<button class="btn primary" onclick="playListenAudio()">PLAY</button><button class="btn" onclick="stopAudio()" style="background:var(--danger-color); color:white;">STOP</button>';
-            currentListenFreq = null; 
-            if (biquadFilter) biquadFilter.gain.value = 0;
-        } else if(mode === 'practice') {
-            controls.style.display = 'grid'; 
-            actions.innerHTML = '<button class="btn primary" onclick="runPractice()">START QUIZ</button>';
-        } else if(mode === 'test') {
+        // 모드에 따른 화면 비율 및 레이아웃 설정
+        if (mode === 'test') {
+            displayArea.style.aspectRatio = '16 / 11'; // 테스트 모드는 창을 더 높게 확장 (정답 표시용)
             controls.style.display = 'none';
-            actions.innerHTML = '<button class="btn primary" onclick="runTest()">START EXAM</button><button class="btn" onclick="listenAgain()">AGAIN</button><button class="btn" onclick="stopAudio()" style="background:var(--danger-color); color:white;">STOP</button><button class="btn" onclick="showAnswers()">ANSWERS</button>';
+            // 버튼 4개가 Grid에 의해 깔끔한 2x2 바둑판 모양으로 렌더링 됨
+            actions.innerHTML = `
+                <button class="btn primary" onclick="runTest()">START EXAM</button>
+                <button class="btn" onclick="listenAgain()">AGAIN</button>
+                <button class="btn" onclick="stopAudio()" style="background:var(--danger-color); color:white;">STOP</button>
+                <button class="btn" onclick="showAnswers()">ANSWERS</button>
+            `;
+        } else {
+            displayArea.style.aspectRatio = '2 / 1'; // 기본 화면 크기 유지
+            
+            if(mode === 'listen') {
+                controls.style.display = 'grid';
+                actions.innerHTML = `
+                    <button class="btn primary" onclick="playListenAudio()">PLAY</button>
+                    <button class="btn" onclick="stopAudio()" style="background:var(--danger-color); color:white;">STOP</button>
+                `;
+                currentListenFreq = null; 
+                if (biquadFilter) biquadFilter.gain.value = 0;
+            } else if(mode === 'practice') {
+                controls.style.display = 'grid'; 
+                // 혼자 있는 버튼은 넓게 채우기 위해 btn-full 사용
+                actions.innerHTML = '<button class="btn primary btn-full" onclick="runPractice()">START QUIZ</button>';
+            }
         }
     }
 
@@ -513,14 +543,17 @@
             
             const display = document.getElementById('answer-display');
             if (freq === currentPracticeFreq) {
-                display.innerHTML = `<span style="color:var(--success-color)">Correct!</span><br>${currentPracticeFreq} Hz`;
+                display.innerHTML = `<span style="color:var(--success-color); font-size:1.2em;">Correct!</span><br><span style="font-size:1.5em;">${currentPracticeFreq} Hz</span>`;
             } else {
-                display.innerHTML = `<span style="color:var(--danger-color)">Incorrect!</span><br>Answer: ${currentPracticeFreq} Hz<br><span style="font-size:0.6em; color:#ccc;">(Your choice: ${freq} Hz)</span>`;
+                display.innerHTML = `<span style="color:var(--danger-color); font-size:1.2em;">Incorrect!</span><br><span style="font-size:1.2em;">Answer: ${currentPracticeFreq} Hz</span><br><span style="font-size:0.7em; color:#ccc;">(Your choice: ${freq} Hz)</span>`;
             }
             display.style.display = 'flex';
             
             document.getElementById('status').innerText = "Quiz Completed.";
-            document.getElementById('action-btns').innerHTML = '<button class="btn primary" onclick="runPractice()">NEXT QUESTION</button><button class="btn" onclick="listenPracticeAgain()">LISTEN AGAIN</button>';
+            actions.innerHTML = `
+                <button class="btn primary" onclick="runPractice()">NEXT QUESTION</button>
+                <button class="btn" onclick="listenPracticeAgain()">LISTEN AGAIN</button>
+            `;
         }
     }
 
@@ -550,7 +583,7 @@
         isPracticeActive = false;
         document.getElementById('answer-display').style.display = 'none';
         document.getElementById('status').innerText = "Canceled. Ready to start.";
-        document.getElementById('action-btns').innerHTML = '<button class="btn primary" onclick="runPractice()">START QUIZ</button>';
+        document.getElementById('action-btns').innerHTML = '<button class="btn primary btn-full" onclick="runPractice()">START QUIZ</button>';
     }
 
     async function runPractice() {
@@ -566,7 +599,7 @@
         
         isPracticeActive = true;
         document.getElementById('answer-display').style.display = 'none';
-        document.getElementById('action-btns').innerHTML = '<button class="btn" onclick="cancelPractice()" style="background:var(--danger-color); color:white;">STOP (Cancel)</button>';
+        document.getElementById('action-btns').innerHTML = '<button class="btn btn-full" onclick="cancelPractice()" style="background:var(--danger-color); color:white;">STOP (Cancel)</button>';
         
         playPracticeSequence(currentPracticeFreq);
     }
@@ -577,7 +610,7 @@
         }
         isPracticeActive = true;
         document.getElementById('answer-display').style.display = 'none';
-        document.getElementById('action-btns').innerHTML = '<button class="btn" onclick="cancelPractice()" style="background:var(--danger-color); color:white;">STOP (Cancel)</button>';
+        document.getElementById('action-btns').innerHTML = '<button class="btn btn-full" onclick="cancelPractice()" style="background:var(--danger-color); color:white;">STOP (Cancel)</button>';
         playPracticeSequence(currentPracticeFreq);
     }
 
@@ -606,7 +639,10 @@
     function finishPracticeSeq() {
         stopAudio();
         document.getElementById('status').innerText = "Audio finished. Select your answer!";
-        document.getElementById('action-btns').innerHTML = '<button class="btn primary" onclick="listenPracticeAgain()">LISTEN AGAIN</button><button class="btn" onclick="cancelPractice()" style="background:var(--danger-color); color:white;">STOP</button>';
+        document.getElementById('action-btns').innerHTML = `
+            <button class="btn primary" onclick="listenPracticeAgain()">LISTEN AGAIN</button>
+            <button class="btn" onclick="cancelPractice()" style="background:var(--danger-color); color:white;">STOP</button>
+        `;
     }
 
     async function runTest() {
@@ -646,8 +682,15 @@
         const display = document.getElementById('answer-display');
         if (currentMode === 'test') {
             if (testAnswers.length > 0) {
-                display.innerHTML = '<div style="font-size:0.6em; color:#ccc; margin-bottom:15px;">[ TEST ANSWERS ]</div>' + 
-                                    testAnswers.map((ans, i) => `Q${i+1}: <span style="color:var(--primary-color)">${ans} Hz</span>`).join('<br>');
+                // 글씨 크기를 조절하여 5개가 잘 보이도록 중앙 정렬 세팅
+                let answersHtml = testAnswers.map((ans, i) => `<div>Q${i+1}: <span style="color:var(--primary-color)">${ans} Hz</span></div>`).join('');
+                
+                display.innerHTML = `
+                    <div style="font-size: 0.8em; color: #ccc; margin-bottom: 15px; letter-spacing: 1px;">[ TEST ANSWERS ]</div>
+                    <div style="font-size: 0.9em; line-height: 1.6; display: flex; flex-direction: column; gap: 4px;">
+                        ${answersHtml}
+                    </div>
+                `;
                 display.style.display = 'flex'; 
             }
         }
