@@ -141,7 +141,6 @@
 
         .content-area { padding: 25px; display: flex; flex-direction: column; align-items: center; flex: 1; }
         
-        /* 캔버스 터치(클릭) 커서 추가 */
         #display-area { 
             position: relative; width: 100%; aspect-ratio: 2 / 1; 
             background: #1e272e; border: none; cursor: pointer;
@@ -192,12 +191,12 @@
         .settings-label { margin-bottom: 12px; font-size: 0.85em; color: var(--text-muted); font-weight: 700; text-align: left; letter-spacing: 0.5px; }
         .row { display: flex; gap: 10px; flex-wrap: wrap; }
         
-        #pw-input, #url-input { 
+        #pw-input { 
             padding: 18px; border-radius: 14px; border: 1px solid var(--border-color); font-size: 1em; 
             background: #f8f9fa; color: var(--text-color); width: 100%; box-sizing: border-box; margin-bottom: 15px; text-align: center;
             transition: all 0.2s; outline: none;
         }
-        #pw-input:focus, #url-input:focus {
+        #pw-input:focus {
             border-color: var(--primary-color);
             background: #fff;
             box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2);
@@ -269,8 +268,11 @@
         <div class="settings-group">
             <div class="settings-label">AUDIO SOURCE</div>
             <div class="row">
+                <!-- FILE 버튼 부활 -->
                 <button id="btn-src-pn" class="btn active" style="flex:1; padding:12px;" onclick="setSource('pn')">PN</button>
+                <button id="btn-src-file" class="btn" style="flex:1; padding:12px;" onclick="setSource('file')">FILE</button>
                 <button id="btn-src-track" class="btn" style="flex:1; padding:12px;" onclick="setSource('track')">TRACKS</button>
+                <input type="file" id="file-input" style="display:none;" accept="audio/*" onchange="handleFileUpload(event)">
             </div>
             
             <div id="track-input-group" style="display:none; margin-top:15px; width:100%;">
@@ -339,7 +341,6 @@
     waveformCanvas.width = 600;
     waveformCanvas.height = 300;
 
-    // 비밀번호 체크
     async function checkPassword() {
         const pw = document.getElementById('pw-input').value;
         if (pw === "1234") {
@@ -390,18 +391,38 @@
         updateGainSettings();
     }
 
+    // 소스 설정 시 file 버튼 로직 추가 복구
     function setSource(type) {
-        document.querySelectorAll('#btn-src-pn, #btn-src-track').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('#btn-src-pn, #btn-src-file, #btn-src-track').forEach(b => b.classList.remove('active'));
         document.getElementById('track-input-group').style.display = 'none';
         
         if(type === 'pn') {
             document.getElementById('btn-src-pn').classList.add('active');
             customBuffer = null;
             document.getElementById('file-name').innerText = "Pink Noise";
+        } else if(type === 'file') {
+            document.getElementById('btn-src-file').classList.add('active');
+            document.getElementById('file-input').click();
         } else if (type === 'track') {
             document.getElementById('btn-src-track').classList.add('active');
             document.getElementById('track-input-group').style.display = 'block';
         }
+    }
+
+    function handleFileUpload(event) {
+        const file = event.target.files[0];
+        if (!file) { setSource('pn'); return; }
+        document.getElementById('file-name').innerText = file.name;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            audioCtx.decodeAudioData(e.target.result, function(buffer) {
+                customBuffer = buffer;
+                fileStartTime = 0; 
+                document.getElementById('file-name').innerText = "Loaded: " + file.name.substring(0, 20);
+                renderWaveform();
+            });
+        };
+        reader.readAsArrayBuffer(file);
     }
 
     async function loadTrack(trackNum) {
@@ -431,13 +452,6 @@
             document.getElementById('file-name').innerText = "Load Failed";
             setSource('pn');
         }
-    }
-
-    function adjustFileTime(sec) {
-        fileStartTime += sec;
-        if (fileStartTime < 0) fileStartTime = 0;
-        if (customBuffer && fileStartTime >= customBuffer.duration) fileStartTime = Math.floor(customBuffer.duration) - 5;
-        document.getElementById('file-time-display').innerText = fileStartTime + "s";
     }
 
     function init(mode, testQs = 5) {
@@ -545,6 +559,11 @@
         }
         currentPracticeFreq = bands[Math.floor(Math.random() * bands.length)];
         
+        if (customBuffer) {
+            const maxStart = Math.max(0, customBuffer.duration - 32);
+            fileStartTime = Math.random() * maxStart;
+        }
+        
         isPracticeActive = true;
         document.getElementById('answer-display').style.display = 'none';
         document.getElementById('action-btns').innerHTML = '<button class="btn" onclick="cancelPractice()" style="background:var(--danger-color); color:white;">STOP (Cancel)</button>';
@@ -597,6 +616,11 @@
         testAnswers = [];
         for (let i = 0; i < totalTestQuestions; i++) {
             testAnswers.push(bands[Math.floor(Math.random() * bands.length)]);
+        }
+
+        if (customBuffer) {
+            const maxStart = Math.max(0, customBuffer.duration - 75);
+            fileStartTime = Math.random() * maxStart;
         }
 
         isTestCompleted = false;
@@ -771,26 +795,23 @@
         setTimeout(() => requestAnimationFrame(drawRTA), 150);
     } 
     
-    // --- 파형 클릭 시 재생 위치 이동 (리슨 모드 전용) ---
+    // 파형 클릭 시 재생 위치 이동 (리슨 모드 전용)
     document.getElementById('display-area').addEventListener('click', function(e) {
-        // 트랙이나 파일을 불러온 상태이고, 리슨 모드일 때만 작동
         if (!customBuffer || currentMode !== 'listen') return;
 
-        // 클릭한 X 좌표를 비율로 계산하여 오디오 전체 길이에 곱함
         const rect = this.getBoundingClientRect();
         const x = e.clientX - rect.left;
         const clickRatio = x / rect.width;
         
         fileStartTime = customBuffer.duration * clickRatio;
         
-        // 이미 재생 중이라면 해당 위치부터 끊김없이 즉시 재시작
         if (isPlaying) {
             if (activeSource) {
                 try { activeSource.stop(); activeSource.disconnect(); } catch(err) {}
                 activeSource = null;
             }
             isPlaying = false;
-            startAudioSource(); // 바뀐 fileStartTime 위치에서 다시 재생 (EQ 세팅 유지)
+            startAudioSource(); 
         }
     });
 
