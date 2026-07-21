@@ -6,12 +6,16 @@
     <title>Classroom Trainer - Student Edition</title>
     <style>
         :root {
-            --bg-color: #121212;
-            --surface-color: #1e1e1e;
-            --primary-color: #3498db;
-            --danger-color: #e74c3c;
-            --success-color: #2ecc71;
-            --text-color: #ffffff;
+            /* 밝고 모던한 테마 컬러로 전면 교체 */
+            --bg-color: #f4f7f6;
+            --surface-color: #ffffff;
+            --primary-color: #4A90E2; /* 세련된 블루 */
+            --primary-hover: #357abd;
+            --danger-color: #ff6b6b;
+            --success-color: #20c997;
+            --text-color: #2d3436;
+            --text-muted: #636e72;
+            --border-color: #dfe6e9;
         }
 
         body { 
@@ -35,37 +39,52 @@
             overflow-y: auto;
             background: var(--bg-color);
             box-sizing: border-box;
+            box-shadow: 0 0 30px rgba(0,0,0,0.05); /* 앱 전체에 은은한 그림자 */
         }
 
         .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 20px;
+            padding: 20px 25px;
             background: var(--surface-color);
-            border-bottom: 1px solid #333;
+            border-bottom: 1px solid var(--border-color);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+            z-index: 10;
         }
         
-        .header h1 { margin: 0; font-size: 1.2em; }
-        #settings-trigger { font-size: 1.5em; cursor: pointer; }
+        .header h1 { margin: 0; font-size: 1.3em; font-weight: 700; color: var(--text-color); }
+        #settings-trigger { font-size: 1.5em; cursor: pointer; color: var(--text-muted); transition: 0.2s; }
+        #settings-trigger:active { transform: scale(0.9); }
 
+        /* 밝은 테마에 맞춘 모던 버튼 스타일 */
         .btn {
             padding: 15px;
-            border-radius: 12px;
-            border: none;
-            background: #333;
-            color: white;
+            border-radius: 14px;
+            border: 1px solid transparent;
+            background: #ffffff;
+            color: var(--text-color);
             font-size: 1em;
             font-weight: 600;
             cursor: pointer;
-            transition: 0.2s;
+            transition: all 0.2s ease;
             text-align: center;
             width: 100%;
             box-sizing: border-box;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.04);
         }
-        .btn:active { transform: scale(0.97); }
-        .btn.active { background: var(--primary-color); }
-        .btn.primary { background: var(--primary-color); }
+        .btn:active { transform: scale(0.97); box-shadow: 0 2px 3px rgba(0,0,0,0.04); }
+        
+        .btn.active { 
+            background: var(--primary-color); 
+            color: white; 
+            box-shadow: 0 6px 15px rgba(74, 144, 226, 0.3); 
+        }
+        .btn.primary { 
+            background: var(--primary-color); 
+            color: white; 
+            box-shadow: 0 6px 15px rgba(74, 144, 226, 0.3); 
+        }
 
         .full-overlay { 
             position: absolute; top:0; left:0; width:100%; height:100%; 
@@ -79,30 +98,31 @@
             flex-direction: column;
             gap: 15px;
             width: 100%;
-            max-width: 300px;
+            max-width: 320px;
         }
 
-        .content-area { padding: 20px; display: flex; flex-direction: column; align-items: center; flex: 1; }
+        .content-area { padding: 25px; display: flex; flex-direction: column; align-items: center; flex: 1; }
         
+        /* 디스플레이 영역은 시인성을 위해 어두운 톤 유지 및 테두리 세련되게 변경 */
         #display-area { 
             position: relative; width: 100%; aspect-ratio: 2 / 1; 
-            background: #000; border: 3px solid var(--primary-color); 
-            border-radius: 20px; overflow: hidden; margin-bottom: 20px;
-            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.2);
+            background: #1e272e; border: none; 
+            border-radius: 20px; overflow: hidden; margin-bottom: 25px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
         }
         #rta-canvas { width: 100%; height: 100%; display: block; }
         
         #answer-display {
             position: absolute; top:0; left:0; width:100%; height:100%; 
-            background: rgba(0,0,0,0.9); display: none; flex-direction: column; 
+            background: rgba(30, 39, 46, 0.95); display: none; flex-direction: column; 
             align-items: center; justify-content: center; z-index: 10; 
             text-align: center; font-size: 1.5em; font-weight: bold; padding: 10px;
-            box-sizing: border-box; line-height: 1.4;
+            box-sizing: border-box; line-height: 1.4; color: white;
         }
 
-        #status { font-size: 0.95em; font-weight: 600; text-align: center; margin-bottom: 20px; min-height: 24px; color: #aaa;}
+        #status { font-size: 0.95em; font-weight: 600; text-align: center; margin-bottom: 25px; min-height: 24px; color: var(--text-muted);}
 
-        .action-btns { display: flex; gap: 10px; width: 100%; margin-bottom: 15px; }
+        .action-btns { display: flex; gap: 12px; width: 100%; margin-bottom: 20px; }
 
         .freq-grid {
             display: grid;
@@ -118,23 +138,30 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            background: var(--surface-color);
         }
 
         #settings-menu { 
             position: absolute; top: 0; right: -100%; width: 85%; height: 100%; 
-            background: var(--surface-color); z-index: 150; transition: right 0.3s ease; 
-            padding: 20px; box-shadow: -5px 0 20px rgba(0,0,0,0.5); 
-            overflow-y: auto; box-sizing: border-box;
+            background: var(--surface-color); z-index: 150; transition: right 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); 
+            padding: 30px 20px; box-shadow: -10px 0 30px rgba(0,0,0,0.1); 
+            overflow-y: auto; box-sizing: border-box; border-left: 1px solid var(--border-color);
         }
         #settings-menu.open { right: 0; }
         
-        .settings-group { margin-bottom: 25px; width: 100%; }
-        .settings-label { margin-bottom: 10px; font-size: 0.8em; color: #aaa; font-weight: bold; text-align: left; }
-        .row { display: flex; gap: 8px; flex-wrap: wrap; }
+        .settings-group { margin-bottom: 30px; width: 100%; }
+        .settings-label { margin-bottom: 12px; font-size: 0.85em; color: var(--text-muted); font-weight: 700; text-align: left; letter-spacing: 0.5px; }
+        .row { display: flex; gap: 10px; flex-wrap: wrap; }
         
-        #url-input { 
-            padding: 15px; border-radius: 10px; border: none; font-size: 1em; 
-            background: #2a2a2a; color: white; width: 100%; box-sizing: border-box; margin-bottom: 15px; text-align: center;
+        #pw-input, #url-input { 
+            padding: 18px; border-radius: 14px; border: 1px solid var(--border-color); font-size: 1em; 
+            background: #f8f9fa; color: var(--text-color); width: 100%; box-sizing: border-box; margin-bottom: 15px; text-align: center;
+            transition: all 0.2s; outline: none;
+        }
+        #pw-input:focus, #url-input:focus {
+            border-color: var(--primary-color);
+            background: #fff;
+            box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2);
         }
     </style>
 </head>
@@ -142,10 +169,14 @@
 
 <div id="app-container">
     
-    <div id="welcome-overlay" class="full-overlay" style="z-index: 999;">
-        <h2 style="margin-bottom: 10px;">Classroom Trainer</h2>
-        <p style="margin-bottom: 40px; color: #aaa;">Student Edition</p>
-        <button class="btn primary" onclick="startApp()" style="width: 250px;">START</button>
+    <!-- 비밀번호 입력 오버레이 부활 및 디자인 세련되게 변경 -->
+    <div id="auth-overlay" class="full-overlay" style="z-index: 999; background: var(--surface-color);">
+        <div style="text-align: center; margin-bottom: 40px;">
+            <h2 style="margin-bottom: 5px; color: var(--text-color); font-size: 1.8em;">Ear Training</h2>
+            <p style="margin: 0; color: var(--primary-color); font-weight: 600;">Student Edition</p>
+        </div>
+        <input type="password" id="pw-input" placeholder="Enter Password">
+        <button class="btn primary" onclick="checkPassword()" style="width: 100%;">START APP</button>
     </div>
 
     <div class="header">
@@ -154,7 +185,7 @@
     </div>
 
     <div id="overlay" class="full-overlay">
-        <h2 style="margin-bottom: 40px; color: var(--primary-color);">Select Mode</h2>
+        <h2 style="margin-bottom: 30px; color: var(--text-color);">Select Mode</h2>
         <div class="menu-grid">
             <button class="btn" onclick="init('listen')">🎧 LISTEN (Free Mode)</button>
             <button class="btn" onclick="init('practice')">🎯 PRACTICE (Quiz Mode)</button>
@@ -175,48 +206,32 @@
 
         <div id="freq-controls" class="freq-grid" style="display:none;"></div>
         
-        <button class="btn" onclick="goBack()" style="background: transparent; border: 1px solid #555; margin-top: auto;">← RETURN TO MAIN MENU</button>
+        <!-- 뒤로가기 버튼 색상 연하게 변경 -->
+        <button class="btn" onclick="goBack()" style="background: #e4e9f0; color: var(--text-muted); margin-top: auto;">← Return to Main Menu</button>
     </div>
 
     <div id="settings-menu">
-        <h2 style="margin-top: 0; color: var(--primary-color);">SETTINGS</h2>
+        <h2 style="margin-top: 0; color: var(--text-color); font-size: 1.5em; margin-bottom: 30px;">Settings</h2>
         
         <div class="settings-group">
             <div class="settings-label">AUDIO SOURCE</div>
             <div class="row">
-                <button id="btn-src-pn" class="btn active" style="flex:1; padding:10px;" onclick="setSource('pn')">PN</button>
-                <button id="btn-src-file" class="btn" style="flex:1; padding:10px;" onclick="setSource('file')">FILE</button>
-                <button id="btn-src-track" class="btn" style="flex:1; padding:10px;" onclick="setSource('track')">TRACKS</button>
-                <button id="btn-src-url" class="btn" style="flex:1; padding:10px;" onclick="setSource('url')">URL</button>
-                <input type="file" id="file-input" style="display:none;" accept="audio/*" onchange="handleFileUpload(event)">
+                <button id="btn-src-pn" class="btn active" style="flex:1; padding:12px;" onclick="setSource('pn')">PN</button>
+                <button id="btn-src-track" class="btn" style="flex:1; padding:12px;" onclick="setSource('track')">TRACKS</button>
             </div>
             
             <div id="track-input-group" style="display:none; margin-top:15px; width:100%;">
                 <div class="settings-label" style="text-align: center; margin-bottom: 10px;">Select Track (1~5.mp3)</div>
                 <div class="row" style="justify-content:center;">
-                    <button class="btn primary" style="flex:1; padding:10px;" onclick="loadTrack('1')">1</button>
-                    <button class="btn primary" style="flex:1; padding:10px;" onclick="loadTrack('2')">2</button>
-                    <button class="btn primary" style="flex:1; padding:10px;" onclick="loadTrack('3')">3</button>
-                    <button class="btn primary" style="flex:1; padding:10px;" onclick="loadTrack('4')">4</button>
-                    <button class="btn primary" style="flex:1; padding:10px;" onclick="loadTrack('5')">5</button>
+                    <button class="btn" style="flex:1; padding:12px; background: #e4e9f0;" onclick="loadTrack('1')">1</button>
+                    <button class="btn" style="flex:1; padding:12px; background: #e4e9f0;" onclick="loadTrack('2')">2</button>
+                    <button class="btn" style="flex:1; padding:12px; background: #e4e9f0;" onclick="loadTrack('3')">3</button>
+                    <button class="btn" style="flex:1; padding:12px; background: #e4e9f0;" onclick="loadTrack('4')">4</button>
+                    <button class="btn" style="flex:1; padding:12px; background: #e4e9f0;" onclick="loadTrack('5')">5</button>
                 </div>
             </div>
-
-            <div id="url-input-group" style="display:none; margin-top:15px; flex-direction:column;">
-                <input type="text" id="url-input" placeholder="Enter Direct MP3/WAV Link">
-                <button class="btn" onclick="loadFromUrl()" style="background:#27ae60;">LOAD AUDIO</button>
-            </div>
             
-            <div id="file-name" style="font-size:0.8em; color:var(--primary-color); margin-top:15px; text-align:center; word-break: break-all;">Pink Noise</div>
-        </div>
-        
-        <div class="settings-group" id="file-time-group" style="display:none;">
-            <div class="settings-label">FILE START TIME</div>
-            <div class="row" style="align-items: center;">
-                <button class="btn" onclick="adjustFileTime(-10)">-10s</button>
-                <div id="file-time-display" style="flex:1; text-align:center; font-weight:bold; color:var(--primary-color);">0s</div>
-                <button class="btn" onclick="adjustFileTime(10)">+10s</button>
-            </div>
+            <div id="file-name" style="font-size:0.85em; color:var(--primary-color); margin-top:15px; text-align:center; font-weight:600;">Pink Noise</div>
         </div>
 
         <div class="settings-group">
@@ -235,7 +250,7 @@
             </div>
         </div>
 
-        <button class="btn" onclick="toggleSettings()" style="margin-top: 20px; background: transparent; border: 1px solid white;">CLOSE</button>
+        <button class="btn" onclick="toggleSettings()" style="margin-top: 20px; background: #e4e9f0; color: var(--text-color);">CLOSE</button>
     </div>
 
 </div>
@@ -271,17 +286,22 @@
     waveformCanvas.width = 600;
     waveformCanvas.height = 300;
 
-    async function startApp() {
-        document.getElementById('welcome-overlay').style.display = 'none';
-        if (!audioCtx) {
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            masterGain = audioCtx.createGain();
-            updateGainSettings(); 
-            masterGain.connect(audioCtx.destination);
-        }
-        // 브라우저의 오디오 잠금 해제를 위한 확실한 복구 명령
-        if (audioCtx.state === 'suspended') {
-            await audioCtx.resume();
+    // 비밀번호 체크 함수 부활 (비밀번호: 1234)
+    async function checkPassword() {
+        const pw = document.getElementById('pw-input').value;
+        if (pw === "1234") {
+            document.getElementById('auth-overlay').style.display = 'none';
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                masterGain = audioCtx.createGain();
+                updateGainSettings(); 
+                masterGain.connect(audioCtx.destination);
+            }
+            if (audioCtx.state === 'suspended') {
+                await audioCtx.resume();
+            }
+        } else {
+            alert("Incorrect password.");
         }
     }
     
@@ -318,44 +338,17 @@
     }
 
     function setSource(type) {
-        document.querySelectorAll('#btn-src-pn, #btn-src-file, #btn-src-url, #btn-src-track').forEach(b => b.classList.remove('active'));
-        document.getElementById('url-input-group').style.display = 'none';
+        document.querySelectorAll('#btn-src-pn, #btn-src-track').forEach(b => b.classList.remove('active'));
         document.getElementById('track-input-group').style.display = 'none';
         
         if(type === 'pn') {
             document.getElementById('btn-src-pn').classList.add('active');
             customBuffer = null;
             document.getElementById('file-name').innerText = "Pink Noise";
-            document.getElementById('file-time-group').style.display = 'none'; 
-        } else if (type === 'file') {
-            document.getElementById('btn-src-file').classList.add('active');
-            document.getElementById('file-input').click();
-            document.getElementById('file-time-group').style.display = 'flex'; 
-        } else if (type === 'url') {
-            document.getElementById('btn-src-url').classList.add('active');
-            document.getElementById('url-input-group').style.display = 'flex';
-            document.getElementById('file-time-group').style.display = 'flex'; 
         } else if (type === 'track') {
             document.getElementById('btn-src-track').classList.add('active');
             document.getElementById('track-input-group').style.display = 'block';
-            document.getElementById('file-time-group').style.display = 'flex'; 
         }
-    }
-
-    function handleFileUpload(event) {
-        const file = event.target.files[0];
-        if (!file) { setSource('pn'); return; }
-        document.getElementById('file-name').innerText = file.name;
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            audioCtx.decodeAudioData(e.target.result, function(buffer) {
-                customBuffer = buffer;
-                fileStartTime = 0; 
-                document.getElementById('file-time-display').innerText = fileStartTime + "s";
-                renderWaveform();
-            });
-        };
-        reader.readAsArrayBuffer(file);
     }
 
     async function loadTrack(trackNum) {
@@ -369,6 +362,7 @@
             await audioCtx.resume();
         }
 
+        // 깃허브 최상위 폴더에 있는 1.mp3 ~ 5.mp3를 불러오도록 URL 설정
         const url = `https://supercan777.github.io/Ear-Training/${trackNum}.mp3`;
         document.getElementById('file-name').innerText = `Loading Track ${trackNum}...`;
         
@@ -378,7 +372,6 @@
             const arrayBuffer = await response.arrayBuffer();
             customBuffer = await audioCtx.decodeAudioData(arrayBuffer);
             fileStartTime = 0; 
-            document.getElementById('file-time-display').innerText = "0s";
             document.getElementById('file-name').innerText = `Loaded: Track ${trackNum} (MP3)`;
             renderWaveform();
         } catch (error) {
@@ -386,31 +379,6 @@
             document.getElementById('file-name').innerText = "Load Failed";
             setSource('pn');
         }
-    }
-
-    async function loadFromUrl() {
-        const url = document.getElementById('url-input').value;
-        if(!url) return alert("Please enter a URL.");
-        document.getElementById('file-name').innerText = "Loading...";
-        try {
-            const response = await fetch(url);
-            const arrayBuffer = await response.arrayBuffer();
-            customBuffer = await audioCtx.decodeAudioData(arrayBuffer);
-            fileStartTime = 0; 
-            document.getElementById('file-time-display').innerText = "0s";
-            document.getElementById('file-name').innerText = "Loaded: " + url.split('/').pop().substring(0, 20) + "...";
-            renderWaveform();
-        } catch (error) {
-            alert("Audio load failed. Please check the link and CORS policy.");
-            setSource('pn');
-        }
-    }
-
-    function adjustFileTime(sec) {
-        fileStartTime += sec;
-        if (fileStartTime < 0) fileStartTime = 0;
-        if (customBuffer && fileStartTime >= customBuffer.duration) fileStartTime = Math.floor(customBuffer.duration) - 5;
-        document.getElementById('file-time-display').innerText = fileStartTime + "s";
     }
 
     function init(mode, testQs = 5) {
@@ -433,7 +401,7 @@
 
         if(mode === 'listen') {
             controls.style.display = 'grid';
-            actions.innerHTML = '<button class="btn primary" onclick="playListenAudio()">PLAY</button><button class="btn" onclick="stopAudio()" style="background:#e74c3c;">STOP</button>';
+            actions.innerHTML = '<button class="btn primary" onclick="playListenAudio()">PLAY</button><button class="btn" onclick="stopAudio()" style="background:var(--danger-color); color:white;">STOP</button>';
             currentListenFreq = null; 
             if (biquadFilter) biquadFilter.gain.value = 0;
         } else if(mode === 'practice') {
@@ -441,7 +409,7 @@
             actions.innerHTML = '<button class="btn primary" onclick="runPractice()">START QUIZ</button>';
         } else if(mode === 'test') {
             controls.style.display = 'none';
-            actions.innerHTML = '<button class="btn primary" onclick="runTest()">START EXAM</button><button class="btn" onclick="listenAgain()">AGAIN</button><button class="btn" onclick="stopAudio()" style="background:#e74c3c;">STOP</button><button class="btn" onclick="showAnswers()">ANSWERS</button>';
+            actions.innerHTML = '<button class="btn primary" onclick="runTest()">START EXAM</button><button class="btn" onclick="listenAgain()">AGAIN</button><button class="btn" onclick="stopAudio()" style="background:var(--danger-color); color:white;">STOP</button><button class="btn" onclick="showAnswers()">ANSWERS</button>';
         }
     }
 
@@ -518,16 +486,9 @@
         }
         currentPracticeFreq = bands[Math.floor(Math.random() * bands.length)];
         
-        if (customBuffer) {
-            const maxStart = Math.max(0, customBuffer.duration - 32);
-            fileStartTime = Math.random() * maxStart;
-            document.getElementById('file-time-display').innerText = Math.floor(fileStartTime) + "s";
-        }
-        
         isPracticeActive = true;
         document.getElementById('answer-display').style.display = 'none';
-        
-        document.getElementById('action-btns').innerHTML = '<button class="btn" onclick="cancelPractice()" style="background:#e74c3c;">STOP (Cancel)</button>';
+        document.getElementById('action-btns').innerHTML = '<button class="btn" onclick="cancelPractice()" style="background:var(--danger-color); color:white;">STOP (Cancel)</button>';
         
         playPracticeSequence(currentPracticeFreq);
     }
@@ -538,7 +499,7 @@
         }
         isPracticeActive = true;
         document.getElementById('answer-display').style.display = 'none';
-        document.getElementById('action-btns').innerHTML = '<button class="btn" onclick="cancelPractice()" style="background:#e74c3c;">STOP (Cancel)</button>';
+        document.getElementById('action-btns').innerHTML = '<button class="btn" onclick="cancelPractice()" style="background:var(--danger-color); color:white;">STOP (Cancel)</button>';
         playPracticeSequence(currentPracticeFreq);
     }
 
@@ -567,7 +528,7 @@
     function finishPracticeSeq() {
         stopAudio();
         document.getElementById('status').innerText = "Audio finished. Select your answer!";
-        document.getElementById('action-btns').innerHTML = '<button class="btn primary" onclick="listenPracticeAgain()">LISTEN AGAIN</button><button class="btn" onclick="cancelPractice()" style="background:#e74c3c;">STOP</button>';
+        document.getElementById('action-btns').innerHTML = '<button class="btn primary" onclick="listenPracticeAgain()">LISTEN AGAIN</button><button class="btn" onclick="cancelPractice()" style="background:var(--danger-color); color:white;">STOP</button>';
     }
 
     async function runTest() {
@@ -577,12 +538,6 @@
         testAnswers = [];
         for (let i = 0; i < totalTestQuestions; i++) {
             testAnswers.push(bands[Math.floor(Math.random() * bands.length)]);
-        }
-
-        if (customBuffer) {
-            const maxStart = Math.max(0, customBuffer.duration - 75);
-            fileStartTime = Math.random() * maxStart;
-            document.getElementById('file-time-display').innerText = Math.floor(fileStartTime) + "s";
         }
 
         isTestCompleted = false;
@@ -723,7 +678,7 @@
         if(!customBuffer) return;
         const data = customBuffer.getChannelData(0);
         const step = Math.ceil(data.length / 600);
-        ctx.fillStyle = '#3498db'; 
+        ctx.fillStyle = '#4A90E2'; 
         for (let i = 0; i < 600; i++) {
             let min = 1.0, max = -1.0;
             for (let j = 0; j < step; j++) {
@@ -750,7 +705,7 @@
         } else {
             for(let i=0; i<30; i++) { 
                 let h = Math.random()*150+20; 
-                ctx.fillStyle='#3498db'; 
+                ctx.fillStyle='#4A90E2'; 
                 ctx.fillRect(i*20, 300-h, 15, h); 
             }
         }
