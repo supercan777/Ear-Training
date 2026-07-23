@@ -647,12 +647,23 @@
 
     async function runPractice() {
         if (audioCtx && audioCtx.state === 'suspended') await audioCtx.resume();
-        currentPracticeAnswer = currentQuizCategory === 'eq' ? bands[Math.floor(Math.random() * bands.length)] : fxPool[Math.floor(Math.random() * fxPool.length)];
+        
+        let pool = currentQuizCategory === 'eq' ? bands : fxPool;
+        let newAnswer;
+        
+        // 이전 정답과 중복 방지 루프
+        do {
+            newAnswer = pool[Math.floor(Math.random() * pool.length)];
+        } while (newAnswer === currentPracticeAnswer);
+        
+        currentPracticeAnswer = newAnswer;
+
         if (customBuffer) { const maxStart = Math.max(0, customBuffer.duration - 32); fileStartTime = Math.random() * maxStart; }
         isPracticeActive = true; document.getElementById('answer-display').style.display = 'none';
         document.getElementById('action-btns').innerHTML = '<button class="btn" style="grid-column: 1 / -1; background:var(--danger-color); color:white; border-color:var(--danger-color);" onclick="cancelPractice()">STOP (Cancel)</button>';
         playPracticeSequence(currentPracticeAnswer);
     }
+    
     async function listenPracticeAgain() {
         if (audioCtx && audioCtx.state === 'suspended') await audioCtx.resume();
         isPracticeActive = true; document.getElementById('answer-display').style.display = 'none';
@@ -690,7 +701,17 @@
         if (audioCtx && audioCtx.state === 'suspended') await audioCtx.resume();
         testAnswers = [];
         let pool = currentQuizCategory === 'eq' ? bands : fxPool;
-        for (let i = 0; i < totalTestQuestions; i++) testAnswers.push(pool[Math.floor(Math.random() * pool.length)]);
+        
+        for (let i = 0; i < totalTestQuestions; i++) {
+            let newAns;
+            // 직전 정답과 똑같으면 다시 뽑기 (중복 방지 루프)
+            do {
+                newAns = pool[Math.floor(Math.random() * pool.length)];
+            } while (i > 0 && newAns === testAnswers[i - 1]);
+            
+            testAnswers.push(newAns);
+        }
+        
         if (customBuffer) { const maxStart = Math.max(0, customBuffer.duration - 75); fileStartTime = Math.random() * maxStart; }
         isTestCompleted = false; currentTestQuestion = 0; startTestSequence(0);
     }
