@@ -366,10 +366,11 @@
     waveformCanvas.width = 1000;
     waveformCanvas.height = 300;
 
-    // --- FX 전용 변수 및 라우팅 노드 ---
+    // --- FX 전용 변수 및 라우팅 노드 (수정됨) ---
     let currentEffectNode = null;
     let dryGainNode = null;
     let wetGainNode = null;
+    let fxSendNode = null; // 오디오 병목현상 해결을 위한 Send 노드 추가
     
     let activeFxCategory = 'reverb';
     let activeReverbType = 'hall';
@@ -549,12 +550,18 @@
 
     // --- FX 셋업 헬퍼 (탐색 및 퀴즈 공용) ---
     function setupFxNode(fxType) {
+        // 기존 연결을 깨끗이 해제 (오디오 중첩 방지)
+        if (fxSendNode) {
+            try { fxSendNode.disconnect(); } catch(e) {}
+        }
+        
         if (currentEffectNode) {
             try { 
                 if (currentEffectNode.input) { currentEffectNode.input.disconnect(); currentEffectNode.output.disconnect(); } 
                 else currentEffectNode.disconnect(); 
             } catch(e) {}
         }
+
         if (fxType === 'room' || fxType === 'chamber' || fxType === 'plate' || fxType === 'hall') {
             currentEffectNode = createReverb(audioCtx, fxType, revPreDelayMs, revTimeSec);
         } else if (fxType === 'chorus') { currentEffectNode = createChorus(audioCtx);
@@ -563,9 +570,14 @@
         }
         
         // 재생 중 라우팅 갱신 (퀴즈 중 이펙터 교체용)
-        if (activeSource && wetGainNode && (currentMode === 'fx-explore' || currentMode === 'practice' || currentMode === 'test')) {
-            if (currentEffectNode.input) { activeSource.connect(currentEffectNode.input); currentEffectNode.output.connect(wetGainNode); } 
-            else { activeSource.connect(currentEffectNode); currentEffectNode.connect(wetGainNode); }
+        if (fxSendNode && wetGainNode && (currentMode === 'fx-explore' || currentMode === 'practice' || currentMode === 'test')) {
+            if (currentEffectNode.input) { 
+                fxSendNode.connect(currentEffectNode.input); 
+                currentEffectNode.output.connect(wetGainNode); 
+            } else { 
+                fxSendNode.connect(currentEffectNode); 
+                currentEffectNode.connect(wetGainNode); 
+            }
         }
     }
 
@@ -797,18 +809,24 @@
         activeSource.loop = true;
 
         if (!dryGainNode) {
-            dryGainNode = audioCtx.createGain(); wetGainNode = audioCtx.createGain();
-            dryGainNode.connect(masterGain); wetGainNode.connect(masterGain);
+            dryGainNode = audioCtx.createGain(); 
+            wetGainNode = audioCtx.createGain();
+            fxSendNode = audioCtx.createGain(); // Send 노드 생성
+            dryGainNode.connect(masterGain); 
+            wetGainNode.connect(masterGain);
         }
 
         if (currentMode === 'fx-explore' || currentQuizCategory === 'fx') {
             // FX 라우팅 (Dry + Wet 병렬 믹스)
             activeSource.connect(dryGainNode); dryGainNode.gain.value = 1; // 원본 유지
+            activeSource.connect(fxSendNode); // 원본 오디오를 가상의 케이블(Send)에 연결
             
             if (currentEffectNode) {
                 if (currentEffectNode.input && currentEffectNode.output) {
-                    activeSource.connect(currentEffectNode.input); currentEffectNode.output.connect(wetGainNode);
-                } else { activeSource.connect(currentEffectNode); currentEffectNode.connect(wetGainNode); }
+                    fxSendNode.connect(currentEffectNode.input); currentEffectNode.output.connect(wetGainNode);
+                } else { 
+                    fxSendNode.connect(currentEffectNode); currentEffectNode.connect(wetGainNode); 
+                }
             }
             // Explore 모드면 Wet 활성화, 퀴즈면 Sequence 로직에 맡김
             if (currentMode === 'fx-explore') wetGainNode.gain.value = 1;
