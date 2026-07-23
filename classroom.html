@@ -366,18 +366,19 @@
     waveformCanvas.width = 1000;
     waveformCanvas.height = 300;
 
-    // --- FX 전용 변수 및 라우팅 노드 (수정됨) ---
+    // --- FX 전용 변수 및 라우팅 노드 ---
     let currentEffectNode = null;
     let dryGainNode = null;
     let wetGainNode = null;
-    let fxSendNode = null; // 오디오 병목현상 해결을 위한 Send 노드 추가
+    let fxSendNode = null; 
+    let currentLFOs = []; // LFO 누적 방지용 배열 (메모리 릭 및 오디오 글리치 해결)
     
     let activeFxCategory = 'reverb';
     let activeReverbType = 'hall';
     let revPreDelayMs = 30;
     let revTimeSec = 2.5;
 
-    // 이펙터 알고리즘
+    // 이펙터 알고리즘 (수치 최적화 및 LFO 트래킹 적용)
     function createReverb(ctx, type, preDelayMs, revTime) {
         const preDelayNode = ctx.createDelay(); preDelayNode.delayTime.value = preDelayMs / 1000.0;
         const convolver = ctx.createConvolver();
@@ -400,25 +401,35 @@
     }
 
     function createChorus(ctx) {
-        const delay = ctx.createDelay(); delay.delayTime.value = 0.03; 
+        const delay = ctx.createDelay(); delay.delayTime.value = 0.025; // 25ms 기본 딜레이 (안정화)
         const lfo = ctx.createOscillator(); const lfoGain = ctx.createGain();
-        lfo.frequency.value = 1.5; lfoGain.value = 0.005; lfo.connect(lfoGain); lfoGain.connect(delay.delayTime); lfo.start();
+        lfo.frequency.value = 1.0; lfoGain.value = 0.003; // 부드러운 코러스 뎁스
+        lfo.connect(lfoGain); lfoGain.connect(delay.delayTime); lfo.start();
+        currentLFOs.push(lfo); // 생성된 LFO 등록 (나중에 청소하기 위함)
         return delay;
     }
+
     function createFlanger(ctx) {
-        const delay = ctx.createDelay(); delay.delayTime.value = 0.005; 
-        const feedback = ctx.createGain(); feedback.gain.value = 0.8; delay.connect(feedback); feedback.connect(delay);
+        const delay = ctx.createDelay(); delay.delayTime.value = 0.006; // 3ms 미만 딜레이 방지 (6ms 설정)
+        const feedback = ctx.createGain(); feedback.gain.value = 0.55; // 강한 피드백 하울링 억제
+        delay.connect(feedback); feedback.connect(delay);
         const lfo = ctx.createOscillator(); const lfoGain = ctx.createGain();
-        lfo.frequency.value = 0.5; lfoGain.value = 0.003; lfo.connect(lfoGain); lfoGain.connect(delay.delayTime); lfo.start();
+        lfo.frequency.value = 0.3; lfoGain.value = 0.0025; // +/- 2.5ms 움직임
+        lfo.connect(lfoGain); lfoGain.connect(delay.delayTime); lfo.start();
+        currentLFOs.push(lfo); // 생성된 LFO 등록
         return delay;
     }
+
     function createPhaser(ctx) {
         const stages = 4; const filters = [];
         const lfo = ctx.createOscillator(); lfo.type = 'sine'; lfo.frequency.value = 0.5; lfo.start();
+        currentLFOs.push(lfo); // 생성된 LFO 등록
+        
         let firstNode = null; let lastNode = null;
         for (let i = 0; i < stages; i++) {
-            const filter = ctx.createBiquadFilter(); filter.type = 'allpass'; filter.frequency.value = 1000; filter.Q.value = 2;
-            const lfoGain = ctx.createGain(); lfoGain.value = 800; lfo.connect(lfoGain); lfoGain.connect(filter.frequency);
+            const filter = ctx.createBiquadFilter(); filter.type = 'allpass'; filter.frequency.value = 1000; filter.Q.value = 1; // 찌그러짐 방지를 위해 Q 하향 조정
+            const lfoGain = ctx.createGain(); lfoGain.value = 700;
+            lfo.connect(lfoGain); lfoGain.connect(filter.frequency);
             if (lastNode) lastNode.connect(filter); else firstNode = filter; lastNode = filter; filters.push(filter);
         }
         return { input: firstNode, output: lastNode };
@@ -550,6 +561,12 @@
 
     // --- FX 셋업 헬퍼 (탐색 및 퀴즈 공용) ---
     function setupFxNode(fxType) {
+        // 기존 켜져 있던 LFO 엔진 완벽히 정지 (소리 겹침 및 CPU 과부하 방지)
+        if (currentLFOs.length > 0) {
+            currentLFOs.forEach(lfo => { try { lfo.stop(); lfo.disconnect(); } catch(e) {} });
+            currentLFOs = [];
+        }
+
         // 기존 연결을 깨끗이 해제 (오디오 중첩 방지)
         if (fxSendNode) {
             try { fxSendNode.disconnect(); } catch(e) {}
