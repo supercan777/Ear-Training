@@ -339,7 +339,7 @@
     
     // 모드 관련 변수
     let currentMode = 'listen'; 
-    let currentQuizCategory = 'eq'; // 'eq' or 'fx'
+    let currentQuizCategory = 'eq'; 
     let totalTestQuestions = 5; 
     let isPracticeActive = false;
     
@@ -347,14 +347,13 @@
     let currentGainAmount = 12; 
     let targetGain = 12;        
 
-    // EQ 문제 풀
+    // 문제 풀
     const bands = [31.5, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
-    // FX 문제 풀
     const fxPool = ['room', 'chamber', 'plate', 'hall', 'chorus', 'flanger', 'phaser'];
 
     let currentListenFreq = null; 
-    let currentPracticeAnswer = null; // 정답 
-    let testAnswers = []; // 테스트 정답 배열
+    let currentPracticeAnswer = null; 
+    let testAnswers = []; 
     
     let sequenceTimer = null;
     let isPlaying = false; 
@@ -378,7 +377,7 @@
     let revPreDelayMs = 30;
     let revTimeSec = 2.5;
 
-    // 이펙터 알고리즘 (라우팅 에러 방지를 위해 모두 {input, output} 캡슐화 통일)
+    // --- 이펙터 알고리즘 (테이프 에러 방지 및 완벽 최적화) ---
     function createReverb(ctx, type, preDelayMs, revTime) {
         const preDelayNode = ctx.createDelay(); preDelayNode.delayTime.value = preDelayMs / 1000.0;
         const convolver = ctx.createConvolver();
@@ -400,22 +399,25 @@
         return { input: preDelayNode, output: convolver };
     }
 
+    // 1. 코러스 (테이프 소리 방지: 요동 폭을 0.001로 극단적 축소)
     function createChorus(ctx) {
         const inputNode = ctx.createGain();
         const outputNode = ctx.createGain();
-        outputNode.gain.value = 0.7; // 듀얼 보이스 볼륨 최적화
+        outputNode.gain.value = 0.8; 
         
         // Voice 1
         const delay1 = ctx.createDelay(); delay1.delayTime.value = 0.025; 
         const lfo1 = ctx.createOscillator(); const lfoGain1 = ctx.createGain();
-        lfo1.type = 'sine'; lfo1.frequency.value = 0.8; lfoGain1.value = 0.003;     
+        lfo1.type = 'sine'; lfo1.frequency.value = 0.8; // 0.8Hz (안전한 속도)
+        lfoGain1.value = 0.001; // 1ms 폭 (찌그러짐 완벽 방지)
         lfo1.connect(lfoGain1); lfoGain1.connect(delay1.delayTime); lfo1.start();
         currentLFOs.push(lfo1); 
         
         // Voice 2
         const delay2 = ctx.createDelay(); delay2.delayTime.value = 0.035; 
         const lfo2 = ctx.createOscillator(); const lfoGain2 = ctx.createGain();
-        lfo2.type = 'sine'; lfo2.frequency.value = 1.3; lfoGain2.value = 0.004;     
+        lfo2.type = 'sine'; lfo2.frequency.value = 1.2; 
+        lfoGain2.value = 0.0015;     
         lfo2.connect(lfoGain2); lfoGain2.connect(delay2.delayTime); lfo2.start();
         currentLFOs.push(lfo2);
 
@@ -425,31 +427,39 @@
         return { input: inputNode, output: outputNode };
     }
 
+    // 2. 플랜저 (테이프 소리 방지: 피드백 감소 및 0.15Hz 초저속 스윕)
     function createFlanger(ctx) {
         const inputNode = ctx.createGain();
         const delay = ctx.createDelay(); delay.delayTime.value = 0.005; // 5ms 중심
-        const feedback = ctx.createGain(); feedback.gain.value = 0.65; // 명확한 빗살무늬
+        
+        // 피드백이 너무 높으면 웽웽거리는 금속음이 나므로 0.4로 안정화
+        const feedback = ctx.createGain(); feedback.gain.value = 0.4; 
         
         inputNode.connect(delay);
-        delay.connect(feedback); feedback.connect(delay); // Comb filter 루프
+        delay.connect(feedback); feedback.connect(delay); 
         
         const lfo = ctx.createOscillator(); const lfoGain = ctx.createGain();
-        lfo.type = 'sine'; lfo.frequency.value = 0.25; lfoGain.value = 0.003; 
+        lfo.type = 'sine'; lfo.frequency.value = 0.15; // 0.15Hz (아주 느린 제트기 소리)
+        lfoGain.value = 0.002; 
         lfo.connect(lfoGain); lfoGain.connect(delay.delayTime); lfo.start();
         currentLFOs.push(lfo); 
         
         return { input: inputNode, output: delay };
     }
 
+    // 3. 페이저 (공명음 방지 및 부드러운 위상 변화)
     function createPhaser(ctx) {
         const stages = 4; const filters = [];
-        const lfo = ctx.createOscillator(); lfo.type = 'sine'; lfo.frequency.value = 0.3; lfo.start();
+        const lfo = ctx.createOscillator(); lfo.type = 'sine'; lfo.frequency.value = 0.2; // 0.2Hz
+        lfo.start();
         currentLFOs.push(lfo); 
         
         let firstNode = null; let lastNode = null;
         for (let i = 0; i < stages; i++) {
-            const filter = ctx.createBiquadFilter(); filter.type = 'allpass'; filter.frequency.value = 1000; filter.Q.value = 1.5; 
-            const lfoGain = ctx.createGain(); lfoGain.value = 800; 
+            const filter = ctx.createBiquadFilter(); filter.type = 'allpass'; filter.frequency.value = 1000; 
+            filter.Q.value = 0.5; // Q값을 낮춰서 웽웽거림(Resonance) 완벽 차단
+            
+            const lfoGain = ctx.createGain(); lfoGain.value = 300; // 스윕 폭 안전하게 축소
             lfo.connect(lfoGain); lfoGain.connect(filter.frequency);
             if (lastNode) lastNode.connect(filter); else firstNode = filter; lastNode = filter; filters.push(filter);
         }
@@ -513,7 +523,7 @@
         } catch (error) { alert(`'${trackNum}.mp3' 파일을 찾을 수 없습니다.`); document.getElementById('file-name').innerText = "Load Failed"; setSource('pn'); }
     }
 
-    // 모드 초기화 함수 (UI 및 변수 세팅)
+    // 모드 초기화 함수
     function init(mode, category = 'eq', testQs = 5) { 
         stopAudio();
         currentMode = mode;
@@ -521,7 +531,6 @@
         totalTestQuestions = testQs;
         isPracticeActive = false;
         
-        // 사이드바 상태 반영
         document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
         let navId = '';
         if (mode === 'listen') navId = 'nav-listen';
@@ -530,7 +539,6 @@
         else if (mode === 'test') navId = `nav-test${testQs}-${category}`;
         document.getElementById(navId).classList.add('active');
         
-        // 헤더 타이틀 반영
         let catText = category === 'eq' ? 'EQ' : 'FX';
         let titleMap = {
             'listen': 'EQ Listen', 'fx-explore': 'FX Explore',
@@ -538,7 +546,6 @@
         };
         document.getElementById('header-title').innerText = titleMap[mode];
         
-        // 리셋 UI
         document.getElementById('answer-display').style.display = 'none'; 
         document.getElementById('status').innerText = "Ready";
         
@@ -551,7 +558,6 @@
         freqControls.innerHTML = ''; actions.innerHTML = '';
         bands.forEach(f => { freqControls.innerHTML += `<button id="btn-freq-${f}" class="btn freq-item" onclick="handleFreqClick(${f})">${f}</button>`; });
 
-        // 블록 표시 제어
         freqControls.style.display = 'none'; fxControls.style.display = 'none'; fxQuizControls.style.display = 'none';
 
         if (mode === 'test') {
@@ -582,17 +588,14 @@
 
     // --- FX 셋업 헬퍼 (탐색 및 퀴즈 공용) ---
     function setupFxNode(fxType) {
-        // 기존 켜져 있던 LFO 엔진 완벽히 정지 (소리 겹침 및 CPU 과부하 방지)
+        // 기존 켜져 있던 LFO 엔진 완벽히 정지
         if (currentLFOs.length > 0) {
             currentLFOs.forEach(lfo => { try { lfo.stop(); lfo.disconnect(); } catch(e) {} });
             currentLFOs = [];
         }
 
-        // 기존 연결을 깨끗이 해제 (오디오 중첩 방지)
-        if (fxSendNode) {
-            try { fxSendNode.disconnect(); } catch(e) {}
-        }
-        
+        // 기존 연결을 깨끗이 해제
+        if (fxSendNode) { try { fxSendNode.disconnect(); } catch(e) {} }
         if (currentEffectNode) {
             try { 
                 if (currentEffectNode.input) { currentEffectNode.input.disconnect(); currentEffectNode.output.disconnect(); } 
@@ -607,7 +610,7 @@
         } else if (fxType === 'phaser') { currentEffectNode = createPhaser(audioCtx);
         }
         
-        // 재생 중 라우팅 갱신 (에러 방지를 위해 모두 {input, output} 캡슐화 사용)
+        // 재생 중 라우팅 갱신
         if (fxSendNode && wetGainNode && (currentMode === 'fx-explore' || currentMode === 'practice' || currentMode === 'test')) {
             fxSendNode.connect(currentEffectNode.input); 
             currentEffectNode.output.connect(wetGainNode); 
@@ -643,7 +646,7 @@
         if (currentQuizCategory === 'eq') {
             biquadFilter.gain.value = isActive ? targetGain : 0;
         } else {
-            wetGainNode.gain.value = isActive ? 1 : 0; // Wet On/Off
+            wetGainNode.gain.value = isActive ? 1 : 0; 
         }
     }
 
@@ -711,7 +714,7 @@
         let pool = currentQuizCategory === 'eq' ? bands : fxPool;
         let newAnswer;
         
-        // 이전 정답과 중복 방지 루프
+        // 연속 중복 정답 방지
         do {
             newAnswer = pool[Math.floor(Math.random() * pool.length)];
         } while (newAnswer === currentPracticeAnswer);
@@ -764,11 +767,10 @@
         
         for (let i = 0; i < totalTestQuestions; i++) {
             let newAns;
-            // 직전 정답과 똑같으면 다시 뽑기 (중복 방지 루프)
+            // 연속 중복 방지
             do {
                 newAns = pool[Math.floor(Math.random() * pool.length)];
             } while (i > 0 && newAns === testAnswers[i - 1]);
-            
             testAnswers.push(newAns);
         }
         
@@ -825,7 +827,7 @@
         }, 5000); 
     }
     
-    // --- 오디오 라우팅 업데이트 (Wet/Dry 믹스 로직 최적화) ---
+    // --- 오디오 라우팅 업데이트 (Wet/Dry 믹스 로직) ---
     function startAudioSource() {
         if (!audioCtx) return; activeSource = audioCtx.createBufferSource();
         if (customBuffer) activeSource.buffer = customBuffer;
@@ -844,25 +846,23 @@
         if (!dryGainNode) {
             dryGainNode = audioCtx.createGain(); 
             wetGainNode = audioCtx.createGain();
-            fxSendNode = audioCtx.createGain(); // Send 노드 생성
+            fxSendNode = audioCtx.createGain(); 
             dryGainNode.connect(masterGain); 
             wetGainNode.connect(masterGain);
         }
 
         if (currentMode === 'fx-explore' || currentQuizCategory === 'fx') {
-            // FX 라우팅 (Dry + Wet 병렬 믹스)
-            activeSource.connect(dryGainNode); dryGainNode.gain.value = 1; // 원본 유지
-            activeSource.connect(fxSendNode); // 원본 오디오를 가상의 케이블(Send)에 연결
+            activeSource.connect(dryGainNode); dryGainNode.gain.value = 1; 
+            activeSource.connect(fxSendNode); 
             
             if (currentEffectNode) {
                 fxSendNode.connect(currentEffectNode.input); 
                 currentEffectNode.output.connect(wetGainNode); 
             }
-            // Explore 모드면 Wet 활성화, 퀴즈면 Sequence 로직에 맡김
+            
             if (currentMode === 'fx-explore') wetGainNode.gain.value = 1;
             else wetGainNode.gain.value = 0; 
         } else {
-            // EQ 라우팅 (직렬)
             activeSource.connect(biquadFilter); biquadFilter.connect(masterGain);
         }
         
