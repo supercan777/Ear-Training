@@ -82,7 +82,6 @@
             color: var(--primary-color); 
             font-weight: 800;
         }
-        /* Active 상태일 때 좌측에 포인트 라인 추가 */
         .nav-btn.active::before {
             content: '';
             position: absolute;
@@ -154,7 +153,6 @@
         .freq-grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 10px; width: 100%; }
         .freq-grid .btn { padding: 15px 5px; font-size: 0.95em; }
 
-        /* FX 퀴즈 정답용 그리드 (7칸) */
         .fx-quiz-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; width: 100%; }
         .fx-quiz-grid .btn { padding: 15px 5px; font-size: 0.9em; }
 
@@ -172,6 +170,15 @@
         .slider-group label { font-weight: 800; color: #475569; font-size: 0.9em; width: 130px;}
         .slider-group input[type="range"] { flex: 1; cursor: pointer; accent-color: var(--primary-color);}
         .slider-value { width: 60px; text-align: right; font-weight: 800; color: var(--primary-color); font-size: 0.95em;}
+
+        /* 새롭게 강조된 믹서 패널 */
+        .mixer-panel {
+            background: #eff6ff;
+            border: 2px solid #bfdbfe;
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 10px;
+        }
 
         /* 오버레이 및 셋팅 메뉴 */
         .full-overlay { position: absolute; top:0; left:0; width:100%; height:100%; background: var(--surface-color); z-index:999; display:flex; flex-direction:column; align-items:center; justify-content:center; }
@@ -277,11 +284,11 @@
                             </div>
                         </div>
 
-                        <!-- 전체 공통 믹스 슬라이더 (항상 보임) -->
-                        <div class="slider-group" style="border-top: 1px dashed var(--border-color); padding-top: 20px;">
-                            <label style="color:var(--primary-color);">FX MIX (Dry/Wet)</label>
+                        <!-- 전체 공통 믹스 슬라이더 (항상 보임, 파란색 배경) -->
+                        <div class="slider-group mixer-panel">
+                            <label style="color:var(--primary-color); font-size:1em;">🎛️ FX MIX (Dry/Wet)</label>
                             <input type="range" id="slider-fxmix" min="0" max="100" step="1" value="50" oninput="updateFxMix()">
-                            <div class="slider-value" id="val-fxmix">50 %</div>
+                            <div class="slider-value" id="val-fxmix" style="font-size:1.1em;">50 %</div>
                         </div>
                     </div>
                 </div>
@@ -348,7 +355,6 @@
     let biquadFilter = null;
     let customBuffer = null;
     
-    // 모드 관련 변수
     let currentMode = 'listen'; 
     let currentQuizCategory = 'eq'; 
     let totalTestQuestions = 5; 
@@ -375,7 +381,7 @@
     waveformCanvas.width = 1000;
     waveformCanvas.height = 300;
 
-    // --- FX 라우팅 및 믹스 변수 ---
+    // --- FX 라우팅 및 상태 변수 ---
     let currentEffectNode = null;
     let dryGainNode = null;
     let wetGainNode = null;
@@ -387,8 +393,11 @@
     let revPreDelayMs = 30;
     let revTimeSec = 2.5;
     let currentFxMix = 50; 
+    
+    // 사용자가 Explore 모드에서 효과를 껐다 켤 수 있는 변수 추가
+    let isFxBypassed = false; 
 
-    // --- 이펙터 알고리즘 (에러 완벽 차단 및 안정화) ---
+    // --- 이펙터 알고리즘 (안정화) ---
     function createReverb(ctx, type, preDelayMs, revTime) {
         const preDelayNode = ctx.createDelay(); preDelayNode.delayTime.value = preDelayMs / 1000.0;
         const convolver = ctx.createConvolver();
@@ -414,7 +423,6 @@
         const inputNode = ctx.createGain();
         const outputNode = ctx.createGain();
         
-        // 정통 아날로그 페달의 따뜻함을 위한 로우패스 필터
         const warmthFilter = ctx.createBiquadFilter();
         warmthFilter.type = 'lowpass';
         warmthFilter.frequency.value = 3500; 
@@ -447,7 +455,7 @@
         delay.delayTime.value = 0.002; 
         
         const feedback = ctx.createGain(); 
-        feedback.gain.value = 0.5; // 피드백 적당히 조절
+        feedback.gain.value = 0.5; 
         
         inputNode.connect(delay);
         delay.connect(feedback); 
@@ -475,9 +483,9 @@
         
         let firstNode = null; let lastNode = null;
         for (let i = 0; i < stages; i++) {
-            const filter = ctx.createBiquadFilter(); filter.type = 'allpass'; filter.frequency.value = 1000; 
+            const filter = ctx.createBiquadFilter(); filter.type = 'allpass'; filter.frequency.value = 1200; 
             filter.Q.value = 0.5; 
-            const lfoGain = ctx.createGain(); lfoGain.value = 300; 
+            const lfoGain = ctx.createGain(); lfoGain.value = 600; 
             lfo.connect(lfoGain); lfoGain.connect(filter.frequency);
             if (lastNode) lastNode.connect(filter); else firstNode = filter; lastNode = filter; filters.push(filter);
         }
@@ -594,13 +602,44 @@
                 currentListenFreq = null; 
             } else if(mode === 'fx-explore') {
                 fxControls.style.display = 'flex'; 
-                actions.innerHTML = `<button class="btn primary" onclick="playListenAudio()">PLAY (FX ON)</button> <button class="btn" onclick="stopAudio()" style="background:var(--danger-color); color:white; border-color:var(--danger-color);">STOP</button>`;
+                isFxBypassed = false; // 진입 시 효과 켜짐 기본 상태
+                
+                // BYPASS 토글 버튼 추가
+                actions.innerHTML = `
+                    <button class="btn primary" onclick="playListenAudio()">PLAY</button> 
+                    <button id="btn-fx-toggle" class="btn active" style="background-color:#8b5cf6; color:white; border-color:#8b5cf6;" onclick="toggleFxBypass()">FX: ON</button>
+                    <button class="btn" onclick="stopAudio()" style="background:var(--danger-color); color:white; border-color:var(--danger-color);">STOP</button>
+                `;
                 applyFxSetup(); 
             } else if(mode === 'practice') {
                 if(category === 'eq') freqControls.style.display = 'grid';
                 else fxQuizControls.style.display = 'grid';
                 actions.innerHTML = '<button class="btn primary" style="grid-column: 1 / -1;" onclick="runPractice()">START QUIZ</button>';
             }
+        }
+    }
+
+    // --- FX Explore용 BYPASS 토글 컨트롤 ---
+    function toggleFxBypass() {
+        isFxBypassed = !isFxBypassed;
+        const btn = document.getElementById('btn-fx-toggle');
+        if (isFxBypassed) {
+            if(btn) { btn.innerText = "BYPASS (Original)"; btn.style.backgroundColor = "#94a3b8"; btn.style.borderColor = "#94a3b8"; }
+            if(isPlaying) setEffectActive(false);
+        } else {
+            if(btn) { btn.innerText = "FX: ON"; btn.style.backgroundColor = "#8b5cf6"; btn.style.borderColor = "#8b5cf6"; }
+            if(isPlaying) setEffectActive(true);
+        }
+        updateFxStatusText();
+    }
+
+    function updateFxStatusText() {
+        if (!isPlaying) return;
+        if (isFxBypassed) {
+            document.getElementById('status').innerText = `PLAYING: ORIGINAL (Bypassed)`;
+        } else {
+            let type = activeFxCategory === 'reverb' ? activeReverbType : activeFxCategory;
+            document.getElementById('status').innerText = `PLAYING FX: ${type.toUpperCase()}`;
         }
     }
 
@@ -636,7 +675,8 @@
     function updateFxMix() {
         currentFxMix = document.getElementById('slider-fxmix').value;
         document.getElementById('val-fxmix').innerText = currentFxMix + " %";
-        if (isPlaying && (currentMode === 'fx-explore' || isPracticeActive || isTestCompleted === false)) {
+        // 효과가 켜져 있을 때만 볼륨 반영
+        if (isPlaying && currentMode === 'fx-explore' && !isFxBypassed) {
             applyFxMixVolume();
         }
     }
@@ -654,7 +694,6 @@
         document.querySelectorAll('.fx-categories .btn').forEach(b => b.classList.remove('active'));
         document.getElementById(`btn-cat-${category}`).classList.add('active');
         
-        // 리버브 전용 패널 숨김/표시 처리
         document.getElementById('reverb-only-params').style.display = (category === 'reverb') ? 'block' : 'none';
         
         if(category === 'reverb') { document.getElementById('slider-fxmix').value = 40; } 
@@ -679,17 +718,29 @@
     function applyFxSetup() {
         let type = activeFxCategory === 'reverb' ? activeReverbType : activeFxCategory;
         setupFxNode(type);
-        document.getElementById('status').innerText = `PLAYING FX: ${type.toUpperCase()}`;
+        if(currentMode === 'fx-explore') {
+            if(isPlaying) updateFxStatusText();
+            else document.getElementById('status').innerText = `READY: ${type.toUpperCase()}`;
+        }
     }
 
     // --- 퀴즈/테스트 공통 이펙트 On/Off 토글러 ---
     function setEffectActive(isActive) {
         if (currentQuizCategory === 'eq') {
-            biquadFilter.gain.value = isActive ? targetGain : 0;
+            if(biquadFilter) biquadFilter.gain.value = isActive ? targetGain : 0;
         } else {
+            if (!dryGainNode || !wetGainNode) return;
             if (isActive) {
-                applyFxMixVolume(); 
+                // 퀴즈/테스트 시에는 학생들이 효과를 뚜렷하게 들을 수 있도록 강제 고정 믹스 적용
+                if (currentMode === 'practice' || currentMode === 'test') {
+                    let quizMix = 0.6; // Wet 60% 고정
+                    dryGainNode.gain.value = Math.cos(quizMix * 0.5 * Math.PI);
+                    wetGainNode.gain.value = Math.sin(quizMix * 0.5 * Math.PI);
+                } else {
+                    applyFxMixVolume(); // Explore 모드에서는 슬라이더 값 적용
+                }
             } else {
+                // Bypass 상태
                 dryGainNode.gain.value = 1;
                 wetGainNode.gain.value = 0; 
             }
@@ -745,6 +796,7 @@
             else document.getElementById('status').innerText = "PLAYING: FLAT (Original)";
         } else if (currentMode === 'fx-explore') {
             startAudioSource(); 
+            updateFxStatusText();
         }
     }
 
@@ -866,7 +918,7 @@
         }, 5000); 
     }
     
-    // --- 오디오 라우팅 (병렬 믹스 콘솔 로직) ---
+    // --- 오디오 라우팅 ---
     function startAudioSource() {
         if (!audioCtx) return; activeSource = audioCtx.createBufferSource();
         if (customBuffer) activeSource.buffer = customBuffer;
@@ -891,16 +943,20 @@
         }
 
         if (currentMode === 'fx-explore' || currentQuizCategory === 'fx') {
-            activeSource.connect(dryGainNode); // 원본 다이렉트 아웃
-            activeSource.connect(fxSendNode);  // 이펙터로 보내는 센드
+            activeSource.connect(dryGainNode); 
+            activeSource.connect(fxSendNode);  
             
             if (currentEffectNode) {
                 fxSendNode.connect(currentEffectNode.input); 
                 currentEffectNode.output.connect(wetGainNode); 
             }
             
-            if (currentMode === 'fx-explore') applyFxMixVolume(); // 슬라이더 설정 적용
-            else { dryGainNode.gain.value = 1; wetGainNode.gain.value = 0; } // 퀴즈 대기 상태는 Dry 100%
+            if (currentMode === 'fx-explore') {
+                if (isFxBypassed) { dryGainNode.gain.value = 1; wetGainNode.gain.value = 0; }
+                else { applyFxMixVolume(); }
+            } else { 
+                dryGainNode.gain.value = 1; wetGainNode.gain.value = 0; // 퀴즈 시작 대기 시 무조건 원본
+            } 
         } else {
             activeSource.connect(biquadFilter); biquadFilter.connect(masterGain);
         }
