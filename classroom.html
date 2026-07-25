@@ -398,7 +398,7 @@
     
     let isFxBypassed = false; 
 
-    // --- 이펙터 알고리즘 (안정화) ---
+    // --- 이펙터 알고리즘 (Triangle LFO 적용으로 원본-효과-원본 반복 현상 완벽 제거) ---
     function createReverb(ctx, type, preDelayMs, revTime) {
         const preDelayNode = ctx.createDelay(); preDelayNode.delayTime.value = preDelayMs / 1000.0;
         const convolver = ctx.createConvolver();
@@ -426,15 +426,16 @@
         
         const warmthFilter = ctx.createBiquadFilter();
         warmthFilter.type = 'lowpass';
-        warmthFilter.frequency.value = 3500; 
+        warmthFilter.frequency.value = 4000; 
         
         const delay = ctx.createDelay(); 
-        delay.delayTime.value = 0.020; 
+        delay.delayTime.value = 0.025; // 기본 딜레이 25ms
         
         const lfo = ctx.createOscillator(); 
         const lfoGain = ctx.createGain();
-        lfo.type = 'sine'; 
-        lfo.frequency.value = 1.5;   
+        // 핵심 수정: sine 대신 triangle을 사용하여 효과가 꺼지는 느낌 제거
+        lfo.type = 'triangle'; 
+        lfo.frequency.value = 1.0;   
         lfoGain.value = 0.003;       
         
         lfo.connect(lfoGain); 
@@ -453,10 +454,10 @@
         const inputNode = ctx.createGain();
         
         const delay = ctx.createDelay(); 
-        delay.delayTime.value = 0.002; 
+        delay.delayTime.value = 0.004; // 베이스 딜레이를 4ms로 올려 원본 소리로 변하는 현상 차단
         
         const feedback = ctx.createGain(); 
-        feedback.gain.value = 0.5; 
+        feedback.gain.value = 0.6; // 피드백 강화로 플랜저 효과 상승
         
         inputNode.connect(delay);
         delay.connect(feedback); 
@@ -464,9 +465,10 @@
         
         const lfo = ctx.createOscillator(); 
         const lfoGain = ctx.createGain();
-        lfo.type = 'sine'; 
-        lfo.frequency.value = 0.2; 
-        lfoGain.value = 0.0018; 
+        // 핵심 수정: triangle 사용으로 일정한 속도의 빗살무늬 움직임 보장
+        lfo.type = 'triangle'; 
+        lfo.frequency.value = 0.3; // 0.3Hz
+        lfoGain.value = 0.003; // 1ms ~ 7ms 사이를 항상 스윕
         
         lfo.connect(lfoGain); 
         lfoGain.connect(delay.delayTime); 
@@ -478,15 +480,18 @@
 
     function createPhaser(ctx) {
         const stages = 4; const filters = [];
-        const lfo = ctx.createOscillator(); lfo.type = 'sine'; lfo.frequency.value = 0.2; 
+        const lfo = ctx.createOscillator(); 
+        // 핵심 수정: triangle 파형
+        lfo.type = 'triangle'; 
+        lfo.frequency.value = 0.4; 
         lfo.start();
         currentLFOs.push(lfo); 
         
         let firstNode = null; let lastNode = null;
         for (let i = 0; i < stages; i++) {
-            const filter = ctx.createBiquadFilter(); filter.type = 'allpass'; filter.frequency.value = 1200; 
-            filter.Q.value = 0.5; 
-            const lfoGain = ctx.createGain(); lfoGain.value = 600; 
+            const filter = ctx.createBiquadFilter(); filter.type = 'allpass'; filter.frequency.value = 1000; 
+            filter.Q.value = 1.0; 
+            const lfoGain = ctx.createGain(); lfoGain.value = 700; // 300Hz ~ 1700Hz 스윕
             lfo.connect(lfoGain); lfoGain.connect(filter.frequency);
             if (lastNode) lastNode.connect(filter); else firstNode = filter; lastNode = filter; filters.push(filter);
         }
@@ -684,8 +689,7 @@
     function applyFxMixVolume() {
         if (!dryGainNode || !wetGainNode) return;
         let sendLevel = currentFxMix / 100.0;
-        // 병렬 프로세싱: 원본(Dry)은 항상 100% 볼륨(Unity Gain) 유지
-        // 이펙터(Wet) 소리만 Send 값에 따라 원본 위에 덧입힘 (Aux Send/Return 방식)
+        // 병렬 프로세싱: 원본(Dry)은 항상 100% 볼륨 유지
         dryGainNode.gain.value = 1.0;
         wetGainNode.gain.value = sendLevel;
     }
@@ -734,7 +738,7 @@
             if (!dryGainNode || !wetGainNode) return;
             if (isActive) {
                 if (currentMode === 'practice' || currentMode === 'test') {
-                    // 퀴즈 시에는 원본 100% 위에 효과음을 80% 볼륨으로 확실하게 병렬 믹스
+                    // 퀴즈 시에는 원본 100% 위에 효과음을 80% 볼륨으로 확실하게 믹스
                     let quizSend = 0.8; 
                     dryGainNode.gain.value = 1.0;
                     wetGainNode.gain.value = quizSend;
