@@ -82,6 +82,7 @@
             color: var(--primary-color); 
             font-weight: 800;
         }
+        /* Active 상태일 때 좌측에 포인트 라인 추가 */
         .nav-btn.active::before {
             content: '';
             position: absolute;
@@ -264,7 +265,7 @@
                     </div>
                     
                     <div id="fx-param-panel" class="fx-sub-panel" style="display:flex;">
-                        <!-- 리버브 전용 UI (다른 모드일 때 숨김) -->
+                        <!-- 리버브 전용 UI -->
                         <div id="reverb-only-params" style="display: block;">
                             <div class="reverb-types" style="margin-bottom: 15px;">
                                 <button id="btn-rev-room" class="btn rev-type-btn" onclick="setReverbType('room')">ROOM</button>
@@ -284,9 +285,9 @@
                             </div>
                         </div>
 
-                        <!-- 전체 공통 믹스 슬라이더 (항상 보임, 파란색 배경) -->
+                        <!-- 병렬 프로세싱 Aux Send 믹서 패널 -->
                         <div class="slider-group mixer-panel">
-                            <label style="color:var(--primary-color); font-size:1em;">🎛️ FX MIX (Dry/Wet)</label>
+                            <label style="color:var(--primary-color); font-size:1em; width:160px;">🎛️ FX SEND (Parallel)</label>
                             <input type="range" id="slider-fxmix" min="0" max="100" step="1" value="50" oninput="updateFxMix()">
                             <div class="slider-value" id="val-fxmix" style="font-size:1.1em;">50 %</div>
                         </div>
@@ -355,6 +356,7 @@
     let biquadFilter = null;
     let customBuffer = null;
     
+    // 모드 관련 변수
     let currentMode = 'listen'; 
     let currentQuizCategory = 'eq'; 
     let totalTestQuestions = 5; 
@@ -394,7 +396,6 @@
     let revTimeSec = 2.5;
     let currentFxMix = 50; 
     
-    // 사용자가 Explore 모드에서 효과를 껐다 켤 수 있는 변수 추가
     let isFxBypassed = false; 
 
     // --- 이펙터 알고리즘 (안정화) ---
@@ -602,9 +603,9 @@
                 currentListenFreq = null; 
             } else if(mode === 'fx-explore') {
                 fxControls.style.display = 'flex'; 
-                isFxBypassed = false; // 진입 시 효과 켜짐 기본 상태
+                isFxBypassed = false; 
                 
-                // BYPASS 토글 버튼 추가
+                // BYPASS 버튼
                 actions.innerHTML = `
                     <button class="btn primary" onclick="playListenAudio()">PLAY</button> 
                     <button id="btn-fx-toggle" class="btn active" style="background-color:#8b5cf6; color:white; border-color:#8b5cf6;" onclick="toggleFxBypass()">FX: ON</button>
@@ -671,11 +672,10 @@
         }
     }
 
-    // --- FX 믹서 (Dry/Wet) 실시간 반영 로직 ---
+    // --- 완벽한 병렬(Parallel) Aux Send 실시간 반영 로직 ---
     function updateFxMix() {
         currentFxMix = document.getElementById('slider-fxmix').value;
         document.getElementById('val-fxmix').innerText = currentFxMix + " %";
-        // 효과가 켜져 있을 때만 볼륨 반영
         if (isPlaying && currentMode === 'fx-explore' && !isFxBypassed) {
             applyFxMixVolume();
         }
@@ -683,9 +683,11 @@
 
     function applyFxMixVolume() {
         if (!dryGainNode || !wetGainNode) return;
-        let mixRatio = currentFxMix / 100.0;
-        dryGainNode.gain.value = Math.cos(mixRatio * 0.5 * Math.PI);
-        wetGainNode.gain.value = Math.sin(mixRatio * 0.5 * Math.PI);
+        let sendLevel = currentFxMix / 100.0;
+        // 병렬 프로세싱: 원본(Dry)은 항상 100% 볼륨(Unity Gain) 유지
+        // 이펙터(Wet) 소리만 Send 값에 따라 원본 위에 덧입힘 (Aux Send/Return 방식)
+        dryGainNode.gain.value = 1.0;
+        wetGainNode.gain.value = sendLevel;
     }
 
     // --- FX Explore UI 컨트롤 ---
@@ -731,18 +733,18 @@
         } else {
             if (!dryGainNode || !wetGainNode) return;
             if (isActive) {
-                // 퀴즈/테스트 시에는 학생들이 효과를 뚜렷하게 들을 수 있도록 강제 고정 믹스 적용
                 if (currentMode === 'practice' || currentMode === 'test') {
-                    let quizMix = 0.6; // Wet 60% 고정
-                    dryGainNode.gain.value = Math.cos(quizMix * 0.5 * Math.PI);
-                    wetGainNode.gain.value = Math.sin(quizMix * 0.5 * Math.PI);
+                    // 퀴즈 시에는 원본 100% 위에 효과음을 80% 볼륨으로 확실하게 병렬 믹스
+                    let quizSend = 0.8; 
+                    dryGainNode.gain.value = 1.0;
+                    wetGainNode.gain.value = quizSend;
                 } else {
                     applyFxMixVolume(); // Explore 모드에서는 슬라이더 값 적용
                 }
             } else {
-                // Bypass 상태
-                dryGainNode.gain.value = 1;
-                wetGainNode.gain.value = 0; 
+                // Bypass 상태: 원본 100%, 효과음 0%
+                dryGainNode.gain.value = 1.0;
+                wetGainNode.gain.value = 0.0; 
             }
         }
     }
@@ -918,7 +920,7 @@
         }, 5000); 
     }
     
-    // --- 오디오 라우팅 ---
+    // --- 오디오 라우팅 (병렬 Aux Send 프로세싱) ---
     function startAudioSource() {
         if (!audioCtx) return; activeSource = audioCtx.createBufferSource();
         if (customBuffer) activeSource.buffer = customBuffer;
@@ -943,8 +945,8 @@
         }
 
         if (currentMode === 'fx-explore' || currentQuizCategory === 'fx') {
-            activeSource.connect(dryGainNode); 
-            activeSource.connect(fxSendNode);  
+            activeSource.connect(dryGainNode); // 원본 메인 아웃 (항상 연결)
+            activeSource.connect(fxSendNode);  // 이펙터로 보내는 Aux Send
             
             if (currentEffectNode) {
                 fxSendNode.connect(currentEffectNode.input); 
@@ -952,10 +954,10 @@
             }
             
             if (currentMode === 'fx-explore') {
-                if (isFxBypassed) { dryGainNode.gain.value = 1; wetGainNode.gain.value = 0; }
+                if (isFxBypassed) { dryGainNode.gain.value = 1.0; wetGainNode.gain.value = 0; }
                 else { applyFxMixVolume(); }
             } else { 
-                dryGainNode.gain.value = 1; wetGainNode.gain.value = 0; // 퀴즈 시작 대기 시 무조건 원본
+                dryGainNode.gain.value = 1.0; wetGainNode.gain.value = 0; // 퀴즈 대기 시 원본 100%
             } 
         } else {
             activeSource.connect(biquadFilter); biquadFilter.connect(masterGain);
