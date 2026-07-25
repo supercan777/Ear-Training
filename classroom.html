@@ -82,9 +82,17 @@
             color: var(--primary-color); 
             font-weight: 800;
         }
+        /* Active 상태일 때 좌측에 포인트 라인 추가 */
         .nav-btn.active::before {
-            content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%);
-            height: 60%; width: 4px; background: var(--primary-color); border-radius: 0 4px 4px 0;
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            height: 60%;
+            width: 4px;
+            background: var(--primary-color);
+            border-radius: 0 4px 4px 0;
         }
 
         /* 메인 영역 */
@@ -92,11 +100,22 @@
         .top-bar { display: flex; justify-content: space-between; align-items: center; padding: 25px 30px; background: transparent; }
         .top-bar h2 { margin: 0; font-size: 1.6em; font-weight: 800; color: #0f172a; letter-spacing: -0.5px; }
         
+        /* 설정 버튼 (기어) 깔끔하게 변경 */
         #settings-trigger { 
-            font-size: 1.5em; cursor: pointer; color: #94a3b8; transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); 
-            background: transparent; padding: 8px; display: flex; align-items: center; justify-content: center;
+            font-size: 1.5em; 
+            cursor: pointer; 
+            color: #94a3b8; 
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); 
+            background: transparent; 
+            padding: 8px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
         }
-        #settings-trigger:hover { color: var(--primary-color); transform: rotate(45deg) scale(1.1); }
+        #settings-trigger:hover { 
+            color: var(--primary-color); 
+            transform: rotate(45deg) scale(1.1); 
+        }
 
         .content-area { padding: 0 30px 30px 30px; display: flex; flex-direction: column; flex: 1; max-width: 1000px; margin: 0 auto; width: 100%; box-sizing: border-box; }
         
@@ -104,7 +123,8 @@
             position: relative; width: 100%; aspect-ratio: 24 / 9; 
             background: #1e293b; border: none; cursor: pointer;
             border-radius: 20px; overflow: hidden; margin-bottom: 25px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.08); transition: aspect-ratio 0.3s ease; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            transition: aspect-ratio 0.3s ease; 
         }
         #rta-canvas { width: 100%; height: 100%; display: block; }
         
@@ -112,7 +132,8 @@
             position: absolute; top:0; left:0; width:100%; height:100%; 
             background: rgba(15, 23, 42, 0.95); display: none; flex-direction: column; 
             align-items: center; justify-content: center; z-index: 10; 
-            text-align: center; padding: 20px; box-sizing: border-box; color: white; cursor: default;
+            text-align: center; padding: 20px;
+            box-sizing: border-box; color: white; cursor: default;
         }
 
         #status { font-size: 1.05em; font-weight: 700; text-align: center; margin-bottom: 25px; min-height: 24px; color: var(--text-muted); background: var(--surface-color); padding: 16px; border-radius: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.02); letter-spacing: 0.5px;}
@@ -132,6 +153,8 @@
 
         .freq-grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 10px; width: 100%; }
         .freq-grid .btn { padding: 15px 5px; font-size: 0.95em; }
+
+        /* FX 퀴즈 정답용 그리드 (7칸) */
         .fx-quiz-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; width: 100%; }
         .fx-quiz-grid .btn { padding: 15px 5px; font-size: 0.9em; }
 
@@ -141,7 +164,7 @@
         .fx-categories .btn { flex: 1; }
         .fx-sub-panel {
             background: #f8fafc; padding: 25px; border-radius: 16px; border: 1px solid var(--border-color);
-            display: none; flex-direction: column; gap: 20px;
+            display: none; flex-direction: column; gap: 25px;
         }
         .reverb-types { display: flex; gap: 10px; }
         .reverb-types .btn { flex: 1; padding: 12px 5px; font-size: 0.9em; }
@@ -362,9 +385,9 @@
     let activeReverbType = 'hall';
     let revPreDelayMs = 30;
     let revTimeSec = 2.5;
-    let currentFxMix = 50; // 기본 믹스 비율 50%
+    let currentFxMix = 50; 
 
-    // --- 이펙터 알고리즘 (에러 완벽 차단 및 안정화) ---
+    // --- 이펙터 알고리즘 (에러 차단 및 플랜저 펌핑현상 완벽 개선) ---
     function createReverb(ctx, type, preDelayMs, revTime) {
         const preDelayNode = ctx.createDelay(); preDelayNode.delayTime.value = preDelayMs / 1000.0;
         const convolver = ctx.createConvolver();
@@ -389,39 +412,56 @@
     function createChorus(ctx) {
         const inputNode = ctx.createGain();
         const outputNode = ctx.createGain();
-        outputNode.gain.value = 0.8; 
         
-        // Voice 1
-        const delay1 = ctx.createDelay(); delay1.delayTime.value = 0.025; 
-        const lfo1 = ctx.createOscillator(); const lfoGain1 = ctx.createGain();
-        lfo1.type = 'sine'; lfo1.frequency.value = 0.8; lfoGain1.value = 0.001; 
-        lfo1.connect(lfoGain1); lfoGain1.connect(delay1.delayTime); lfo1.start();
-        currentLFOs.push(lfo1); 
+        // 정통 아날로그 페달의 따뜻함을 위한 로우패스 필터
+        const warmthFilter = ctx.createBiquadFilter();
+        warmthFilter.type = 'lowpass';
+        warmthFilter.frequency.value = 3500; 
         
-        // Voice 2
-        const delay2 = ctx.createDelay(); delay2.delayTime.value = 0.035; 
-        const lfo2 = ctx.createOscillator(); const lfoGain2 = ctx.createGain();
-        lfo2.type = 'sine'; lfo2.frequency.value = 1.2; lfoGain2.value = 0.0015;     
-        lfo2.connect(lfoGain2); lfoGain2.connect(delay2.delayTime); lfo2.start();
-        currentLFOs.push(lfo2);
-
-        inputNode.connect(delay1); inputNode.connect(delay2);
-        delay1.connect(outputNode); delay2.connect(outputNode);
+        const delay = ctx.createDelay(); 
+        delay.delayTime.value = 0.020; 
+        
+        const lfo = ctx.createOscillator(); 
+        const lfoGain = ctx.createGain();
+        lfo.type = 'sine'; 
+        lfo.frequency.value = 1.5;   
+        lfoGain.value = 0.003;       
+        
+        lfo.connect(lfoGain); 
+        lfoGain.connect(delay.delayTime); 
+        lfo.start();
+        currentLFOs.push(lfo); 
+        
+        inputNode.connect(warmthFilter);
+        warmthFilter.connect(delay);
+        delay.connect(outputNode);
         
         return { input: inputNode, output: outputNode };
     }
 
     function createFlanger(ctx) {
         const inputNode = ctx.createGain();
-        const delay = ctx.createDelay(); delay.delayTime.value = 0.005; 
-        const feedback = ctx.createGain(); feedback.gain.value = 0.4; 
+        
+        const delay = ctx.createDelay(); 
+        // 펌핑(볼륨 변화) 해결의 핵심: 딜레이 베이스를 2ms로 앞당겨서 저음역 캔슬링 방지
+        delay.delayTime.value = 0.002; 
+        
+        const feedback = ctx.createGain(); 
+        feedback.gain.value = 0.5; // 피드백 적당히 조절 (안정적인 스윕)
         
         inputNode.connect(delay);
-        delay.connect(feedback); feedback.connect(delay); 
+        delay.connect(feedback); 
+        feedback.connect(delay); 
         
-        const lfo = ctx.createOscillator(); const lfoGain = ctx.createGain();
-        lfo.type = 'sine'; lfo.frequency.value = 0.15; lfoGain.value = 0.002; 
-        lfo.connect(lfoGain); lfoGain.connect(delay.delayTime); lfo.start();
+        const lfo = ctx.createOscillator(); 
+        const lfoGain = ctx.createGain();
+        lfo.type = 'sine'; 
+        lfo.frequency.value = 0.2; // 0.2Hz (5초 주기의 부드러운 스윕)
+        lfoGain.value = 0.0018; // 0.2ms ~ 3.8ms 사이를 스윕 (제트기 사운드)
+        
+        lfo.connect(lfoGain); 
+        lfoGain.connect(delay.delayTime); 
+        lfo.start();
         currentLFOs.push(lfo); 
         
         return { input: inputNode, output: delay };
@@ -603,7 +643,6 @@
 
     function applyFxMixVolume() {
         if (!dryGainNode || !wetGainNode) return;
-        // Equal Power Crossfade 방식 (소리 겹침 시 볼륨 펌핑 방지)
         let mixRatio = currentFxMix / 100.0;
         dryGainNode.gain.value = Math.cos(mixRatio * 0.5 * Math.PI);
         wetGainNode.gain.value = Math.sin(mixRatio * 0.5 * Math.PI);
@@ -615,10 +654,8 @@
         document.querySelectorAll('.fx-categories .btn').forEach(b => b.classList.remove('active'));
         document.getElementById(`btn-cat-${category}`).classList.add('active');
         
-        // 리버브 전용 패널 숨김/표시 처리
         document.getElementById('reverb-only-params').style.display = (category === 'reverb') ? 'block' : 'none';
         
-        // 이펙터 전환 시 최적의 기본 믹스값 제안
         if(category === 'reverb') { document.getElementById('slider-fxmix').value = 40; } 
         else { document.getElementById('slider-fxmix').value = 50; }
         updateFxMix();
@@ -650,9 +687,8 @@
             biquadFilter.gain.value = isActive ? targetGain : 0;
         } else {
             if (isActive) {
-                applyFxMixVolume(); // 슬라이더 설정값에 맞춰 믹스 켜기
+                applyFxMixVolume(); 
             } else {
-                // 이펙트 껐을 때는 Dry 100%, Wet 0%
                 dryGainNode.gain.value = 1;
                 wetGainNode.gain.value = 0; 
             }
