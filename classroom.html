@@ -348,6 +348,7 @@
     let biquadFilter = null;
     let customBuffer = null;
     
+    // 모드 관련 변수
     let currentMode = 'listen'; 
     let currentQuizCategory = 'eq'; 
     let totalTestQuestions = 5; 
@@ -387,7 +388,7 @@
     let revTimeSec = 2.5;
     let currentFxMix = 50; 
 
-    // --- 이펙터 알고리즘 (에러 차단 및 플랜저 펌핑현상 완벽 개선) ---
+    // --- 이펙터 알고리즘 (에러 완벽 차단 및 안정화) ---
     function createReverb(ctx, type, preDelayMs, revTime) {
         const preDelayNode = ctx.createDelay(); preDelayNode.delayTime.value = preDelayMs / 1000.0;
         const convolver = ctx.createConvolver();
@@ -443,11 +444,10 @@
         const inputNode = ctx.createGain();
         
         const delay = ctx.createDelay(); 
-        // 펌핑(볼륨 변화) 해결의 핵심: 딜레이 베이스를 2ms로 앞당겨서 저음역 캔슬링 방지
         delay.delayTime.value = 0.002; 
         
         const feedback = ctx.createGain(); 
-        feedback.gain.value = 0.5; // 피드백 적당히 조절 (안정적인 스윕)
+        feedback.gain.value = 0.5; // 피드백 적당히 조절
         
         inputNode.connect(delay);
         delay.connect(feedback); 
@@ -456,8 +456,8 @@
         const lfo = ctx.createOscillator(); 
         const lfoGain = ctx.createGain();
         lfo.type = 'sine'; 
-        lfo.frequency.value = 0.2; // 0.2Hz (5초 주기의 부드러운 스윕)
-        lfoGain.value = 0.0018; // 0.2ms ~ 3.8ms 사이를 스윕 (제트기 사운드)
+        lfo.frequency.value = 0.2; 
+        lfoGain.value = 0.0018; 
         
         lfo.connect(lfoGain); 
         lfoGain.connect(delay.delayTime); 
@@ -654,6 +654,7 @@
         document.querySelectorAll('.fx-categories .btn').forEach(b => b.classList.remove('active'));
         document.getElementById(`btn-cat-${category}`).classList.add('active');
         
+        // 리버브 전용 패널 숨김/표시 처리
         document.getElementById('reverb-only-params').style.display = (category === 'reverb') ? 'block' : 'none';
         
         if(category === 'reverb') { document.getElementById('slider-fxmix').value = 40; } 
