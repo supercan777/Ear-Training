@@ -219,7 +219,8 @@
             <!-- Explore 카테고리 -->
             <div class="nav-category">Explore</div>
             <button class="nav-btn active" id="nav-listen" onclick="init('listen')">EQ Listen</button>
-            <button class="nav-btn" id="nav-fx-explore" onclick="init('fx-explore')">FX Explore</button>
+            <!-- 버그의 원인이었던 클릭 이벤트 수정 (강제로 'fx' 카테고리 주입) -->
+            <button class="nav-btn" id="nav-fx-explore" onclick="init('fx-explore', 'fx')">FX Explore</button>
             
             <!-- Practice 카테고리 -->
             <div class="nav-category">Practice</div>
@@ -399,11 +400,10 @@
     let isFxBypassed = false; 
 
     // --------------------------------------------------
-    // 이펙터 알고리즘 (완벽한 캡슐화 및 아날로그 모델링)
+    // 이펙터 알고리즘 (볼륨 안정화 및 삼각파 유지)
     // --------------------------------------------------
 
     function createReverb(ctx, type, preDelayMs, revTime) {
-        // 독립된 입력/출력 노드를 통해 내부 회로를 완벽 격리합니다.
         const inputNode = ctx.createGain();
         const outputNode = ctx.createGain();
         
@@ -425,7 +425,6 @@
         }
         convolver.buffer = impulse; 
         
-        // 라우팅 
         inputNode.connect(preDelayNode);
         preDelayNode.connect(convolver);
         convolver.connect(outputNode);
@@ -436,16 +435,16 @@
     function createChorus(ctx) {
         const inputNode = ctx.createGain();
         const outputNode = ctx.createGain();
-        outputNode.gain.value = 0.6; // 다중 보이스로 인한 볼륨 클리핑 방지
+        // 볼륨 펌핑을 막기 위해 코러스 이펙터 출력 한계를 0.4로 더 낮춤 (안정적 믹싱)
+        outputNode.gain.value = 0.4; 
         
-        // 3-Voice Chorus 구조: 기계적인 외계인 소리 방지 및 자연스러운 풍성함 확보
         function addVoice(delayTime, lfoFreq, lfoDepth) {
             const delay = ctx.createDelay();
             delay.delayTime.value = delayTime;
             
             const lfo = ctx.createOscillator();
             const lfoGain = ctx.createGain();
-            lfo.type = 'sine'; // 다중 보이스일때는 사인파가 부드럽게 들림
+            lfo.type = 'sine'; // 다중 보이스에 한해 코러스는 sine이 예쁩니다.
             lfo.frequency.value = lfoFreq;
             lfoGain.value = lfoDepth;
             
@@ -458,9 +457,9 @@
             delay.connect(outputNode);
         }
         
-        addVoice(0.015, 0.5, 0.001);  // 보이스 1
-        addVoice(0.020, 0.8, 0.0015); // 보이스 2
-        addVoice(0.025, 1.2, 0.001);  // 보이스 3
+        addVoice(0.015, 0.5, 0.001);  
+        addVoice(0.020, 0.8, 0.0015); 
+        addVoice(0.025, 1.2, 0.001);  
         
         return { input: inputNode, output: outputNode };
     }
@@ -470,10 +469,11 @@
         const outputNode = ctx.createGain();
         
         const delay = ctx.createDelay(); 
-        delay.delayTime.value = 0.003; // 제트기 스윕의 정석적인 시작점(3ms)
+        delay.delayTime.value = 0.003; 
         
         const feedback = ctx.createGain(); 
-        feedback.gain.value = 0.75; // 강한 피드백으로 메탈릭한 스윕 강화
+        // 웽웽거리는 노이즈와 볼륨 펌핑을 막기 위해 피드백을 0.45로 안정화
+        feedback.gain.value = 0.45; 
         
         inputNode.connect(delay);
         delay.connect(feedback); 
@@ -482,9 +482,9 @@
         
         const lfo = ctx.createOscillator(); 
         const lfoGain = ctx.createGain();
-        lfo.type = 'sine'; 
-        lfo.frequency.value = 0.1; // 10초 주기의 아주 느린 스윕
-        lfoGain.value = 0.002; // 1ms ~ 5ms 구간을 왕복
+        lfo.type = 'triangle'; // 원본 소리로 돌아가는 현상 완전 차단
+        lfo.frequency.value = 0.1; 
+        lfoGain.value = 0.002; 
         
         lfo.connect(lfoGain); 
         lfoGain.connect(delay.delayTime); 
@@ -499,8 +499,8 @@
         const outputNode = ctx.createGain();
         
         const lfo = ctx.createOscillator(); 
-        lfo.type = 'sine'; 
-        lfo.frequency.value = 0.2; // 5초 주기
+        lfo.type = 'triangle'; 
+        lfo.frequency.value = 0.2; 
         lfo.start();
         currentLFOs.push(lfo); 
         
@@ -514,7 +514,7 @@
             filter.Q.value = 1.0; 
             
             const lfoGain = ctx.createGain(); 
-            lfoGain.value = 800; // 넓은 주파수 대역 왕복
+            lfoGain.value = 800; 
             
             lfo.connect(lfoGain); 
             lfoGain.connect(filter.frequency);
@@ -587,10 +587,15 @@
         } catch (error) { alert(`'${trackNum}.mp3' 파일을 찾을 수 없습니다.`); document.getElementById('file-name').innerText = "Load Failed"; setSource('pn'); }
     }
 
-    // 모드 초기화 함수
+    // 모드 초기화 함수 (바이패스 버그 완전 해결)
     function init(mode, category = 'eq', testQs = 5) { 
         stopAudio();
         currentMode = mode;
+        
+        // ★ 핵심 해결책: FX 모드 진입 시 강제로 category를 'fx'로 고정하여 버튼 오작동 방지
+        if (mode === 'fx-explore') {
+            category = 'fx';
+        }
         currentQuizCategory = category;
         totalTestQuestions = testQs;
         isPracticeActive = false;
@@ -642,7 +647,6 @@
                 fxControls.style.display = 'flex'; 
                 isFxBypassed = false; 
                 
-                // BYPASS 버튼
                 actions.innerHTML = `
                     <button class="btn primary" onclick="playListenAudio()">PLAY</button> 
                     <button id="btn-fx-toggle" class="btn active" style="background-color:#8b5cf6; color:white; border-color:#8b5cf6;" onclick="toggleFxBypass()">FX: ON</button>
@@ -663,10 +667,10 @@
         const btn = document.getElementById('btn-fx-toggle');
         if (isFxBypassed) {
             if(btn) { btn.innerText = "BYPASS (Original)"; btn.style.backgroundColor = "#94a3b8"; btn.style.borderColor = "#94a3b8"; }
-            setEffectActive(false); // 즉각적인 효과 차단
+            setEffectActive(false); // 즉각적인 효과 차단 실행
         } else {
             if(btn) { btn.innerText = "FX: ON"; btn.style.backgroundColor = "#8b5cf6"; btn.style.borderColor = "#8b5cf6"; }
-            setEffectActive(true); // 즉각적인 효과 재가동
+            setEffectActive(true); // 즉각적인 효과 재가동 실행
         }
         updateFxStatusText();
     }
@@ -739,9 +743,10 @@
             if(biquadFilter) biquadFilter.gain.value = isActive ? targetGain : 0;
         } else {
             if (!dryGainNode || !wetGainNode || !fxSendNode) return;
+            
             if (isActive) {
                 if (currentMode === 'practice' || currentMode === 'test') {
-                    // 퀴즈 시에는 원본 위에 효과음을 80% 볼륨으로 확실하게 병렬 믹스
+                    // 퀴즈 시에는 원본 100% 위에 효과음을 80% 볼륨으로 확실하게 병렬 믹스
                     let quizSend = 0.8; 
                     dryGainNode.gain.value = 1.0;
                     wetGainNode.gain.value = quizSend;
@@ -750,7 +755,8 @@
                     applyFxMixVolume(); // Explore 모드에서는 슬라이더 값 적용
                 }
             } else {
-                // Bypass 상태: 원본 100%, 이펙터 출력 0%, 이펙터로 들어가는 소리 0% (완전 차단)
+                // ★ Bypass 상태 (핵심 수정부분): 
+                // 원본 100% 유지 + 이펙터 출력 0% + 이펙터 입력 완전히 차단 0%
                 dryGainNode.gain.value = 1.0;
                 wetGainNode.gain.value = 0.0; 
                 fxSendNode.gain.value = 0.0; 
@@ -999,10 +1005,10 @@
             }
             
             if (currentMode === 'fx-explore') {
-                if (isFxBypassed) { setEffectActive(false); } // 바이패스면 완전 차단
+                if (isFxBypassed) { setEffectActive(false); } // 완전 차단 적용
                 else { applyFxMixVolume(); }
             } else { 
-                setEffectActive(false); // 퀴즈 시작 대기 시 원본 100%, 효과 완전 차단
+                setEffectActive(false); // 퀴즈 대기 시 완벽 차단
             } 
         } else {
             activeSource.connect(biquadFilter); biquadFilter.connect(masterGain);
