@@ -356,6 +356,8 @@
     let targetGain = 12;        
 
     const bands = [31.5, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
+    
+    // ★ 퀴즈 풀: 완벽하고 직관적인 6종의 FX로 압축
     const fxPool = ['room', 'chamber', 'plate', 'hall', 'tremolo', 'distortion'];
 
     let currentListenFreq = null; 
@@ -374,6 +376,7 @@
 
     let currentEffectNode = null;
     
+    // 직렬 연결(Insert)을 위한 노드
     let dryGainNode = null;
     let wetGainNode = null;
     let fxInputNode = null; 
@@ -386,10 +389,6 @@
     let revTimeSec = 2.5;
     
     let isFxBypassed = false; 
-
-    // --------------------------------------------------
-    // ★ 완벽하게 다듬어진 아날로그 톤의 리버브 엔진 ★
-    // --------------------------------------------------
 
     function createReverb(ctx, type, preDelayMs, revTime) {
         const inputNode = ctx.createGain();
@@ -445,7 +444,6 @@
         return { input: inputNode, output: outputNode };
     }
 
-    // 트레몰로 (주기적인 볼륨 변조)
     function createTremolo(ctx) {
         const inputNode = ctx.createGain();
         const outputNode = ctx.createGain();
@@ -473,7 +471,6 @@
         return { input: inputNode, output: outputNode };
     }
 
-    // 디스토션 (파형 찌그러뜨리기)
     function createDistortion(ctx) {
         const inputNode = ctx.createGain();
         const outputNode = ctx.createGain();
@@ -503,7 +500,6 @@
         return { input: inputNode, output: outputNode };
     }
 
-    // 시스템 및 오디오 초기화
     async function checkPassword() {
         if (document.getElementById('pw-input').value === "rkddkdls0622") {
             document.getElementById('auth-overlay').style.display = 'none';
@@ -684,7 +680,6 @@
         }
     }
 
-    // ★ 핵심 수정: 퀴즈/기본 모드에서 모든 FX가 Mix 40%로 통일되도록 설정
     const fxMixSettings = {
         'reverb': 0.40,
         'tremolo': 0.40,  
@@ -718,7 +713,6 @@
             
             if (isActive) {
                 if (currentMode === 'practice' || currentMode === 'test') {
-                    // ★ 퀴즈 시 무조건 40% 적용하여 원본 소리와 효과음을 섞음
                     let quizMix = fxMixSettings[activeFxCategory] || 0.40;
                     if(['room', 'chamber', 'plate', 'hall'].includes(activeFxCategory)) quizMix = fxMixSettings['reverb'];
                     
@@ -728,7 +722,6 @@
                     applyFixedMix(); 
                 }
             } else {
-                // Bypass 상태
                 dryGainNode.gain.setTargetAtTime(1.0, audioCtx.currentTime, 0.02);
                 wetGainNode.gain.setTargetAtTime(0.0, audioCtx.currentTime, 0.02); 
             }
@@ -742,7 +735,6 @@
         
         document.getElementById('reverb-only-params').style.display = (category === 'reverb') ? 'block' : 'none';
         
-        // 탐색 시 슬라이더 기본값도 모두 40%로 셋팅
         let defaultMix = fxMixSettings[category] ? fxMixSettings[category] * 100 : 40;
         document.getElementById('slider-fxmix').value = defaultMix;
         updateFxMix();
@@ -904,12 +896,13 @@
         }
     }
 
+    // ★ 핵심 수정: 테스트 결과의 정답 텍스트를 가장 잘 보이는 노란색(#ffeb3b)으로 변경
     function showAnswers() {
         const display = document.getElementById('answer-display');
         if (currentMode === 'test' && testAnswers.length > 0) {
             let answersHtml = testAnswers.map((ans, i) => {
                 let text = currentQuizCategory === 'eq' ? `${ans} Hz` : ans.toUpperCase();
-                return `<div>Q${i+1}: <span style="color:var(--primary-color)">${text}</span></div>`;
+                return `<div>Q${i+1}: <span style="color:#ffeb3b; font-weight:900;">${text}</span></div>`;
             }).join('');
             display.innerHTML = `<div style="font-size: 1.1em; color: #94a3b8; margin-bottom: 20px; letter-spacing: 1px;">[ TEST ANSWERS ]</div> <div style="font-size: 1.2em; line-height: 1.6; display: grid; grid-template-columns: 1fr 1fr; gap: 10px 40px; text-align: left;"> ${answersHtml} </div>`;
             display.style.display = 'flex'; 
