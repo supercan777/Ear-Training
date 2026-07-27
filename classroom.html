@@ -82,7 +82,6 @@
             color: var(--primary-color); 
             font-weight: 800;
         }
-        /* Active 상태일 때 좌측에 포인트 라인 추가 */
         .nav-btn.active::before {
             content: '';
             position: absolute;
@@ -100,7 +99,6 @@
         .top-bar { display: flex; justify-content: space-between; align-items: center; padding: 25px 30px; background: transparent; }
         .top-bar h2 { margin: 0; font-size: 1.6em; font-weight: 800; color: #0f172a; letter-spacing: -0.5px; }
         
-        /* 설정 버튼 (기어) 깔끔하게 변경 */
         #settings-trigger { 
             font-size: 1.5em; 
             cursor: pointer; 
@@ -280,8 +278,8 @@
 
                         <div class="slider-group mixer-panel">
                             <label style="color:var(--primary-color); font-size:1em; width:160px;">🎛️ FX SEND (Parallel)</label>
-                            <input type="range" id="slider-fxmix" min="0" max="100" step="1" value="100" oninput="updateFxMix()">
-                            <div class="slider-value" id="val-fxmix" style="font-size:1.1em;">100 %</div>
+                            <input type="range" id="slider-fxmix" min="0" max="100" step="1" value="23" oninput="updateFxMix()">
+                            <div class="slider-value" id="val-fxmix" style="font-size:1.1em;">23 %</div>
                         </div>
                     </div>
                 </div>
@@ -383,12 +381,12 @@
     let activeReverbType = 'hall';
     let revPreDelayMs = 30;
     let revTimeSec = 2.5;
-    let currentFxMix = 100; 
+    let currentFxMix = 23; 
     
     let isFxBypassed = false; 
 
     // --------------------------------------------------
-    // ★ 볼륨 보상(Gain Staging)이 완벽히 적용된 FX 엔진 ★
+    // ★ Pro Tools 파라미터를 그대로 번역한 이펙터 로직 ★
     // --------------------------------------------------
 
     function createReverb(ctx, type, preDelayMs, revTime) {
@@ -420,11 +418,10 @@
         return { input: inputNode, output: outputNode };
     }
 
-    // 코러스: 병렬 믹스 시 볼륨이 튀는 것을 막기 위해 이펙터 내부 출력볼륨을 0.4로 강제 다운
     function createChorus(ctx) {
         const inputNode = ctx.createGain();
         const outputNode = ctx.createGain();
-        outputNode.gain.value = 0.4; // ★ 핵심: 병렬 합산 시 볼륨 점프 완벽 방지
+        outputNode.gain.value = 0.5; // Gain Staging
         
         const delay = ctx.createDelay(); 
         delay.delayTime.value = 0.025; 
@@ -446,34 +443,29 @@
         return { input: inputNode, output: outputNode };
     }
 
-    // 플랜저: 저음역대 캔슬링(볼륨 펌핑)을 피하기 위해 스윕 대역을 고정하고 피드백 감소
+    // ★ Pro Tools Flanger (Rate:1Hz, Depth:3ms, Pre:0.75ms, Tri, FB:0)
     function createFlanger(ctx) {
         const inputNode = ctx.createGain();
         const outputNode = ctx.createGain();
-        outputNode.gain.value = 0.5; // ★ 볼륨 커짐(Swelling) 1차 보상
-        
-        // 피드백 루프 내 하이패스 필터로 저음역대 부딪힘 2차 차단 (펌핑 방지)
-        const hpf = ctx.createBiquadFilter();
-        hpf.type = 'highpass';
-        hpf.frequency.value = 300; 
+        outputNode.gain.value = 0.5; // Gain Staging
         
         const delay = ctx.createDelay(); 
-        delay.delayTime.value = 0.0015; // 베이스 딜레이 1.5ms (저음을 건드리지 않는 고음역대로 이동)
+        // 0.75ms(Pre-delay) + 1.5ms(Depth/2) = 2.25ms (0.00225) 중심점
+        delay.delayTime.value = 0.00225; 
         
         const feedback = ctx.createGain(); 
-        feedback.gain.value = 0.35; // 피드백을 극도로 낮춰 공진 폭주(시끄러워짐) 완전 차단
+        feedback.gain.value = 0.0; // FB: 0 설정 (펌핑 폭발 원천 차단)
         
-        inputNode.connect(hpf);
-        hpf.connect(delay); 
+        inputNode.connect(delay);
         delay.connect(feedback); 
         feedback.connect(delay); 
         delay.connect(outputNode);
         
         const lfo = ctx.createOscillator(); 
         const lfoGain = ctx.createGain();
-        lfo.type = 'sine'; 
-        lfo.frequency.value = 0.2; 
-        lfoGain.value = 0.0005; // 1ms ~ 2ms 사이의 아주 좁은 스윕 (볼륨 요동 방지의 핵심)
+        lfo.type = 'triangle'; // LFO: Tri
+        lfo.frequency.value = 1.0; // Rate: 1Hz
+        lfoGain.value = 0.0015; // Depth: +/- 1.5ms (총 3ms 스윕)
         
         lfo.connect(lfoGain); 
         lfoGain.connect(delay.delayTime); 
@@ -483,36 +475,51 @@
         return { input: inputNode, output: outputNode };
     }
 
-    // 페이저: 출력 볼륨 보상
+    // ★ Pro Tools Phaser (Rate:1Hz, Depth:50, Center:1kHz, Poles:6, Tri, FB:50)
     function createPhaser(ctx) {
         const inputNode = ctx.createGain();
         const outputNode = ctx.createGain();
-        outputNode.gain.value = 0.6; // ★ 볼륨 보상
+        outputNode.gain.value = 0.6; // Gain Staging
         
         const lfo = ctx.createOscillator(); 
-        lfo.type = 'sine'; 
-        lfo.frequency.value = 0.2; 
+        lfo.type = 'triangle'; // LFO: Tri
+        lfo.frequency.value = 1.0; // Rate: 1Hz
         lfo.start();
         currentLFOs.push(lfo); 
         
-        let prevFilter = inputNode;
-        for (let i = 0; i < 4; i++) {
+        const inputMixer = ctx.createGain();
+        inputNode.connect(inputMixer);
+        
+        // 피드백 라인 (FB: 50%)
+        const feedback = ctx.createGain();
+        feedback.gain.value = 0.5;
+        feedback.connect(inputMixer);
+
+        let prevFilter = inputMixer;
+        let lastFilter = null;
+        
+        // Poles: 6
+        for (let i = 0; i < 6; i++) {
             const filter = ctx.createBiquadFilter(); 
             filter.type = 'allpass'; 
-            filter.frequency.value = 1000; 
+            filter.frequency.value = 1000; // Center F: 1kHz
             filter.Q.value = 1.0; 
             
             const lfoGain = ctx.createGain(); 
-            lfoGain.value = 800; 
+            lfoGain.value = 500; // Depth: 50 (약 500Hz 범위)
             
             lfo.connect(lfoGain); 
             lfoGain.connect(filter.frequency);
             
             prevFilter.connect(filter);
             prevFilter = filter;
+            lastFilter = filter;
         }
         
-        prevFilter.connect(outputNode);
+        // 6번째 마지막 필터를 피드백과 아웃풋으로 연결
+        lastFilter.connect(feedback);
+        lastFilter.connect(outputNode);
+        
         return { input: inputNode, output: outputNode };
     }
 
@@ -726,8 +733,8 @@
             
             if (isActive) {
                 if (currentMode === 'practice' || currentMode === 'test') {
-                    // 퀴즈 시에는 원본 위에 효과음을 80% 볼륨으로 확실하게 병렬 믹스
-                    let quizSend = 0.8; 
+                    // 퀴즈 시에는 학생들이 맞추기 쉽도록 조금 더 올려서 고정
+                    let quizSend = 0.5; 
                     dryGainNode.gain.setTargetAtTime(1.0, audioCtx.currentTime, 0.02);
                     wetGainNode.gain.setTargetAtTime(quizSend, audioCtx.currentTime, 0.02);
                     fxSendNode.gain.setTargetAtTime(1.0, audioCtx.currentTime, 0.02);
@@ -749,8 +756,10 @@
         
         document.getElementById('reverb-only-params').style.display = (category === 'reverb') ? 'block' : 'none';
         
-        if(category === 'reverb') { document.getElementById('slider-fxmix').value = 50; } 
-        else { document.getElementById('slider-fxmix').value = 100; } // 음악용 기본값 100%
+        // 플랜저, 페이저는 Pro Tools 세팅값에 맞게 기본값 23%로 세팅
+        if(category === 'reverb') { document.getElementById('slider-fxmix').value = 40; } 
+        else if(category === 'phaser' || category === 'flanger') { document.getElementById('slider-fxmix').value = 23; }
+        else { document.getElementById('slider-fxmix').value = 40; } 
         updateFxMix();
         
         applyFxSetup();
