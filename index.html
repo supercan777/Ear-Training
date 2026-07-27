@@ -27,7 +27,6 @@
             justify-content: center;
         }
         
-        /* Student Edition 중앙 컨테이너 스타일 */
         #app-container { 
             width: 100%; 
             max-width: 500px; 
@@ -45,12 +44,11 @@
         .top-bar h2 { margin: 0; font-size: 1.4em; font-weight: 800; color: #0f172a; letter-spacing: -0.5px; }
         .top-bar p { margin: 2px 0 0 0; color: var(--primary-color); font-size: 0.75em; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;}
         
-        #settings-trigger { font-size: 1.5em; cursor: pointer; color: #94a3b8; transition: all 0.3s ease; padding: 5px; }
-        #settings-trigger:hover { color: var(--primary-color); transform: rotate(45deg); }
+        #settings-trigger { font-size: 0.85em; font-weight: 800; letter-spacing: 1px; cursor: pointer; color: #94a3b8; transition: all 0.3s ease; padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 8px; text-transform: uppercase; }
+        #settings-trigger:hover { color: var(--primary-color); border-color: var(--primary-color); background: #eff6ff; }
 
         .content-area { padding: 25px; display: flex; flex-direction: column; flex: 1; overflow-y: auto; }
         
-        /* 메인 메뉴 (Select Mode) */
         #main-menu { display: flex; flex-direction: column; gap: 25px; }
         .menu-section { background: #f8fafc; border-radius: 16px; padding: 20px; border: 1px solid var(--border-color); }
         .menu-section h3 { margin: 0 0 15px 0; font-size: 0.9em; color: #64748b; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; text-align: center; }
@@ -58,7 +56,6 @@
         .menu-btn { padding: 16px; border-radius: 12px; border: 1px solid var(--border-color); background: #ffffff; color: #334155; font-size: 1em; font-weight: 700; cursor: pointer; transition: all 0.2s; }
         .menu-btn:hover { border-color: var(--primary-color); color: var(--primary-color); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
 
-        /* 훈련 화면 */
         #app-view { display: none; flex-direction: column; }
         #view-title { font-size: 1.2em; font-weight: 800; text-align: center; margin-bottom: 20px; color: var(--primary-color); }
 
@@ -83,7 +80,6 @@
         .fx-quiz-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 100%; }
         .fx-quiz-grid .btn { padding: 12px 2px; font-size: 0.85em; }
 
-        /* FX 컨트롤 UI 모바일 최적화 */
         .fx-layout { display: flex; flex-direction: column; gap: 15px; }
         .fx-categories { display: flex; gap: 8px; }
         .fx-categories .btn { flex: 1; padding: 12px 5px; font-size: 0.85em; }
@@ -102,7 +98,6 @@
         .return-btn { margin-top: 30px; width: 100%; background: transparent; border: none; color: #94a3b8; font-weight: 700; text-decoration: underline; cursor: pointer; padding: 10px; font-size: 0.9em; }
         .return-btn:hover { color: var(--text-color); }
 
-        /* 오버레이 및 셋팅 메뉴 */
         .full-overlay { position: absolute; top:0; left:0; width:100%; height:100%; background: var(--surface-color); z-index:999; display:flex; flex-direction:column; align-items:center; justify-content:center; }
         #pw-input { padding: 18px; border-radius: 14px; border: 1px solid var(--border-color); font-size: 1.1em; background: #f8fafc; text-align: center; margin-bottom: 25px; width: 80%; max-width: 300px; outline: none; transition: all 0.2s; color: #0f172a; font-weight: 600;}
         #pw-input:focus { border-color: var(--primary-color); box-shadow: 0 0 0 4px rgba(74, 144, 226, 0.15); background: white;}
@@ -136,7 +131,7 @@
             <h2>Ear Training</h2>
             <p>Student Edition</p>
         </div>
-        <div id="settings-trigger" onclick="toggleSettings()">⚙️</div>
+        <div id="settings-trigger" onclick="toggleSettings()">SETTINGS</div>
     </div>
 
     <div class="content-area">
@@ -145,7 +140,7 @@
             <h2 style="margin: 0; font-size: 1.5em; text-align: center; color: #0f172a;">Select Mode</h2>
             
             <div class="menu-section">
-                <h3>🔊 EQ Training</h3>
+                <h3>EQ TRAINING</h3>
                 <div class="menu-grid">
                     <button class="menu-btn" onclick="init('listen', 'eq')">LISTEN (Exploration)</button>
                     <button class="menu-btn" onclick="init('practice', 'eq')">PRACTICE (Interactive)</button>
@@ -155,7 +150,7 @@
             </div>
 
             <div class="menu-section">
-                <h3>🎛️ FX Training</h3>
+                <h3>FX TRAINING</h3>
                 <div class="menu-grid">
                     <button class="menu-btn" onclick="init('fx-explore', 'fx')">FX EXPLORE (Listen)</button>
                     <button class="menu-btn" onclick="init('practice', 'fx')">FX PRACTICE (Quiz)</button>
@@ -205,8 +200,8 @@
                         </div>
                     </div>
                     <div class="slider-group mixer-panel">
-                        <div class="slider-header"><label style="color:var(--primary-color);">🎛️ FX MIX</label><div class="slider-value" id="val-fxmix">40 %</div></div>
-                        <input type="range" id="slider-fxmix" min="0" max="100" step="1" value="40" oninput="updateFxMix()">
+                        <div class="slider-header"><label style="color:var(--primary-color);">FX MIX</label><div class="slider-value" id="val-fxmix">30 %</div></div>
+                        <input type="range" id="slider-fxmix" min="0" max="100" step="1" value="30" oninput="updateFxMix()">
                     </div>
                 </div>
             </div>
@@ -220,7 +215,7 @@
                 <button class="btn" onclick="handleFxClick('distortion')">DIST</button>
             </div>
 
-            <button class="return-btn" onclick="returnToMenu()">← Return to Main Menu</button>
+            <button class="return-btn" onclick="returnToMenu()">Return to Main Menu</button>
         </div>
     </div>
 
@@ -258,6 +253,7 @@
             <div class="row">
                 <button class="btn eq-btn active" onclick="setEqMode('boost', this)" style="flex:1;">BOOST</button>
                 <button class="btn eq-btn" onclick="setEqMode('cut', this)" style="flex:1;">CUT</button>
+                <button class="btn eq-btn" onclick="setEqMode('mix', this)" style="flex:1;">MIX</button>
             </div>
         </div>
         <button class="btn" onclick="toggleSettings()" style="margin-top: 20px; width:100%; background: #f1f5f9; color: #475569; border-color: transparent;">Close Settings</button>
@@ -279,6 +275,8 @@
     let currentEqMode = 'boost';
     let currentGainAmount = 12; 
     let targetGain = 12;        
+    let currentQuestionGain = 12; // 믹스 모드를 위한 변수
+    let testGains = []; // 믹스 모드용 평가 배열
 
     const bands = [31.5, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
     const fxPool = ['room', 'chamber', 'plate', 'hall', 'tremolo', 'distortion'];
@@ -309,7 +307,7 @@
     let revTimeSec = 2.5;
     let isFxBypassed = false; 
 
-    // --- FX 엔진 코드 유지 ---
+    // --- 부드러운 아날로그 리버브 (금속성 공명 완화) ---
     function createReverb(ctx, type, preDelayMs, revTime) {
         const inputNode = ctx.createGain();
         const outputNode = ctx.createGain();
@@ -317,10 +315,10 @@
         const convolver = ctx.createConvolver();
         
         let decay = 2.0; let damping = 0.2; 
-        if (type === 'room') { decay = 5.0; damping = 0.4; } 
-        else if (type === 'plate') { decay = 2.0; damping = 0.8; } 
-        else if (type === 'chamber') { decay = 3.0; damping = 0.3; } 
-        else if (type === 'hall') { decay = 1.5; damping = 0.15; } 
+        if (type === 'room') { decay = 5.0; damping = 0.2; } 
+        else if (type === 'plate') { decay = 2.0; damping = 0.4; } 
+        else if (type === 'chamber') { decay = 3.0; damping = 0.15; } 
+        else if (type === 'hall') { decay = 1.5; damping = 0.08; } // 댐핑 계수를 낮춰 고음역대 울림 제어
 
         const length = ctx.sampleRate * revTime;
         const impulse = ctx.createBuffer(2, length, ctx.sampleRate);
@@ -329,13 +327,25 @@
 
         for (let i = 0; i < length; i++) {
             const env = Math.pow(1 - i / length, decay);
-            const fadeIn = i < 200 ? (i / 200) : 1.0; 
-            const wLeft = (Math.random() * 2 - 1); const wRight = (Math.random() * 2 - 1);
-            lpLeft = lpLeft + damping * (wLeft - lpLeft); lpRight = lpRight + damping * (wRight - lpRight);
-            left[i] = lpLeft * env * fadeIn; right[i] = lpRight * env * fadeIn;
+            const fadeIn = i < 100 ? (i / 100) : 1.0; 
+            
+            // 단순 난수(White noise) 대신 여러 난수를 더해(Gaussian 유사) 금속성 공명 완화
+            const wLeft = (Math.random() + Math.random() + Math.random() - 1.5) * 0.66; 
+            const wRight = (Math.random() + Math.random() + Math.random() - 1.5) * 0.66;
+
+            lpLeft = lpLeft + damping * (wLeft - lpLeft); 
+            lpRight = lpRight + damping * (wRight - lpRight);
+            
+            left[i] = lpLeft * env * fadeIn; 
+            right[i] = lpRight * env * fadeIn;
         }
         convolver.buffer = impulse; 
-        const toneFilter = ctx.createBiquadFilter(); toneFilter.type = 'highshelf'; toneFilter.frequency.value = 4000; toneFilter.gain.value = -8; 
+        
+        // 고음역대 컷오프를 더 낮게 설정하여 부드럽게 조정
+        const toneFilter = ctx.createBiquadFilter(); 
+        toneFilter.type = 'highshelf'; 
+        toneFilter.frequency.value = 3500; 
+        toneFilter.gain.value = -10; 
 
         inputNode.connect(preDelayNode); preDelayNode.connect(convolver); convolver.connect(toneFilter); toneFilter.connect(outputNode);
         return { input: inputNode, output: outputNode };
@@ -366,7 +376,7 @@
 
     // --- 기본 동작 및 UI ---
     async function checkPassword() {
-        if (document.getElementById('pw-input').value === "rkddkdls0622") { // 기존 비밀번호 유지
+        if (document.getElementById('pw-input').value === "13579") { // 비밀번호 13579 변경
             document.getElementById('auth-overlay').style.display = 'none';
             if (!audioCtx) {
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -379,8 +389,10 @@
     function toggleSettings() { document.getElementById('settings-menu').classList.toggle('open'); }
     
     function updateGainSettings() {
-        targetGain = currentEqMode === 'boost' ? currentGainAmount : -currentGainAmount;
-        if (masterGain) masterGain.gain.value = currentEqMode === 'boost' && currentGainAmount === 12 ? 0.15 : 0.3;
+        if (currentEqMode === 'mix') { targetGain = currentGainAmount; } 
+        else { targetGain = currentEqMode === 'boost' ? currentGainAmount : -currentGainAmount; }
+        
+        if (masterGain) masterGain.gain.value = (currentEqMode === 'boost' || currentEqMode === 'mix') && currentGainAmount === 12 ? 0.15 : 0.3;
         if (currentMode === 'listen' && currentListenFreq && biquadFilter) {
             biquadFilter.gain.setTargetAtTime(targetGain, audioCtx.currentTime, 0.02);
         }
@@ -423,8 +435,6 @@
     // --- 모드 초기화 ---
     function init(mode, category = 'eq', testQs = 5) { 
         stopAudio();
-        
-        // 화면 전환 (메인 메뉴 -> 앱 뷰)
         document.getElementById('main-menu').style.display = 'none';
         document.getElementById('app-view').style.display = 'flex';
 
@@ -486,7 +496,7 @@
         }
     }
 
-    // --- FX 로직 ---
+    // --- FX 로직 (믹스 기본값 30%) ---
     function toggleFxBypass() {
         isFxBypassed = !isFxBypassed;
         const btn = document.getElementById('btn-fx-toggle');
@@ -514,7 +524,7 @@
         }
     }
 
-    const fxMixSettings = { 'reverb': 0.40, 'tremolo': 0.40, 'distortion': 0.40 };
+    const fxMixSettings = { 'reverb': 0.30, 'tremolo': 0.30, 'distortion': 0.30 }; // 기본값 30%로 변경
 
     function applyFixedMix() {
         if (!dryGainNode || !wetGainNode || !audioCtx) return;
@@ -535,7 +545,7 @@
             if (!dryGainNode || !wetGainNode || !audioCtx) return;
             if (isActive) {
                 if (currentMode === 'practice' || currentMode === 'test') {
-                    let quizMix = ['room', 'chamber', 'plate', 'hall'].includes(activeFxCategory) ? fxMixSettings['reverb'] : (fxMixSettings[activeFxCategory] || 0.40);
+                    let quizMix = ['room', 'chamber', 'plate', 'hall'].includes(activeFxCategory) ? fxMixSettings['reverb'] : (fxMixSettings[activeFxCategory] || 0.30);
                     dryGainNode.gain.setTargetAtTime(Math.cos(quizMix * 0.5 * Math.PI), audioCtx.currentTime, 0.02);
                     wetGainNode.gain.setTargetAtTime(Math.sin(quizMix * 0.5 * Math.PI), audioCtx.currentTime, 0.02);
                 } else applyFixedMix(); 
@@ -551,7 +561,7 @@
         document.getElementById(`btn-cat-${category}`).classList.add('active');
         document.getElementById('reverb-only-params').style.display = (category === 'reverb') ? 'block' : 'none';
         
-        document.getElementById('slider-fxmix').value = (fxMixSettings[category] ? fxMixSettings[category] * 100 : 40); updateFxMix();
+        document.getElementById('slider-fxmix').value = (fxMixSettings[category] ? fxMixSettings[category] * 100 : 30); updateFxMix();
         applyFxSetup();
         if (isPlaying && currentMode === 'fx-explore' && !isFxBypassed) applyFixedMix();
     }
@@ -573,11 +583,12 @@
     function handleQuizAnswer(answer) {
         if (currentMode !== 'practice' || !isPracticeActive) { if (currentMode === 'practice') alert("Please press 'START QUIZ' first."); return; }
         stopAudio(); isPracticeActive = false; const display = document.getElementById('answer-display');
-        let displayTarget = currentQuizCategory === 'eq' ? `${currentPracticeAnswer} Hz` : currentPracticeAnswer.toUpperCase();
-        let displayUser = currentQuizCategory === 'eq' ? `${answer} Hz` : answer.toUpperCase();
+        
+        let targetText = currentQuizCategory === 'eq' ? `${currentPracticeAnswer} Hz (${currentQuestionGain > 0 ? '+' : ''}${currentQuestionGain}dB)` : currentPracticeAnswer.toUpperCase();
+        let userText = currentQuizCategory === 'eq' ? `${answer} Hz` : answer.toUpperCase();
 
-        if (answer === currentPracticeAnswer) { display.innerHTML = `<span style="color:var(--success-color); font-size:1.4em;">Correct!</span><br><span style="font-size:1.8em;">${displayTarget}</span>`; } 
-        else { display.innerHTML = `<span style="color:var(--danger-color); font-size:1.4em;">Incorrect!</span><br><span style="font-size:1.2em;">Answer: <span style="color:#ffeb3b; font-weight:900;">${displayTarget}</span></span><br><span style="font-size:0.8em; color:#94a3b8;">(Your choice: ${displayUser})</span>`; }
+        if (answer === currentPracticeAnswer) { display.innerHTML = `<span style="color:var(--success-color); font-size:1.4em;">Correct!</span><br><span style="font-size:1.8em;">${targetText}</span>`; } 
+        else { display.innerHTML = `<span style="color:var(--danger-color); font-size:1.4em;">Incorrect!</span><br><span style="font-size:1.2em;">Answer: <span style="color:#ffeb3b; font-weight:900;">${targetText}</span></span><br><span style="font-size:0.8em; color:#94a3b8;">(Your choice: ${userText})</span>`; }
         display.style.display = 'flex'; document.getElementById('status').innerText = "Quiz Completed.";
         document.getElementById('action-btns').innerHTML = `<button class="btn primary" onclick="runPractice()">NEXT QUESTION</button> <button class="btn" onclick="listenPracticeAgain()">LISTEN AGAIN</button>`;
     }
@@ -585,10 +596,23 @@
     function handleFreqClick(freq) {
         if (currentMode === 'listen') {
             document.querySelectorAll('.freq-item').forEach(btn => btn.classList.remove('active'));
-            if (currentListenFreq === freq) { currentListenFreq = null; if (biquadFilter) biquadFilter.gain.value = 0; document.getElementById('status').innerText = isPlaying ? "PLAYING: FLAT" : "READY"; } 
-            else { currentListenFreq = freq; document.getElementById(`btn-freq-${freq}`).classList.add('active'); if(!biquadFilter) createOrUpdateFilter(freq, targetGain); else { biquadFilter.frequency.value = freq; biquadFilter.gain.value = targetGain; } document.getElementById('status').innerText = isPlaying ? `PLAYING: ${freq}Hz` : `READY (${freq}Hz)`; }
+            if (currentListenFreq === freq) { 
+                currentListenFreq = null; if (biquadFilter) biquadFilter.gain.value = 0; document.getElementById('status').innerText = isPlaying ? "PLAYING: FLAT" : "READY"; 
+            } else { 
+                currentListenFreq = freq; 
+                document.getElementById(`btn-freq-${freq}`).classList.add('active'); 
+                
+                // 믹스 모드 처리
+                if (currentEqMode === 'mix') { targetGain = Math.random() > 0.5 ? currentGainAmount : -currentGainAmount; } 
+                else { targetGain = currentEqMode === 'boost' ? currentGainAmount : -currentGainAmount; }
+                
+                if(!biquadFilter) createOrUpdateFilter(freq, targetGain); 
+                else { biquadFilter.frequency.value = freq; biquadFilter.gain.value = targetGain; } 
+                document.getElementById('status').innerText = isPlaying ? `PLAYING: ${freq}Hz (${targetGain > 0 ? '+' : ''}${targetGain}dB)` : `READY (${freq}Hz)`; 
+            }
         } else if (currentMode === 'practice') handleQuizAnswer(freq);
     }
+    
     function handleFxClick(fx) { if (currentMode === 'practice') handleQuizAnswer(fx); }
 
     function createOrUpdateFilter(freq, gain) {
@@ -600,7 +624,7 @@
         if (isPlaying) return; if (audioCtx && audioCtx.state === 'suspended') await audioCtx.resume();
         if (currentMode === 'listen') {
             if (!biquadFilter) createOrUpdateFilter(1000, 0); startAudioSource();
-            document.getElementById('status').innerText = currentListenFreq ? `PLAYING: ${currentListenFreq}Hz` : "PLAYING: FLAT (Original)";
+            document.getElementById('status').innerText = currentListenFreq ? `PLAYING: ${currentListenFreq}Hz (${targetGain > 0 ? '+' : ''}${targetGain}dB)` : "PLAYING: FLAT (Original)";
         } else if (currentMode === 'fx-explore') { startAudioSource(); updateFxStatusText(); }
     }
 
@@ -615,6 +639,11 @@
         let pool = currentQuizCategory === 'eq' ? bands : fxPool; let newAnswer;
         do { newAnswer = pool[Math.floor(Math.random() * pool.length)]; } while (newAnswer === currentPracticeAnswer);
         currentPracticeAnswer = newAnswer;
+        
+        // MIX 모드 적용 시 난수 생성
+        if (currentEqMode === 'mix') { currentQuestionGain = Math.random() > 0.5 ? currentGainAmount : -currentGainAmount; } 
+        else { currentQuestionGain = currentEqMode === 'boost' ? currentGainAmount : -currentGainAmount; }
+
         if (customBuffer) { const maxStart = Math.max(0, customBuffer.duration - 32); fileStartTime = Math.random() * maxStart; }
         isPracticeActive = true; document.getElementById('answer-display').style.display = 'none';
         document.getElementById('action-btns').innerHTML = '<button class="btn" style="grid-column: 1 / -1; background:var(--danger-color); color:white; border-color:var(--danger-color);" onclick="cancelPractice()">STOP (Cancel)</button>';
@@ -632,9 +661,10 @@
         stopAudio(); document.getElementById('answer-display').style.display = 'none'; 
         if (currentQuizCategory === 'eq') {
             biquadFilter = audioCtx.createBiquadFilter(); biquadFilter.type = "peaking"; biquadFilter.frequency.value = answer; biquadFilter.Q.value = 1.4; biquadFilter.gain.value = 0; 
+            targetGain = currentQuestionGain; // Practice용 Gain 적용
         } else { activeFxCategory = answer; setupFxNode(answer); }
         startAudioSource(); document.getElementById('status').innerText = "Listen carefully...";
-        // 5초 간격으로 수정됨
+        // 5초 간격 시퀀스
         function step1() { setEffectActive(false); sequenceTimer = setTimeout(step2, 5000); } 
         function step2() { setEffectActive(true); sequenceTimer = setTimeout(step3, 5000); } 
         function step3() { setEffectActive(false); sequenceTimer = setTimeout(step4, 5000); } 
@@ -650,10 +680,14 @@
 
     async function runTest() {
         if (audioCtx && audioCtx.state === 'suspended') await audioCtx.resume();
-        testAnswers = []; let pool = currentQuizCategory === 'eq' ? bands : fxPool;
+        testAnswers = []; testGains = [];
+        let pool = currentQuizCategory === 'eq' ? bands : fxPool;
         for (let i = 0; i < totalTestQuestions; i++) {
             let newAns; do { newAns = pool[Math.floor(Math.random() * pool.length)]; } while (i > 0 && newAns === testAnswers[i - 1]);
             testAnswers.push(newAns);
+            // 각 테스트 문항마다 Boost/Cut Gain 지정
+            let g = currentEqMode === 'mix' ? (Math.random() > 0.5 ? currentGainAmount : -currentGainAmount) : (currentEqMode === 'boost' ? currentGainAmount : -currentGainAmount);
+            testGains.push(g);
         }
         if (customBuffer) { const maxStart = Math.max(0, customBuffer.duration - (totalTestQuestions * 15)); fileStartTime = Math.random() * maxStart; }
         isTestCompleted = false; currentTestQuestion = 0; startTestSequence(0);
@@ -667,7 +701,10 @@
     function showAnswers() {
         const display = document.getElementById('answer-display');
         if (currentMode === 'test' && testAnswers.length > 0) {
-            let answersHtml = testAnswers.map((ans, i) => { let text = currentQuizCategory === 'eq' ? `${ans} Hz` : ans.toUpperCase(); return `<div>Q${i+1}: <span style="color:#ffeb3b; font-weight:900;">${text}</span></div>`; }).join('');
+            let answersHtml = testAnswers.map((ans, i) => { 
+                let text = currentQuizCategory === 'eq' ? `${ans} Hz (${testGains[i] > 0 ? '+' : ''}${testGains[i]}dB)` : ans.toUpperCase(); 
+                return `<div>Q${i+1}: <span style="color:#ffeb3b; font-weight:900;">${text}</span></div>`; 
+            }).join('');
             display.innerHTML = `<div style="font-size: 1em; color: #94a3b8; margin-bottom: 15px; letter-spacing: 1px;">[ ANSWERS ]</div> <div style="font-size: 1.1em; line-height: 1.5; display: grid; grid-template-columns: 1fr; gap: 8px; text-align: left;"> ${answersHtml} </div>`; display.style.display = 'flex'; 
         }
     }
@@ -679,7 +716,7 @@
         startAudioSource(); nextTestStep();
     }
 
-    // 5초 간격으로 수정됨
+    // 5초 간격 테스트 시퀀스
     function nextTestStep() {
         if (currentTestQuestion >= totalTestQuestions) {
             setEffectActive(false); document.getElementById('status').innerText = "All completed! Original source (3s)";
@@ -687,8 +724,10 @@
         }
         setEffectActive(false); document.getElementById('status').innerText = `[Q ${currentTestQuestion + 1}/${totalTestQuestions}] Original (5s)`;
         sequenceTimer = setTimeout(() => {
-            if (currentQuizCategory === 'eq') biquadFilter.frequency.value = testAnswers[currentTestQuestion];
-            else { activeFxCategory = testAnswers[currentTestQuestion]; setupFxNode(testAnswers[currentTestQuestion]); }
+            if (currentQuizCategory === 'eq') {
+                biquadFilter.frequency.value = testAnswers[currentTestQuestion];
+                targetGain = testGains[currentTestQuestion];
+            } else { activeFxCategory = testAnswers[currentTestQuestion]; setupFxNode(testAnswers[currentTestQuestion]); }
             
             setEffectActive(true); document.getElementById('status').innerText = `[Q ${currentTestQuestion + 1}/${totalTestQuestions}] Change 1 (5s)`;
             sequenceTimer = setTimeout(() => {
