@@ -99,6 +99,7 @@
         .top-bar { display: flex; justify-content: space-between; align-items: center; padding: 25px 30px; background: transparent; }
         .top-bar h2 { margin: 0; font-size: 1.6em; font-weight: 800; color: #0f172a; letter-spacing: -0.5px; }
         
+        /* 설정 버튼 (기어) 깔끔하게 변경 */
         #settings-trigger { 
             font-size: 1.5em; 
             cursor: pointer; 
@@ -152,7 +153,7 @@
         .freq-grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 10px; width: 100%; }
         .freq-grid .btn { padding: 15px 5px; font-size: 0.95em; }
 
-        /* 퀴즈 버튼 그리드 수정 (6개 버튼) */
+        /* 퀴즈 버튼 그리드 6개 정렬 */
         .fx-quiz-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; width: 100%; }
         .fx-quiz-grid .btn { padding: 15px 5px; font-size: 0.9em; }
 
@@ -250,7 +251,7 @@
                 <div id="freq-controls" class="freq-grid" style="display:none;"></div>
                 
                 <div id="fx-controls" class="fx-layout" style="display:none;">
-                    <!-- FX 카테고리 (리버브, 트레몰로, 디스토션) -->
+                    <!-- 3가지 완벽한 효과로 교체 -->
                     <div class="fx-categories">
                         <button id="btn-cat-reverb" class="btn active" onclick="selectFxCategory('reverb')">REVERB</button>
                         <button id="btn-cat-tremolo" class="btn" onclick="selectFxCategory('tremolo')">TREMOLO</button>
@@ -277,7 +278,7 @@
                             </div>
                         </div>
 
-                        <!-- 믹서 패널 유지 (크로스페이드용) -->
+                        <!-- 크로스페이드 믹서 패널 -->
                         <div class="slider-group mixer-panel">
                             <label style="color:var(--primary-color); font-size:1em; width:160px;">🎛️ FX MIX (Dry/Wet)</label>
                             <input type="range" id="slider-fxmix" min="0" max="100" step="1" value="40" oninput="updateFxMix()">
@@ -286,7 +287,6 @@
                     </div>
                 </div>
 
-                <!-- 퀴즈 버튼 라인업 전면 교체 -->
                 <div id="fx-quiz-controls" class="fx-quiz-grid" style="display:none;">
                     <button class="btn" onclick="handleFxClick('room')">ROOM</button>
                     <button class="btn" onclick="handleFxClick('chamber')">CHMBR</button>
@@ -346,6 +346,7 @@
     let biquadFilter = null;
     let customBuffer = null;
     
+    // 모드 관련 변수
     let currentMode = 'listen'; 
     let currentQuizCategory = 'eq'; 
     let totalTestQuestions = 5; 
@@ -356,8 +357,6 @@
     let targetGain = 12;        
 
     const bands = [31.5, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
-    
-    // ★ 퀴즈 풀: 완벽하고 직관적인 6종의 FX로 압축
     const fxPool = ['room', 'chamber', 'plate', 'hall', 'tremolo', 'distortion'];
 
     let currentListenFreq = null; 
@@ -376,9 +375,10 @@
 
     let currentEffectNode = null;
     
-    // 직렬 연결(Insert)을 위한 노드
+    // ★ 직렬 연결(Insert) 오디오 라우팅용 노드
     let dryGainNode = null;
     let wetGainNode = null;
+    let fxInputNode = null; // ★ 핵심 해결: 스위칭 시 끊기지 않게 연결해 주는 가상 케이블
     
     let currentLFOs = []; 
     
@@ -422,23 +422,22 @@
         return { input: inputNode, output: outputNode };
     }
 
-    // ★ 안정성의 끝판왕 1: 트레몰로 (주기적인 볼륨 변조)
+    // 트레몰로: 주기적인 볼륨 변조
     function createTremolo(ctx) {
         const inputNode = ctx.createGain();
         const outputNode = ctx.createGain();
         
-        // 트레몰로는 볼륨을 깎는 효과이므로 약간의 볼륨 보상
         outputNode.gain.value = 1.2; 
         
         const tremoloGain = ctx.createGain();
-        tremoloGain.gain.value = 0.5; // 베이스 볼륨
+        tremoloGain.gain.value = 0.5; 
         
         const lfo = ctx.createOscillator();
         lfo.type = 'sine';
-        lfo.frequency.value = 4.0; // 4Hz 속도로 빠르고 명확하게 떨림
+        lfo.frequency.value = 5.0; // 5Hz 속도로 명확하게 떨림
         
         const lfoDepth = ctx.createGain();
-        lfoDepth.value = 0.5; // 깊이 (0 ~ 1.0 사이를 크게 요동침)
+        lfoDepth.gain.value = 0.5; // ★ 오타 수정 완료! (0~1.0 사이로 크게 요동침)
         
         lfo.connect(lfoDepth);
         lfoDepth.connect(tremoloGain.gain);
@@ -451,17 +450,15 @@
         return { input: inputNode, output: outputNode };
     }
 
-    // ★ 안정성의 끝판왕 2: 디스토션 (파형 찌그러뜨리기)
+    // 디스토션: 파형 찌그러뜨리기
     function createDistortion(ctx) {
         const inputNode = ctx.createGain();
         const outputNode = ctx.createGain();
         
-        // 디스토션은 소리가 매우 커지므로 출력 볼륨을 대폭 낮춰서 밸런스 유지
-        outputNode.gain.value = 0.4; 
+        outputNode.gain.value = 0.4; // 디스토션 시 폭주하는 볼륨을 잡기 위한 밸런스 조정
         
         const distortion = ctx.createWaveShaper();
         
-        // 수학적으로 완벽한 Overdrive/Distortion 커브 생성 함수
         function makeDistortionCurve(amount) {
             let k = typeof amount === 'number' ? amount : 50;
             let n_samples = 44100;
@@ -474,8 +471,8 @@
             return curve;
         }
         
-        distortion.curve = makeDistortionCurve(400); // 400: 아주 확실한 드라이브 질감
-        distortion.oversample = '4x'; // 앨리어싱(디지털 깨짐) 방지 고음질 처리
+        distortion.curve = makeDistortionCurve(400); // 아주 확실한 드라이브 질감
+        distortion.oversample = '4x'; 
 
         inputNode.connect(distortion);
         distortion.connect(outputNode);
@@ -638,6 +635,7 @@
         }
     }
 
+    // ★ 핵심 수정: 핫스왑 중에도 케이블이 뽑히지 않도록 fxInputNode를 통한 안정적인 라우팅 유지
     function setupFxNode(fxType) {
         if (currentLFOs.length > 0) {
             currentLFOs.forEach(lfo => { try { lfo.stop(); lfo.disconnect(); } catch(e) {} });
@@ -659,22 +657,22 @@
         } else if (fxType === 'distortion') { currentEffectNode = createDistortion(audioCtx);
         }
         
-        if (wetGainNode && (currentMode === 'fx-explore' || currentMode === 'practice' || currentMode === 'test')) {
+        // 새 이펙터가 생성되면, 고정되어 있는 fxInputNode와 wetGainNode 사이에 새 이펙터를 끼워넣음
+        if (fxInputNode && wetGainNode && (currentMode === 'fx-explore' || currentMode === 'practice' || currentMode === 'test')) {
+            fxInputNode.connect(currentEffectNode.input);
             currentEffectNode.output.connect(wetGainNode); 
         }
     }
 
-    // 트레몰로와 디스토션은 인서트 효과이므로 Mix 값을 높게 줍니다.
     const fxMixSettings = {
         'reverb': 0.40,
-        'tremolo': 1.0,  // 트레몰로는 100% Wet
-        'distortion': 1.0 // 디스토션도 100% Wet
+        'tremolo': 1.0,  
+        'distortion': 1.0 
     };
 
     function applyFixedMix() {
         if (!dryGainNode || !wetGainNode || !audioCtx) return;
         
-        // 슬라이더 값을 직접 가져옵니다.
         let mix = document.getElementById('slider-fxmix').value / 100.0;
         
         dryGainNode.gain.setTargetAtTime(Math.cos(mix * 0.5 * Math.PI), audioCtx.currentTime, 0.02);
@@ -699,9 +697,7 @@
             
             if (isActive) {
                 if (currentMode === 'practice' || currentMode === 'test') {
-                    // 퀴즈 시에는 해당 효과에 맞는 고정 황금 비율 사용
                     let quizMix = fxMixSettings[activeFxCategory] || 0.5;
-                    // 예외: 룸, 챔버, 플레이트, 홀인 경우 모두 리버브 카테고리 비율 사용
                     if(['room', 'chamber', 'plate', 'hall'].includes(activeFxCategory)) quizMix = fxMixSettings['reverb'];
                     
                     dryGainNode.gain.setTargetAtTime(Math.cos(quizMix * 0.5 * Math.PI), audioCtx.currentTime, 0.02);
@@ -724,7 +720,6 @@
         
         document.getElementById('reverb-only-params').style.display = (category === 'reverb') ? 'block' : 'none';
         
-        // 각 카테고리에 맞는 기본 슬라이더 값 셋팅
         let defaultMix = fxMixSettings[category] ? fxMixSettings[category] * 100 : 50;
         document.getElementById('slider-fxmix').value = defaultMix;
         updateFxMix();
@@ -931,7 +926,7 @@
         }, 5000); 
     }
     
-    // 직렬(Insert) 오디오 라우팅
+    // ★ fxInputNode를 통한 안정적인 영구 라우팅 배선 완료
     function startAudioSource() {
         if (!audioCtx) return; activeSource = audioCtx.createBufferSource();
         if (customBuffer) activeSource.buffer = customBuffer;
@@ -950,15 +945,17 @@
         if (!dryGainNode) {
             dryGainNode = audioCtx.createGain(); 
             wetGainNode = audioCtx.createGain();
+            fxInputNode = audioCtx.createGain(); // ★ 이 선이 끊어져 있었습니다!
             dryGainNode.connect(masterGain); 
             wetGainNode.connect(masterGain);
         }
 
         if (currentMode === 'fx-explore' || currentQuizCategory === 'fx') {
             activeSource.connect(dryGainNode); 
+            activeSource.connect(fxInputNode); // 항상 fxInputNode로 소리를 밀어넣습니다.
             
             if (currentEffectNode) {
-                activeSource.connect(currentEffectNode.input); 
+                fxInputNode.connect(currentEffectNode.input); 
                 currentEffectNode.output.connect(wetGainNode); 
             }
             
