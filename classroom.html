@@ -383,12 +383,12 @@
     let activeReverbType = 'hall';
     let revPreDelayMs = 30;
     let revTimeSec = 2.5;
-    let currentFxMix = 100; // 음악에 잘 들리도록 기본값을 100%로 설정
+    let currentFxMix = 100; 
     
     let isFxBypassed = false; 
 
     // --------------------------------------------------
-    // ★ 실제 음악(MP3)에 최적화된 스튜디오급 이펙터 로직 ★
+    // 가장 심플하고 완벽한 오디오 이펙터 로직 (플랜저 폭주 해결)
     // --------------------------------------------------
 
     function createReverb(ctx, type, preDelayMs, revTime) {
@@ -420,65 +420,59 @@
         return { input: inputNode, output: outputNode };
     }
 
-    // ★ 음악용 코러스: 듀얼 보이스로 존재감을 확 살림
+    // 코러스: 스탠다드 25ms 딜레이 단일 보이스로 깔끔하게 원복
     function createChorus(ctx) {
-        const inputNode = ctx.createGain();
-        const outputNode = ctx.createGain();
-        outputNode.gain.value = 0.7; 
-        
-        // 음악에 파묻히지 않도록 두 개의 독립된 딜레이 라인 사용
-        function addChorusVoice(delayTime, lfoFreq) {
-            const delay = ctx.createDelay();
-            delay.delayTime.value = delayTime;
-            
-            const lfo = ctx.createOscillator();
-            const gain = ctx.createGain();
-            lfo.type = 'sine';
-            lfo.frequency.value = lfoFreq;
-            gain.value = 0.0025; // 음악에선 이정도 깊이가 있어야 뚜렷함
-            
-            lfo.connect(gain);
-            gain.connect(delay.delayTime);
-            lfo.start();
-            currentLFOs.push(lfo);
-            
-            inputNode.connect(delay);
-            delay.connect(outputNode);
-        }
-
-        addChorusVoice(0.015, 0.6); // 15ms
-        addChorusVoice(0.025, 0.9); // 25ms
-        
-        return { input: inputNode, output: outputNode };
-    }
-
-    // ★ 음악용 플랜저: 깊은 스윕과 높은 공명으로 제트기 소리 극대화
-    function createFlanger(ctx) {
         const inputNode = ctx.createGain();
         const outputNode = ctx.createGain();
         
         const delay = ctx.createDelay(); 
-        delay.delayTime.value = 0.003; 
+        delay.delayTime.value = 0.025; 
         
-        const feedback = ctx.createGain(); 
-        feedback.gain.value = 0.7; // 음악의 드럼/베이스를 뚫고 나오기 위한 강한 피드백
+        const lfo = ctx.createOscillator(); 
+        const lfoGain = ctx.createGain();
+        lfo.type = 'sine'; 
+        lfo.frequency.value = 0.8; 
+        lfoGain.value = 0.003; 
         
-        // 저음역대 뭉침 방지 (중요!)
-        const hpf = ctx.createBiquadFilter();
-        hpf.type = 'highpass';
-        hpf.frequency.value = 200; 
+        lfo.connect(lfoGain); 
+        lfoGain.connect(delay.delayTime); 
+        lfo.start();
+        currentLFOs.push(lfo); 
         
         inputNode.connect(delay);
-        delay.connect(hpf); 
-        hpf.connect(feedback); 
+        delay.connect(outputNode);
+        
+        return { input: inputNode, output: outputNode };
+    }
+
+    // 플랜저: 피드백 루프 내 하이패스 필터 탑재로 볼륨 펌핑 완전 해결
+    function createFlanger(ctx) {
+        const inputNode = ctx.createGain();
+        const outputNode = ctx.createGain();
+        
+        // 저음역대 뭉침 방지를 위한 하이패스 (플랜저 폭주 원인 완벽 제거)
+        const hpf = ctx.createBiquadFilter();
+        hpf.type = 'highpass';
+        hpf.frequency.value = 150; 
+        
+        const delay = ctx.createDelay(); 
+        delay.delayTime.value = 0.003; // 베이스 딜레이 3ms
+        
+        const feedback = ctx.createGain(); 
+        feedback.gain.value = 0.5; // 피드백을 적절하게 유지
+        
+        // 라우팅 (입력 -> 필터 -> 딜레이 -> 피드백 루프)
+        inputNode.connect(hpf);
+        hpf.connect(delay); 
+        delay.connect(feedback); 
         feedback.connect(delay); 
         delay.connect(outputNode);
         
         const lfo = ctx.createOscillator(); 
         const lfoGain = ctx.createGain();
         lfo.type = 'sine'; 
-        lfo.frequency.value = 0.15; // 천천히 스윕
-        lfoGain.value = 0.0025; // 깊은 스윕
+        lfo.frequency.value = 0.15; // 0.15Hz 부드러운 스윕
+        lfoGain.value = 0.002; 
         
         lfo.connect(lfoGain); 
         lfoGain.connect(delay.delayTime); 
@@ -488,35 +482,35 @@
         return { input: inputNode, output: outputNode };
     }
 
-    // ★ 음악용 페이저: 6단계 올패스 필터로 화려한 위상 변화
+    // 페이저: 4단 올패스 필터의 완벽한 모델링
     function createPhaser(ctx) {
         const inputNode = ctx.createGain();
         const outputNode = ctx.createGain();
         
         const lfo = ctx.createOscillator(); 
         lfo.type = 'sine'; 
-        lfo.frequency.value = 0.25; 
+        lfo.frequency.value = 0.2; 
         lfo.start();
         currentLFOs.push(lfo); 
         
-        let prev = inputNode;
-        for (let i = 0; i < 6; i++) {
-            const apf = ctx.createBiquadFilter(); 
-            apf.type = 'allpass'; 
-            apf.frequency.value = 1000; 
-            apf.Q.value = 1.5; 
+        let prevFilter = inputNode;
+        for (let i = 0; i < 4; i++) {
+            const filter = ctx.createBiquadFilter(); 
+            filter.type = 'allpass'; 
+            filter.frequency.value = 1000; 
+            filter.Q.value = 1.0; 
             
             const lfoGain = ctx.createGain(); 
-            lfoGain.value = 800; // 넓은 주파수 대역 스윕
+            lfoGain.value = 800; // 스윕 범위
             
             lfo.connect(lfoGain); 
-            lfoGain.connect(apf.frequency);
+            lfoGain.connect(filter.frequency);
             
-            prev.connect(apf);
-            prev = apf;
+            prevFilter.connect(filter);
+            prevFilter = filter;
         }
-        prev.connect(outputNode);
         
+        prevFilter.connect(outputNode);
         return { input: inputNode, output: outputNode };
     }
 
@@ -711,14 +705,12 @@
         }
     }
 
-    // ★ 음악(Music)에 묻히지 않도록 효과음 레벨을 1.5배 증폭
     function applyFxMixVolume() {
         if (!dryGainNode || !wetGainNode || !fxSendNode || !audioCtx) return;
         let sendLevel = currentFxMix / 100.0;
         
         dryGainNode.gain.setTargetAtTime(1.0, audioCtx.currentTime, 0.02);
-        // 슬라이더 100%일 때, 음악에서도 뚜렷하게 들리도록 1.5배 부스트
-        wetGainNode.gain.setTargetAtTime(sendLevel * 1.5, audioCtx.currentTime, 0.02);
+        wetGainNode.gain.setTargetAtTime(sendLevel, audioCtx.currentTime, 0.02);
         fxSendNode.gain.setTargetAtTime(1.0, audioCtx.currentTime, 0.02);
     }
 
@@ -732,15 +724,16 @@
             
             if (isActive) {
                 if (currentMode === 'practice' || currentMode === 'test') {
-                    // 퀴즈 시에는 학생들이 확실하게 맞출 수 있도록 아주 강하게 믹스(1.5배)
-                    let quizSend = 1.5; 
+                    // 퀴즈 시에는 원본 100% 위에 효과음을 80% 볼륨으로 확실하게 병렬 믹스
+                    let quizSend = 0.8; 
                     dryGainNode.gain.setTargetAtTime(1.0, audioCtx.currentTime, 0.02);
                     wetGainNode.gain.setTargetAtTime(quizSend, audioCtx.currentTime, 0.02);
                     fxSendNode.gain.setTargetAtTime(1.0, audioCtx.currentTime, 0.02);
                 } else {
-                    applyFxMixVolume(); // Explore 모드는 슬라이더 적용
+                    applyFxMixVolume(); 
                 }
             } else {
+                // Bypass 상태: 원본 100%, 이펙터 출력 0%, 이펙터 입력 0% (완전 차단)
                 dryGainNode.gain.setTargetAtTime(1.0, audioCtx.currentTime, 0.02);
                 wetGainNode.gain.setTargetAtTime(0.0, audioCtx.currentTime, 0.02); 
                 fxSendNode.gain.setTargetAtTime(0.0, audioCtx.currentTime, 0.02); 
@@ -755,8 +748,8 @@
         
         document.getElementById('reverb-only-params').style.display = (category === 'reverb') ? 'block' : 'none';
         
-        if(category === 'reverb') { document.getElementById('slider-fxmix').value = 50; } 
-        else { document.getElementById('slider-fxmix').value = 100; } // 음악용 기본값 100%
+        if(category === 'reverb') { document.getElementById('slider-fxmix').value = 40; } 
+        else { document.getElementById('slider-fxmix').value = 80; } // 음악용 기본값
         updateFxMix();
         
         applyFxSetup();
