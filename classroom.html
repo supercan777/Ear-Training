@@ -99,6 +99,7 @@
         .top-bar { display: flex; justify-content: space-between; align-items: center; padding: 25px 30px; background: transparent; }
         .top-bar h2 { margin: 0; font-size: 1.6em; font-weight: 800; color: #0f172a; letter-spacing: -0.5px; }
         
+        /* 설정 버튼 (기어) 깔끔하게 변경 */
         #settings-trigger { 
             font-size: 1.5em; 
             cursor: pointer; 
@@ -355,8 +356,6 @@
     let targetGain = 12;        
 
     const bands = [31.5, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
-    
-    // ★ 퀴즈 풀: 완벽하고 직관적인 6종의 FX로 압축
     const fxPool = ['room', 'chamber', 'plate', 'hall', 'tremolo', 'distortion'];
 
     let currentListenFreq = null; 
@@ -375,7 +374,6 @@
 
     let currentEffectNode = null;
     
-    // 직렬 연결(Insert)을 위한 노드
     let dryGainNode = null;
     let wetGainNode = null;
     let fxInputNode = null; 
@@ -401,13 +399,12 @@
         const convolver = ctx.createConvolver();
         
         let decay = 2.0;
-        let damping = 0.2; // 0.0 ~ 1.0 (수치가 낮을수록 고음이 깎여서 소리가 따뜻해짐)
+        let damping = 0.2; 
 
-        // 각 룸 타입별로 Damping(어두운 정도)과 Decay 세밀하게 분리
         if (type === 'room') { decay = 5.0; damping = 0.4; } 
-        else if (type === 'plate') { decay = 2.0; damping = 0.8; } // 플레이트는 찰랑거리고 밝게
+        else if (type === 'plate') { decay = 2.0; damping = 0.8; } 
         else if (type === 'chamber') { decay = 3.0; damping = 0.3; } 
-        else if (type === 'hall') { decay = 1.5; damping = 0.15; } // 홀은 아주 부드럽고 어둡게
+        else if (type === 'hall') { decay = 1.5; damping = 0.15; } 
 
         const sampleRate = ctx.sampleRate;
         const length = sampleRate * revTime;
@@ -422,14 +419,11 @@
             const n = i;
             const env = Math.pow(1 - n / length, decay);
             
-            // 초기 어택의 거친 틱(Click) 소리를 없애는 부드러운 페이드인
             const fadeIn = i < 200 ? (i / 200) : 1.0; 
 
-            // 순수 화이트 노이즈 생성
             const wLeft = (Math.random() * 2 - 1);
             const wRight = (Math.random() * 2 - 1);
 
-            // 로우패스 댐핑 필터 적용 (쇳소리, 기계음, 날카로운 소리 제거)
             lpLeft = lpLeft + damping * (wLeft - lpLeft);
             lpRight = lpRight + damping * (wRight - lpRight);
 
@@ -438,13 +432,11 @@
         }
         convolver.buffer = impulse; 
 
-        // 내부 톤 필터 (High Shelf) 장착: 아날로그 리버브 페달의 'Tone' 노브 역할
         const toneFilter = ctx.createBiquadFilter();
         toneFilter.type = 'highshelf';
         toneFilter.frequency.value = 4000;
-        toneFilter.gain.value = -8; // 초고역대 디지털 쇳소리 추가 억제
+        toneFilter.gain.value = -8; 
 
-        // 입력 -> 딜레이 -> 컨볼버 -> 톤필터 -> 출력 연결
         inputNode.connect(preDelayNode);
         preDelayNode.connect(convolver);
         convolver.connect(toneFilter);
@@ -692,10 +684,11 @@
         }
     }
 
+    // ★ 핵심 수정: 퀴즈/기본 모드에서 모든 FX가 Mix 40%로 통일되도록 설정
     const fxMixSettings = {
         'reverb': 0.40,
-        'tremolo': 1.0,  
-        'distortion': 1.0 
+        'tremolo': 0.40,  
+        'distortion': 0.40 
     };
 
     function applyFixedMix() {
@@ -725,7 +718,8 @@
             
             if (isActive) {
                 if (currentMode === 'practice' || currentMode === 'test') {
-                    let quizMix = fxMixSettings[activeFxCategory] || 0.5;
+                    // ★ 퀴즈 시 무조건 40% 적용하여 원본 소리와 효과음을 섞음
+                    let quizMix = fxMixSettings[activeFxCategory] || 0.40;
                     if(['room', 'chamber', 'plate', 'hall'].includes(activeFxCategory)) quizMix = fxMixSettings['reverb'];
                     
                     dryGainNode.gain.setTargetAtTime(Math.cos(quizMix * 0.5 * Math.PI), audioCtx.currentTime, 0.02);
@@ -734,6 +728,7 @@
                     applyFixedMix(); 
                 }
             } else {
+                // Bypass 상태
                 dryGainNode.gain.setTargetAtTime(1.0, audioCtx.currentTime, 0.02);
                 wetGainNode.gain.setTargetAtTime(0.0, audioCtx.currentTime, 0.02); 
             }
@@ -747,7 +742,8 @@
         
         document.getElementById('reverb-only-params').style.display = (category === 'reverb') ? 'block' : 'none';
         
-        let defaultMix = fxMixSettings[category] ? fxMixSettings[category] * 100 : 50;
+        // 탐색 시 슬라이더 기본값도 모두 40%로 셋팅
+        let defaultMix = fxMixSettings[category] ? fxMixSettings[category] * 100 : 40;
         document.getElementById('slider-fxmix').value = defaultMix;
         updateFxMix();
         
