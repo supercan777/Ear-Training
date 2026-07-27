@@ -250,7 +250,6 @@
                 <div id="freq-controls" class="freq-grid" style="display:none;"></div>
                 
                 <div id="fx-controls" class="fx-layout" style="display:none;">
-                    <!-- 3가지 완벽한 효과로 교체 -->
                     <div class="fx-categories">
                         <button id="btn-cat-reverb" class="btn active" onclick="selectFxCategory('reverb')">REVERB</button>
                         <button id="btn-cat-tremolo" class="btn" onclick="selectFxCategory('tremolo')">TREMOLO</button>
@@ -391,7 +390,7 @@
     let isFxBypassed = false; 
 
     // --------------------------------------------------
-    // ★ 완벽하게 안정적인 직관적 FX 모듈 (버그율 0%) ★
+    // ★ 완벽하게 다듬어진 아날로그 톤의 리버브 엔진 ★
     // --------------------------------------------------
 
     function createReverb(ctx, type, preDelayMs, revTime) {
@@ -400,47 +399,76 @@
         
         const preDelayNode = ctx.createDelay(); preDelayNode.delayTime.value = preDelayMs / 1000.0;
         const convolver = ctx.createConvolver();
+        
         let decay = 2.0;
-        if (type === 'room') decay = 5.0; else if (type === 'plate') decay = 2.0; 
-        else if (type === 'chamber') decay = 3.0; else if (type === 'hall') decay = 1.5;  
+        let damping = 0.2; // 0.0 ~ 1.0 (수치가 낮을수록 고음이 깎여서 소리가 따뜻해짐)
+
+        // 각 룸 타입별로 Damping(어두운 정도)과 Decay 세밀하게 분리
+        if (type === 'room') { decay = 5.0; damping = 0.4; } 
+        else if (type === 'plate') { decay = 2.0; damping = 0.8; } // 플레이트는 찰랑거리고 밝게
+        else if (type === 'chamber') { decay = 3.0; damping = 0.3; } 
+        else if (type === 'hall') { decay = 1.5; damping = 0.15; } // 홀은 아주 부드럽고 어둡게
 
         const sampleRate = ctx.sampleRate;
         const length = sampleRate * revTime;
         const impulse = ctx.createBuffer(2, length, sampleRate);
-        const left = impulse.getChannelData(0); const right = impulse.getChannelData(1);
+        const left = impulse.getChannelData(0); 
+        const right = impulse.getChannelData(1);
+
+        let lpLeft = 0;
+        let lpRight = 0;
 
         for (let i = 0; i < length; i++) {
             const n = i;
-            left[i] = (Math.random() * 2 - 1) * Math.pow(1 - n / length, decay);
-            right[i] = (Math.random() * 2 - 1) * Math.pow(1 - n / length, decay);
+            const env = Math.pow(1 - n / length, decay);
+            
+            // 초기 어택의 거친 틱(Click) 소리를 없애는 부드러운 페이드인
+            const fadeIn = i < 200 ? (i / 200) : 1.0; 
+
+            // 순수 화이트 노이즈 생성
+            const wLeft = (Math.random() * 2 - 1);
+            const wRight = (Math.random() * 2 - 1);
+
+            // 로우패스 댐핑 필터 적용 (쇳소리, 기계음, 날카로운 소리 제거)
+            lpLeft = lpLeft + damping * (wLeft - lpLeft);
+            lpRight = lpRight + damping * (wRight - lpRight);
+
+            left[i] = lpLeft * env * fadeIn;
+            right[i] = lpRight * env * fadeIn;
         }
         convolver.buffer = impulse; 
-        
+
+        // 내부 톤 필터 (High Shelf) 장착: 아날로그 리버브 페달의 'Tone' 노브 역할
+        const toneFilter = ctx.createBiquadFilter();
+        toneFilter.type = 'highshelf';
+        toneFilter.frequency.value = 4000;
+        toneFilter.gain.value = -8; // 초고역대 디지털 쇳소리 추가 억제
+
+        // 입력 -> 딜레이 -> 컨볼버 -> 톤필터 -> 출력 연결
         inputNode.connect(preDelayNode);
         preDelayNode.connect(convolver);
-        convolver.connect(outputNode);
+        convolver.connect(toneFilter);
+        toneFilter.connect(outputNode);
         
         return { input: inputNode, output: outputNode };
     }
 
-    // ★ 안정성의 끝판왕 1: 트레몰로 (주기적인 볼륨 변조) - 속도 수정됨
+    // 트레몰로 (주기적인 볼륨 변조)
     function createTremolo(ctx) {
         const inputNode = ctx.createGain();
         const outputNode = ctx.createGain();
         
-        // 트레몰로는 볼륨을 깎는 효과이므로 약간의 볼륨 보상
         outputNode.gain.value = 1.2; 
         
         const tremoloGain = ctx.createGain();
-        tremoloGain.gain.value = 0.5; // 베이스 볼륨
+        tremoloGain.gain.value = 0.5; 
         
         const lfo = ctx.createOscillator();
         lfo.type = 'sine';
-        // ★ 핵심 수정: 5.0Hz에서 2.0Hz로 낮춰 부드럽고 묵직한 물결처럼 떨리게 변경
         lfo.frequency.value = 2.0; 
         
         const lfoDepth = ctx.createGain();
-        lfoDepth.gain.value = 0.5; // 깊이 (0 ~ 1.0 사이를 크게 요동침)
+        lfoDepth.gain.value = 0.5; 
         
         lfo.connect(lfoDepth);
         lfoDepth.connect(tremoloGain.gain);
@@ -453,17 +481,15 @@
         return { input: inputNode, output: outputNode };
     }
 
-    // ★ 안정성의 끝판왕 2: 디스토션 (파형 찌그러뜨리기)
+    // 디스토션 (파형 찌그러뜨리기)
     function createDistortion(ctx) {
         const inputNode = ctx.createGain();
         const outputNode = ctx.createGain();
         
-        // 디스토션은 소리가 매우 커지므로 출력 볼륨을 대폭 낮춰서 밸런스 유지
         outputNode.gain.value = 0.4; 
         
         const distortion = ctx.createWaveShaper();
         
-        // 수학적으로 완벽한 Overdrive/Distortion 커브 생성 함수
         function makeDistortionCurve(amount) {
             let k = typeof amount === 'number' ? amount : 50;
             let n_samples = 44100;
@@ -476,15 +502,14 @@
             return curve;
         }
         
-        distortion.curve = makeDistortionCurve(400); // 400: 아주 확실한 드라이브 질감
-        distortion.oversample = '4x'; // 앨리어싱(디지털 깨짐) 방지 고음질 처리
+        distortion.curve = makeDistortionCurve(400); 
+        distortion.oversample = '4x'; 
 
         inputNode.connect(distortion);
         distortion.connect(outputNode);
         
         return { input: inputNode, output: outputNode };
     }
-
 
     // 시스템 및 오디오 초기화
     async function checkPassword() {
@@ -709,7 +734,6 @@
                     applyFixedMix(); 
                 }
             } else {
-                // Bypass 상태
                 dryGainNode.gain.setTargetAtTime(1.0, audioCtx.currentTime, 0.02);
                 wetGainNode.gain.setTargetAtTime(0.0, audioCtx.currentTime, 0.02); 
             }
