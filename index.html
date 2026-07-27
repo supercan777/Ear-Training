@@ -307,7 +307,6 @@
     let revTimeSec = 2.5;
     let isFxBypassed = false; 
 
-    // --- 리버브: 톤의 대비감을 줄이기 위해 Lowpass 필터 대역 상향 ---
     function createReverb(ctx, type, preDelayMs, revTime) {
         const inputNode = ctx.createGain();
         const outputNode = ctx.createGain();
@@ -340,7 +339,6 @@
         }
         convolver.buffer = impulse; 
         
-        // 컷오프 주파수를 2.5kHz에서 5kHz로 상향 조정 (먹먹함 줄임)
         const toneFilter = ctx.createBiquadFilter(); 
         toneFilter.type = 'lowpass'; 
         toneFilter.frequency.value = 5000; 
@@ -375,11 +373,16 @@
         return { input: inputNode, output: outputNode };
     }
 
-    // --- 디스토션: 톤 매칭을 위해 Lowpass 필터 대역 상향 ---
+    // --- 은은하고 부드러운 디스토션 (Overdrive 질감으로 개선) ---
     function createDistortion(ctx) {
         const inputNode = ctx.createGain(); 
         const outputNode = ctx.createGain(); 
-        outputNode.gain.value = 0.6; 
+        
+        // ★ 파형이 너무 빨리 찌그러지지 않도록 드라이브 입력 게인을 줄임 (헤드룸 확보)
+        const driveInput = ctx.createGain();
+        driveInput.gain.value = 0.5;
+        
+        outputNode.gain.value = 1.2; // 깎인 볼륨을 최종단에서 보상
         
         const distortion = ctx.createWaveShaper();
         
@@ -395,14 +398,16 @@
             return curve;
         }
         
-        distortion.curve = makeCurve(100); 
+        // ★ 핵심: 디스토션 강도를 100 -> 10으로 대폭 줄여서 부드러운 새츄레이션/오버드라이브 느낌 연출
+        distortion.curve = makeCurve(10); 
         distortion.oversample = 'none'; 
         
         const cabFilter = ctx.createBiquadFilter();
         cabFilter.type = 'lowpass';
-        cabFilter.frequency.value = 5000; // 3kHz에서 5kHz로 상향
+        cabFilter.frequency.value = 4000; // 고음역대 노이즈를 살짝 더 깎아줌
         
-        inputNode.connect(distortion); 
+        inputNode.connect(driveInput); 
+        driveInput.connect(distortion); 
         distortion.connect(cabFilter); 
         cabFilter.connect(outputNode);
         
@@ -559,7 +564,6 @@
 
     const fxMixSettings = { 'reverb': 0.30, 'tremolo': 0.30, 'distortion': 0.30 };
 
-    // --- 수정됨: 미세 볼륨 찌꺼기가 남지 않도록 linearRampToValueAtTime 사용 ---
     function applyFixedMix() {
         if (!dryGainNode || !wetGainNode || !audioCtx) return;
         let mix = document.getElementById('slider-fxmix').value / 100.0;
@@ -580,7 +584,6 @@
         if (isPlaying && currentMode === 'fx-explore' && !isFxBypassed) applyFixedMix();
     }
 
-    // --- 수정됨: 미세 볼륨 찌꺼기가 남지 않도록 linearRampToValueAtTime 사용 ---
     function setEffectActive(isActive) {
         if (currentQuizCategory === 'eq') {
             if(biquadFilter) {
