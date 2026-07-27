@@ -99,7 +99,6 @@
         .top-bar { display: flex; justify-content: space-between; align-items: center; padding: 25px 30px; background: transparent; }
         .top-bar h2 { margin: 0; font-size: 1.6em; font-weight: 800; color: #0f172a; letter-spacing: -0.5px; }
         
-        /* 설정 버튼 (기어) 깔끔하게 변경 */
         #settings-trigger { 
             font-size: 1.5em; 
             cursor: pointer; 
@@ -357,6 +356,8 @@
     let targetGain = 12;        
 
     const bands = [31.5, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
+    
+    // ★ 퀴즈 풀: 완벽하고 직관적인 6종의 FX로 압축
     const fxPool = ['room', 'chamber', 'plate', 'hall', 'tremolo', 'distortion'];
 
     let currentListenFreq = null; 
@@ -375,10 +376,10 @@
 
     let currentEffectNode = null;
     
-    // ★ 직렬 연결(Insert) 오디오 라우팅용 노드
+    // 직렬 연결(Insert)을 위한 노드
     let dryGainNode = null;
     let wetGainNode = null;
-    let fxInputNode = null; // ★ 핵심 해결: 스위칭 시 끊기지 않게 연결해 주는 가상 케이블
+    let fxInputNode = null; 
     
     let currentLFOs = []; 
     
@@ -422,22 +423,24 @@
         return { input: inputNode, output: outputNode };
     }
 
-    // 트레몰로: 주기적인 볼륨 변조
+    // ★ 안정성의 끝판왕 1: 트레몰로 (주기적인 볼륨 변조) - 속도 수정됨
     function createTremolo(ctx) {
         const inputNode = ctx.createGain();
         const outputNode = ctx.createGain();
         
+        // 트레몰로는 볼륨을 깎는 효과이므로 약간의 볼륨 보상
         outputNode.gain.value = 1.2; 
         
         const tremoloGain = ctx.createGain();
-        tremoloGain.gain.value = 0.5; 
+        tremoloGain.gain.value = 0.5; // 베이스 볼륨
         
         const lfo = ctx.createOscillator();
         lfo.type = 'sine';
-        lfo.frequency.value = 5.0; // 5Hz 속도로 명확하게 떨림
+        // ★ 핵심 수정: 5.0Hz에서 2.0Hz로 낮춰 부드럽고 묵직한 물결처럼 떨리게 변경
+        lfo.frequency.value = 2.0; 
         
         const lfoDepth = ctx.createGain();
-        lfoDepth.gain.value = 0.5; // ★ 오타 수정 완료! (0~1.0 사이로 크게 요동침)
+        lfoDepth.gain.value = 0.5; // 깊이 (0 ~ 1.0 사이를 크게 요동침)
         
         lfo.connect(lfoDepth);
         lfoDepth.connect(tremoloGain.gain);
@@ -450,15 +453,17 @@
         return { input: inputNode, output: outputNode };
     }
 
-    // 디스토션: 파형 찌그러뜨리기
+    // ★ 안정성의 끝판왕 2: 디스토션 (파형 찌그러뜨리기)
     function createDistortion(ctx) {
         const inputNode = ctx.createGain();
         const outputNode = ctx.createGain();
         
-        outputNode.gain.value = 0.4; // 디스토션 시 폭주하는 볼륨을 잡기 위한 밸런스 조정
+        // 디스토션은 소리가 매우 커지므로 출력 볼륨을 대폭 낮춰서 밸런스 유지
+        outputNode.gain.value = 0.4; 
         
         const distortion = ctx.createWaveShaper();
         
+        // 수학적으로 완벽한 Overdrive/Distortion 커브 생성 함수
         function makeDistortionCurve(amount) {
             let k = typeof amount === 'number' ? amount : 50;
             let n_samples = 44100;
@@ -471,8 +476,8 @@
             return curve;
         }
         
-        distortion.curve = makeDistortionCurve(400); // 아주 확실한 드라이브 질감
-        distortion.oversample = '4x'; 
+        distortion.curve = makeDistortionCurve(400); // 400: 아주 확실한 드라이브 질감
+        distortion.oversample = '4x'; // 앨리어싱(디지털 깨짐) 방지 고음질 처리
 
         inputNode.connect(distortion);
         distortion.connect(outputNode);
@@ -635,7 +640,6 @@
         }
     }
 
-    // ★ 핵심 수정: 핫스왑 중에도 케이블이 뽑히지 않도록 fxInputNode를 통한 안정적인 라우팅 유지
     function setupFxNode(fxType) {
         if (currentLFOs.length > 0) {
             currentLFOs.forEach(lfo => { try { lfo.stop(); lfo.disconnect(); } catch(e) {} });
@@ -657,7 +661,6 @@
         } else if (fxType === 'distortion') { currentEffectNode = createDistortion(audioCtx);
         }
         
-        // 새 이펙터가 생성되면, 고정되어 있는 fxInputNode와 wetGainNode 사이에 새 이펙터를 끼워넣음
         if (fxInputNode && wetGainNode && (currentMode === 'fx-explore' || currentMode === 'practice' || currentMode === 'test')) {
             fxInputNode.connect(currentEffectNode.input);
             currentEffectNode.output.connect(wetGainNode); 
@@ -926,7 +929,6 @@
         }, 5000); 
     }
     
-    // ★ fxInputNode를 통한 안정적인 영구 라우팅 배선 완료
     function startAudioSource() {
         if (!audioCtx) return; activeSource = audioCtx.createBufferSource();
         if (customBuffer) activeSource.buffer = customBuffer;
@@ -945,14 +947,14 @@
         if (!dryGainNode) {
             dryGainNode = audioCtx.createGain(); 
             wetGainNode = audioCtx.createGain();
-            fxInputNode = audioCtx.createGain(); // ★ 이 선이 끊어져 있었습니다!
+            fxInputNode = audioCtx.createGain(); 
             dryGainNode.connect(masterGain); 
             wetGainNode.connect(masterGain);
         }
 
         if (currentMode === 'fx-explore' || currentQuizCategory === 'fx') {
             activeSource.connect(dryGainNode); 
-            activeSource.connect(fxInputNode); // 항상 fxInputNode로 소리를 밀어넣습니다.
+            activeSource.connect(fxInputNode); 
             
             if (currentEffectNode) {
                 fxInputNode.connect(currentEffectNode.input); 
