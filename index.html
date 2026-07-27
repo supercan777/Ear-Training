@@ -373,16 +373,16 @@
         return { input: inputNode, output: outputNode };
     }
 
-    // --- 은은하고 부드러운 디스토션 (Overdrive 질감으로 개선) ---
+    // --- 적당한 타격감의 디스토션 (중간 지점) ---
     function createDistortion(ctx) {
         const inputNode = ctx.createGain(); 
         const outputNode = ctx.createGain(); 
         
-        // ★ 파형이 너무 빨리 찌그러지지 않도록 드라이브 입력 게인을 줄임 (헤드룸 확보)
+        // 입력 게인을 올려서 소리가 조금 더 강하게 찌그러지도록 수정
         const driveInput = ctx.createGain();
-        driveInput.gain.value = 0.5;
+        driveInput.gain.value = 0.8;
         
-        outputNode.gain.value = 1.2; // 깎인 볼륨을 최종단에서 보상
+        outputNode.gain.value = 1.0; // 출력 밸런스 조정
         
         const distortion = ctx.createWaveShaper();
         
@@ -398,13 +398,14 @@
             return curve;
         }
         
-        // ★ 핵심: 디스토션 강도를 100 -> 10으로 대폭 줄여서 부드러운 새츄레이션/오버드라이브 느낌 연출
-        distortion.curve = makeCurve(10); 
+        // ★ 핵심: 강도를 10에서 40으로 올려 확실한 디스토션 질감 확보
+        distortion.curve = makeCurve(40); 
         distortion.oversample = 'none'; 
         
         const cabFilter = ctx.createBiquadFilter();
         cabFilter.type = 'lowpass';
-        cabFilter.frequency.value = 4000; // 고음역대 노이즈를 살짝 더 깎아줌
+        // 고음역대를 살짝 열어주어 크런치(Crunch)한 질감을 살림
+        cabFilter.frequency.value = 4500; 
         
         inputNode.connect(driveInput); 
         driveInput.connect(distortion); 
