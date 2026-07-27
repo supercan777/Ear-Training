@@ -388,7 +388,7 @@
     let isFxBypassed = false; 
 
     // --------------------------------------------------
-    // 가장 심플하고 완벽한 오디오 이펙터 로직 (플랜저 폭주 해결)
+    // ★ 볼륨 보상(Gain Staging)이 완벽히 적용된 FX 엔진 ★
     // --------------------------------------------------
 
     function createReverb(ctx, type, preDelayMs, revTime) {
@@ -420,10 +420,11 @@
         return { input: inputNode, output: outputNode };
     }
 
-    // 코러스: 스탠다드 25ms 딜레이 단일 보이스로 깔끔하게 원복
+    // 코러스: 병렬 믹스 시 볼륨이 튀는 것을 막기 위해 이펙터 내부 출력볼륨을 0.4로 강제 다운
     function createChorus(ctx) {
         const inputNode = ctx.createGain();
         const outputNode = ctx.createGain();
+        outputNode.gain.value = 0.4; // ★ 핵심: 병렬 합산 시 볼륨 점프 완벽 방지
         
         const delay = ctx.createDelay(); 
         delay.delayTime.value = 0.025; 
@@ -432,7 +433,7 @@
         const lfoGain = ctx.createGain();
         lfo.type = 'sine'; 
         lfo.frequency.value = 0.8; 
-        lfoGain.value = 0.003; 
+        lfoGain.value = 0.002; 
         
         lfo.connect(lfoGain); 
         lfoGain.connect(delay.delayTime); 
@@ -445,23 +446,23 @@
         return { input: inputNode, output: outputNode };
     }
 
-    // 플랜저: 피드백 루프 내 하이패스 필터 탑재로 볼륨 펌핑 완전 해결
+    // 플랜저: 저음역대 캔슬링(볼륨 펌핑)을 피하기 위해 스윕 대역을 고정하고 피드백 감소
     function createFlanger(ctx) {
         const inputNode = ctx.createGain();
         const outputNode = ctx.createGain();
+        outputNode.gain.value = 0.5; // ★ 볼륨 커짐(Swelling) 1차 보상
         
-        // 저음역대 뭉침 방지를 위한 하이패스 (플랜저 폭주 원인 완벽 제거)
+        // 피드백 루프 내 하이패스 필터로 저음역대 부딪힘 2차 차단 (펌핑 방지)
         const hpf = ctx.createBiquadFilter();
         hpf.type = 'highpass';
-        hpf.frequency.value = 150; 
+        hpf.frequency.value = 300; 
         
         const delay = ctx.createDelay(); 
-        delay.delayTime.value = 0.003; // 베이스 딜레이 3ms
+        delay.delayTime.value = 0.0015; // 베이스 딜레이 1.5ms (저음을 건드리지 않는 고음역대로 이동)
         
         const feedback = ctx.createGain(); 
-        feedback.gain.value = 0.5; // 피드백을 적절하게 유지
+        feedback.gain.value = 0.35; // 피드백을 극도로 낮춰 공진 폭주(시끄러워짐) 완전 차단
         
-        // 라우팅 (입력 -> 필터 -> 딜레이 -> 피드백 루프)
         inputNode.connect(hpf);
         hpf.connect(delay); 
         delay.connect(feedback); 
@@ -471,8 +472,8 @@
         const lfo = ctx.createOscillator(); 
         const lfoGain = ctx.createGain();
         lfo.type = 'sine'; 
-        lfo.frequency.value = 0.15; // 0.15Hz 부드러운 스윕
-        lfoGain.value = 0.002; 
+        lfo.frequency.value = 0.2; 
+        lfoGain.value = 0.0005; // 1ms ~ 2ms 사이의 아주 좁은 스윕 (볼륨 요동 방지의 핵심)
         
         lfo.connect(lfoGain); 
         lfoGain.connect(delay.delayTime); 
@@ -482,10 +483,11 @@
         return { input: inputNode, output: outputNode };
     }
 
-    // 페이저: 4단 올패스 필터의 완벽한 모델링
+    // 페이저: 출력 볼륨 보상
     function createPhaser(ctx) {
         const inputNode = ctx.createGain();
         const outputNode = ctx.createGain();
+        outputNode.gain.value = 0.6; // ★ 볼륨 보상
         
         const lfo = ctx.createOscillator(); 
         lfo.type = 'sine'; 
@@ -501,7 +503,7 @@
             filter.Q.value = 1.0; 
             
             const lfoGain = ctx.createGain(); 
-            lfoGain.value = 800; // 스윕 범위
+            lfoGain.value = 800; 
             
             lfo.connect(lfoGain); 
             lfoGain.connect(filter.frequency);
@@ -724,7 +726,7 @@
             
             if (isActive) {
                 if (currentMode === 'practice' || currentMode === 'test') {
-                    // 퀴즈 시에는 원본 100% 위에 효과음을 80% 볼륨으로 확실하게 병렬 믹스
+                    // 퀴즈 시에는 원본 위에 효과음을 80% 볼륨으로 확실하게 병렬 믹스
                     let quizSend = 0.8; 
                     dryGainNode.gain.setTargetAtTime(1.0, audioCtx.currentTime, 0.02);
                     wetGainNode.gain.setTargetAtTime(quizSend, audioCtx.currentTime, 0.02);
@@ -733,7 +735,6 @@
                     applyFxMixVolume(); 
                 }
             } else {
-                // Bypass 상태: 원본 100%, 이펙터 출력 0%, 이펙터 입력 0% (완전 차단)
                 dryGainNode.gain.setTargetAtTime(1.0, audioCtx.currentTime, 0.02);
                 wetGainNode.gain.setTargetAtTime(0.0, audioCtx.currentTime, 0.02); 
                 fxSendNode.gain.setTargetAtTime(0.0, audioCtx.currentTime, 0.02); 
@@ -748,8 +749,8 @@
         
         document.getElementById('reverb-only-params').style.display = (category === 'reverb') ? 'block' : 'none';
         
-        if(category === 'reverb') { document.getElementById('slider-fxmix').value = 40; } 
-        else { document.getElementById('slider-fxmix').value = 80; } // 음악용 기본값
+        if(category === 'reverb') { document.getElementById('slider-fxmix').value = 50; } 
+        else { document.getElementById('slider-fxmix').value = 100; } // 음악용 기본값 100%
         updateFxMix();
         
         applyFxSetup();
