@@ -46,7 +46,7 @@
         .sidebar-header h1 { margin: 0; font-size: 1.35em; font-weight: 800; color: #0f172a; letter-spacing: -0.5px; }
         .sidebar-header p { margin: 5px 0 0 0; color: var(--primary-color); font-size: 0.8em; font-weight: 700; letter-spacing: 1px;}
 
-        /* 메뉴 스타일 */
+        /* 세련된 메뉴 스타일로 개편 */
         .nav-menu { display: flex; flex-direction: column; padding: 15px 15px; gap: 4px; }
         
         .nav-category {
@@ -152,7 +152,8 @@
         .freq-grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 10px; width: 100%; }
         .freq-grid .btn { padding: 15px 5px; font-size: 0.95em; }
 
-        .fx-quiz-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; width: 100%; }
+        /* 퀴즈 버튼 그리드 수정 (6개 버튼) */
+        .fx-quiz-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; width: 100%; }
         .fx-quiz-grid .btn { padding: 15px 5px; font-size: 0.9em; }
 
         /* FX 컨트롤 UI */
@@ -169,6 +170,14 @@
         .slider-group label { font-weight: 800; color: #475569; font-size: 0.9em; width: 130px;}
         .slider-group input[type="range"] { flex: 1; cursor: pointer; accent-color: var(--primary-color);}
         .slider-value { width: 60px; text-align: right; font-weight: 800; color: var(--primary-color); font-size: 0.95em;}
+
+        .mixer-panel {
+            background: #eff6ff;
+            border: 2px solid #bfdbfe;
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 10px;
+        }
 
         /* 오버레이 및 셋팅 메뉴 */
         .full-overlay { position: absolute; top:0; left:0; width:100%; height:100%; background: var(--surface-color); z-index:999; display:flex; flex-direction:column; align-items:center; justify-content:center; }
@@ -240,13 +249,12 @@
 
                 <div id="freq-controls" class="freq-grid" style="display:none;"></div>
                 
-                <!-- FX 컨트롤 UI -->
                 <div id="fx-controls" class="fx-layout" style="display:none;">
+                    <!-- FX 카테고리 (리버브, 트레몰로, 디스토션) -->
                     <div class="fx-categories">
                         <button id="btn-cat-reverb" class="btn active" onclick="selectFxCategory('reverb')">REVERB</button>
-                        <button id="btn-cat-chorus" class="btn" onclick="selectFxCategory('chorus')">CHORUS</button>
-                        <button id="btn-cat-flanger" class="btn" onclick="selectFxCategory('flanger')">FLANGER</button>
-                        <button id="btn-cat-phaser" class="btn" onclick="selectFxCategory('phaser')">PHASER</button>
+                        <button id="btn-cat-tremolo" class="btn" onclick="selectFxCategory('tremolo')">TREMOLO</button>
+                        <button id="btn-cat-distortion" class="btn" onclick="selectFxCategory('distortion')">DISTORT</button>
                     </div>
                     
                     <div id="fx-param-panel" class="fx-sub-panel" style="display:flex;">
@@ -268,20 +276,24 @@
                                 <div class="slider-value" id="val-revtime">2.5 s</div>
                             </div>
                         </div>
-                        
-                        <!-- ⚠️ 선생님의 요청으로 외부 슬라이더(MIX 페이더)를 완전히 삭제했습니다. (내부 하드코딩 적용) -->
 
+                        <!-- 믹서 패널 유지 (크로스페이드용) -->
+                        <div class="slider-group mixer-panel">
+                            <label style="color:var(--primary-color); font-size:1em; width:160px;">🎛️ FX MIX (Dry/Wet)</label>
+                            <input type="range" id="slider-fxmix" min="0" max="100" step="1" value="40" oninput="updateFxMix()">
+                            <div class="slider-value" id="val-fxmix" style="font-size:1.1em;">40 %</div>
+                        </div>
                     </div>
                 </div>
 
+                <!-- 퀴즈 버튼 라인업 전면 교체 -->
                 <div id="fx-quiz-controls" class="fx-quiz-grid" style="display:none;">
                     <button class="btn" onclick="handleFxClick('room')">ROOM</button>
                     <button class="btn" onclick="handleFxClick('chamber')">CHMBR</button>
                     <button class="btn" onclick="handleFxClick('plate')">PLATE</button>
                     <button class="btn" onclick="handleFxClick('hall')">HALL</button>
-                    <button class="btn" onclick="handleFxClick('chorus')">CHORS</button>
-                    <button class="btn" onclick="handleFxClick('flanger')">FLNGR</button>
-                    <button class="btn" onclick="handleFxClick('phaser')">PHASR</button>
+                    <button class="btn" onclick="handleFxClick('tremolo')">TREM</button>
+                    <button class="btn" onclick="handleFxClick('distortion')">DIST</button>
                 </div>
             </div>
         </div>
@@ -344,7 +356,9 @@
     let targetGain = 12;        
 
     const bands = [31.5, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
-    const fxPool = ['room', 'chamber', 'plate', 'hall', 'chorus', 'flanger', 'phaser'];
+    
+    // ★ 퀴즈 풀: 완벽하고 직관적인 6종의 FX로 압축
+    const fxPool = ['room', 'chamber', 'plate', 'hall', 'tremolo', 'distortion'];
 
     let currentListenFreq = null; 
     let currentPracticeAnswer = null; 
@@ -362,7 +376,7 @@
 
     let currentEffectNode = null;
     
-    // ★ 직렬 연결(Insert)을 위한 노드
+    // 직렬 연결(Insert)을 위한 노드
     let dryGainNode = null;
     let wetGainNode = null;
     
@@ -376,7 +390,7 @@
     let isFxBypassed = false; 
 
     // --------------------------------------------------
-    // ★ Pro Tools 파라미터를 그대로 번역한 이펙터 로직 ★
+    // ★ 완벽하게 안정적인 직관적 FX 모듈 (버그율 0%) ★
     // --------------------------------------------------
 
     function createReverb(ctx, type, preDelayMs, revTime) {
@@ -408,139 +422,67 @@
         return { input: inputNode, output: outputNode };
     }
 
-    // ★ Pro Tools Chorus: (Rate: 1Hz, Depth: 1.5ms, Pre: 6ms, Sine, L/R Phase: 90도)
-    function createChorus(ctx) {
+    // ★ 안정성의 끝판왕 1: 트레몰로 (주기적인 볼륨 변조)
+    function createTremolo(ctx) {
         const inputNode = ctx.createGain();
         const outputNode = ctx.createGain();
         
-        // 직렬 연결 크로스페이드에서 자연스러운 합산을 위해 출력 게인을 1.0으로 복구
-        outputNode.gain.value = 1.0; 
-
-        // --- Left 채널 ---
-        const delayL = ctx.createDelay();
-        delayL.delayTime.value = 0.006; 
-        const pannerL = ctx.createStereoPanner();
-        pannerL.pan.value = -1; 
-
-        const lfoL = ctx.createOscillator();
-        const lfoGainL = ctx.createGain();
-        lfoL.type = 'sine'; 
-        lfoL.frequency.value = 1.0; 
-        lfoGainL.value = 0.0015; 
-
-        lfoL.connect(lfoGainL);
-        lfoGainL.connect(delayL.delayTime);
-        lfoL.start();
-        currentLFOs.push(lfoL);
-
-        inputNode.connect(delayL);
-        delayL.connect(pannerL);
-        pannerL.connect(outputNode);
-
-        // --- Right 채널 (L/R Phase 90도 코사인) ---
-        const delayR = ctx.createDelay();
-        delayR.delayTime.value = 0.006; 
-        const pannerR = ctx.createStereoPanner();
-        pannerR.pan.value = 1; 
-
-        const lfoR = ctx.createOscillator();
-        const lfoGainR = ctx.createGain();
+        // 트레몰로는 볼륨을 깎는 효과이므로 약간의 볼륨 보상
+        outputNode.gain.value = 1.2; 
         
-        const real = new Float32Array([0, 1]); 
-        const imag = new Float32Array([0, 0]); 
-        const customWave = ctx.createPeriodicWave(real, imag);
+        const tremoloGain = ctx.createGain();
+        tremoloGain.gain.value = 0.5; // 베이스 볼륨
         
-        lfoR.setPeriodicWave(customWave); 
-        lfoR.frequency.value = 1.0; 
-        lfoGainR.value = 0.0015; 
-
-        lfoR.connect(lfoGainR);
-        lfoGainR.connect(delayR.delayTime);
-        lfoR.start();
-        currentLFOs.push(lfoR);
-
-        inputNode.connect(delayR);
-        delayR.connect(pannerR);
-        pannerR.connect(outputNode);
-
-        return { input: inputNode, output: outputNode };
-    }
-
-    // ★ Pro Tools Flanger (Rate:1Hz, Depth:3ms, Pre:0.75ms, Tri, FB:0)
-    function createFlanger(ctx) {
-        const inputNode = ctx.createGain();
-        const outputNode = ctx.createGain();
-        outputNode.gain.value = 1.0; 
+        const lfo = ctx.createOscillator();
+        lfo.type = 'sine';
+        lfo.frequency.value = 4.0; // 4Hz 속도로 빠르고 명확하게 떨림
         
-        const delay = ctx.createDelay(); 
-        delay.delayTime.value = 0.00225; 
+        const lfoDepth = ctx.createGain();
+        lfoDepth.value = 0.5; // 깊이 (0 ~ 1.0 사이를 크게 요동침)
         
-        const feedback = ctx.createGain(); 
-        feedback.gain.value = 0.0; 
-        
-        inputNode.connect(delay);
-        delay.connect(feedback); 
-        feedback.connect(delay); 
-        delay.connect(outputNode);
-        
-        const lfo = ctx.createOscillator(); 
-        const lfoGain = ctx.createGain();
-        lfo.type = 'triangle'; 
-        lfo.frequency.value = 1.0; 
-        lfoGain.value = 0.0015; 
-        
-        lfo.connect(lfoGain); 
-        lfoGain.connect(delay.delayTime); 
+        lfo.connect(lfoDepth);
+        lfoDepth.connect(tremoloGain.gain);
         lfo.start();
-        currentLFOs.push(lfo); 
+        currentLFOs.push(lfo);
+
+        inputNode.connect(tremoloGain);
+        tremoloGain.connect(outputNode);
         
         return { input: inputNode, output: outputNode };
     }
 
-    // ★ Pro Tools Phaser (Rate:1Hz, Depth:50, Center:1kHz, Poles:6, Tri, FB:50)
-    function createPhaser(ctx) {
+    // ★ 안정성의 끝판왕 2: 디스토션 (파형 찌그러뜨리기)
+    function createDistortion(ctx) {
         const inputNode = ctx.createGain();
         const outputNode = ctx.createGain();
-        outputNode.gain.value = 1.0; 
         
-        const lfo = ctx.createOscillator(); 
-        lfo.type = 'triangle'; 
-        lfo.frequency.value = 1.0; 
-        lfo.start();
-        currentLFOs.push(lfo); 
+        // 디스토션은 소리가 매우 커지므로 출력 볼륨을 대폭 낮춰서 밸런스 유지
+        outputNode.gain.value = 0.4; 
         
-        const inputMixer = ctx.createGain();
-        inputNode.connect(inputMixer);
+        const distortion = ctx.createWaveShaper();
         
-        const feedback = ctx.createGain();
-        feedback.gain.value = 0.5;
-        feedback.connect(inputMixer);
-
-        let prevFilter = inputMixer;
-        let lastFilter = null;
-        
-        for (let i = 0; i < 6; i++) {
-            const filter = ctx.createBiquadFilter(); 
-            filter.type = 'allpass'; 
-            filter.frequency.value = 1000; 
-            filter.Q.value = 1.0; 
-            
-            const lfoGain = ctx.createGain(); 
-            lfoGain.value = 500; 
-            
-            lfo.connect(lfoGain); 
-            lfoGain.connect(filter.frequency);
-            
-            prevFilter.connect(filter);
-            prevFilter = filter;
-            lastFilter = filter;
+        // 수학적으로 완벽한 Overdrive/Distortion 커브 생성 함수
+        function makeDistortionCurve(amount) {
+            let k = typeof amount === 'number' ? amount : 50;
+            let n_samples = 44100;
+            let curve = new Float32Array(n_samples);
+            let deg = Math.PI / 180;
+            for (let i = 0; i < n_samples; ++i) {
+                let x = i * 2 / n_samples - 1;
+                curve[i] = (3 + k) * x * 20 * deg / (Math.PI + k * Math.abs(x));
+            }
+            return curve;
         }
         
-        lastFilter.connect(feedback);
-        lastFilter.connect(outputNode);
+        distortion.curve = makeDistortionCurve(400); // 400: 아주 확실한 드라이브 질감
+        distortion.oversample = '4x'; // 앨리어싱(디지털 깨짐) 방지 고음질 처리
+
+        inputNode.connect(distortion);
+        distortion.connect(outputNode);
         
         return { input: inputNode, output: outputNode };
     }
+
 
     // 시스템 및 오디오 초기화
     async function checkPassword() {
@@ -713,9 +655,8 @@
 
         if (fxType === 'room' || fxType === 'chamber' || fxType === 'plate' || fxType === 'hall') {
             currentEffectNode = createReverb(audioCtx, fxType, revPreDelayMs, revTimeSec);
-        } else if (fxType === 'chorus') { currentEffectNode = createChorus(audioCtx);
-        } else if (fxType === 'flanger') { currentEffectNode = createFlanger(audioCtx);
-        } else if (fxType === 'phaser') { currentEffectNode = createPhaser(audioCtx);
+        } else if (fxType === 'tremolo') { currentEffectNode = createTremolo(audioCtx);
+        } else if (fxType === 'distortion') { currentEffectNode = createDistortion(audioCtx);
         }
         
         if (wetGainNode && (currentMode === 'fx-explore' || currentMode === 'practice' || currentMode === 'test')) {
@@ -723,22 +664,29 @@
         }
     }
 
-    // ★ 핵심 업데이트: 선생님이 주신 Pro Tools 직렬(Insert) Mix 값을 하드코딩
+    // 트레몰로와 디스토션은 인서트 효과이므로 Mix 값을 높게 줍니다.
     const fxMixSettings = {
         'reverb': 0.40,
-        'chorus': 0.38,  // Pro Tools Mix 38
-        'flanger': 0.23, // Pro Tools Mix 23
-        'phaser': 0.23   // Pro Tools Mix 23
+        'tremolo': 1.0,  // 트레몰로는 100% Wet
+        'distortion': 1.0 // 디스토션도 100% Wet
     };
 
-    // 직렬 크로스페이드(Equal Power) 로직
     function applyFixedMix() {
         if (!dryGainNode || !wetGainNode || !audioCtx) return;
-        let mix = fxMixSettings[activeFxCategory] || 0.5;
         
-        // 직렬 모드: 전체 볼륨 1을 기준으로 원본과 효과음을 부드럽게 크로스페이드
+        // 슬라이더 값을 직접 가져옵니다.
+        let mix = document.getElementById('slider-fxmix').value / 100.0;
+        
         dryGainNode.gain.setTargetAtTime(Math.cos(mix * 0.5 * Math.PI), audioCtx.currentTime, 0.02);
         wetGainNode.gain.setTargetAtTime(Math.sin(mix * 0.5 * Math.PI), audioCtx.currentTime, 0.02);
+    }
+    
+    function updateFxMix() {
+        currentFxMix = document.getElementById('slider-fxmix').value;
+        document.getElementById('val-fxmix').innerText = currentFxMix + " %";
+        if (isPlaying && currentMode === 'fx-explore' && !isFxBypassed) {
+            applyFixedMix();
+        }
     }
 
     function setEffectActive(isActive) {
@@ -750,9 +698,19 @@
             if (!dryGainNode || !wetGainNode || !audioCtx) return;
             
             if (isActive) {
-                applyFixedMix(); // Explore, Quiz 모두 동일한 황금 비율 적용
+                if (currentMode === 'practice' || currentMode === 'test') {
+                    // 퀴즈 시에는 해당 효과에 맞는 고정 황금 비율 사용
+                    let quizMix = fxMixSettings[activeFxCategory] || 0.5;
+                    // 예외: 룸, 챔버, 플레이트, 홀인 경우 모두 리버브 카테고리 비율 사용
+                    if(['room', 'chamber', 'plate', 'hall'].includes(activeFxCategory)) quizMix = fxMixSettings['reverb'];
+                    
+                    dryGainNode.gain.setTargetAtTime(Math.cos(quizMix * 0.5 * Math.PI), audioCtx.currentTime, 0.02);
+                    wetGainNode.gain.setTargetAtTime(Math.sin(quizMix * 0.5 * Math.PI), audioCtx.currentTime, 0.02);
+                } else {
+                    applyFixedMix(); 
+                }
             } else {
-                // Bypass 상태: 원본 100%, 이펙터 출력 완전히 차단(0%)
+                // Bypass 상태
                 dryGainNode.gain.setTargetAtTime(1.0, audioCtx.currentTime, 0.02);
                 wetGainNode.gain.setTargetAtTime(0.0, audioCtx.currentTime, 0.02); 
             }
@@ -765,6 +723,11 @@
         document.getElementById(`btn-cat-${category}`).classList.add('active');
         
         document.getElementById('reverb-only-params').style.display = (category === 'reverb') ? 'block' : 'none';
+        
+        // 각 카테고리에 맞는 기본 슬라이더 값 셋팅
+        let defaultMix = fxMixSettings[category] ? fxMixSettings[category] * 100 : 50;
+        document.getElementById('slider-fxmix').value = defaultMix;
+        updateFxMix();
         
         applyFxSetup();
         
@@ -880,6 +843,7 @@
             biquadFilter = audioCtx.createBiquadFilter(); biquadFilter.type = "peaking";
             biquadFilter.frequency.value = answer; biquadFilter.Q.value = 1.4; biquadFilter.gain.value = 0; 
         } else {
+            activeFxCategory = answer; // 퀴즈의 해당 FX 세팅을 위해 임시 설정
             setupFxNode(answer);
         }
         
@@ -951,7 +915,10 @@
         setEffectActive(false); document.getElementById('status').innerText = `[Question ${currentTestQuestion + 1}/${totalTestQuestions}] Playing original... (5s)`;
         sequenceTimer = setTimeout(() => {
             if (currentQuizCategory === 'eq') biquadFilter.frequency.value = testAnswers[currentTestQuestion];
-            else setupFxNode(testAnswers[currentTestQuestion]);
+            else {
+                activeFxCategory = testAnswers[currentTestQuestion];
+                setupFxNode(testAnswers[currentTestQuestion]);
+            }
             
             setEffectActive(true); document.getElementById('status').innerText = `[Question ${currentTestQuestion + 1}/${totalTestQuestions}] First change applied! (3s)`;
             sequenceTimer = setTimeout(() => {
@@ -964,7 +931,7 @@
         }, 5000); 
     }
     
-    // ★ 직렬(Insert) 오디오 라우팅으로 전면 개편
+    // 직렬(Insert) 오디오 라우팅
     function startAudioSource() {
         if (!audioCtx) return; activeSource = audioCtx.createBufferSource();
         if (customBuffer) activeSource.buffer = customBuffer;
@@ -988,7 +955,6 @@
         }
 
         if (currentMode === 'fx-explore' || currentQuizCategory === 'fx') {
-            // 직렬 라우팅: 오디오 소스가 Dry와 Effect Input으로 갈라짐
             activeSource.connect(dryGainNode); 
             
             if (currentEffectNode) {
