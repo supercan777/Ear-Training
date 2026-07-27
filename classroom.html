@@ -356,8 +356,6 @@
     let targetGain = 12;        
 
     const bands = [31.5, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
-    
-    // ★ 퀴즈 풀: 완벽하고 직관적인 6종의 FX로 압축
     const fxPool = ['room', 'chamber', 'plate', 'hall', 'tremolo', 'distortion'];
 
     let currentListenFreq = null; 
@@ -376,7 +374,6 @@
 
     let currentEffectNode = null;
     
-    // 직렬 연결(Insert)을 위한 노드
     let dryGainNode = null;
     let wetGainNode = null;
     let fxInputNode = null; 
@@ -389,6 +386,10 @@
     let revTimeSec = 2.5;
     
     let isFxBypassed = false; 
+
+    // --------------------------------------------------
+    // ★ 완벽하게 다듬어진 아날로그 톤의 리버브 엔진 ★
+    // --------------------------------------------------
 
     function createReverb(ctx, type, preDelayMs, revTime) {
         const inputNode = ctx.createGain();
@@ -722,6 +723,7 @@
                     applyFixedMix(); 
                 }
             } else {
+                // Bypass 상태
                 dryGainNode.gain.setTargetAtTime(1.0, audioCtx.currentTime, 0.02);
                 wetGainNode.gain.setTargetAtTime(0.0, audioCtx.currentTime, 0.02); 
             }
@@ -778,7 +780,7 @@
         if (answer === currentPracticeAnswer) {
             display.innerHTML = `<span style="color:var(--success-color); font-size:1.4em;">Correct!</span><br><span style="font-size:1.8em;">${displayTarget}</span>`;
         } else {
-            display.innerHTML = `<span style="color:var(--danger-color); font-size:1.4em;">Incorrect!</span><br><span style="font-size:1.2em;">Answer: ${displayTarget}</span><br><span style="font-size:0.8em; color:#94a3b8;">(Your choice: ${displayUser})</span>`;
+            display.innerHTML = `<span style="color:var(--danger-color); font-size:1.4em;">Incorrect!</span><br><span style="font-size:1.2em;">Answer: <span style="color:#ffeb3b; font-weight:900;">${displayTarget}</span></span><br><span style="font-size:0.8em; color:#94a3b8;">(Your choice: ${displayUser})</span>`;
         }
         display.style.display = 'flex'; document.getElementById('status').innerText = "Quiz Completed.";
         document.getElementById('action-btns').innerHTML = `<button class="btn primary" onclick="runPractice()">NEXT QUESTION</button> <button class="btn" onclick="listenPracticeAgain()">LISTEN AGAIN</button>`;
@@ -825,6 +827,7 @@
         document.getElementById('action-btns').innerHTML = '<button class="btn primary" style="grid-column: 1 / -1;" onclick="runPractice()">START QUIZ</button>';
     }
 
+    // ★ 연습 모드 시간 5초로 연장 적용
     async function runPractice() {
         if (audioCtx && audioCtx.state === 'suspended') await audioCtx.resume();
         
@@ -860,10 +863,11 @@
         startAudioSource();
         document.getElementById('status').innerText = "Listen carefully... (Select answer anytime!)";
         
-        function step1() { setEffectActive(false); sequenceTimer = setTimeout(step2, 3000); } 
-        function step2() { setEffectActive(true); sequenceTimer = setTimeout(step3, 3000); } 
-        function step3() { setEffectActive(false); sequenceTimer = setTimeout(step4, 3000); } 
-        function step4() { setEffectActive(true); sequenceTimer = setTimeout(step5, 3000); } 
+        // ★ 3000ms -> 5000ms 로 변경
+        function step1() { setEffectActive(false); sequenceTimer = setTimeout(step2, 5000); } 
+        function step2() { setEffectActive(true); sequenceTimer = setTimeout(step3, 5000); } 
+        function step3() { setEffectActive(false); sequenceTimer = setTimeout(step4, 5000); } 
+        function step4() { setEffectActive(true); sequenceTimer = setTimeout(step5, 5000); } 
         function step5() { setEffectActive(false); sequenceTimer = setTimeout(finishPracticeSeq, 2000); } 
         step1(); 
     }
@@ -896,7 +900,6 @@
         }
     }
 
-    // ★ 핵심 수정: 테스트 결과의 정답 텍스트를 가장 잘 보이는 노란색(#ffeb3b)으로 변경
     function showAnswers() {
         const display = document.getElementById('answer-display');
         if (currentMode === 'test' && testAnswers.length > 0) {
@@ -918,6 +921,7 @@
         startAudioSource(); nextTestStep();
     }
 
+    // ★ 테스트 모드 시간 5초로 연장 적용
     function nextTestStep() {
         if (currentTestQuestion >= totalTestQuestions) {
             setEffectActive(false); document.getElementById('status').innerText = "All questions completed! Playing original source... (3s)";
@@ -931,14 +935,14 @@
                 setupFxNode(testAnswers[currentTestQuestion]);
             }
             
-            setEffectActive(true); document.getElementById('status').innerText = `[Question ${currentTestQuestion + 1}/${totalTestQuestions}] First change applied! (3s)`;
+            setEffectActive(true); document.getElementById('status').innerText = `[Question ${currentTestQuestion + 1}/${totalTestQuestions}] First change applied! (5s)`;
             sequenceTimer = setTimeout(() => {
-                setEffectActive(false); document.getElementById('status').innerText = `[Question ${currentTestQuestion + 1}/${totalTestQuestions}] Playing original... (3s)`;
+                setEffectActive(false); document.getElementById('status').innerText = `[Question ${currentTestQuestion + 1}/${totalTestQuestions}] Playing original... (5s)`;
                 sequenceTimer = setTimeout(() => {
-                    setEffectActive(true); document.getElementById('status').innerText = `[Question ${currentTestQuestion + 1}/${totalTestQuestions}] Second change applied! (3s)`;
-                    sequenceTimer = setTimeout(() => { currentTestQuestion++; nextTestStep(); }, 3000); 
-                }, 3000); 
-            }, 3000); 
+                    setEffectActive(true); document.getElementById('status').innerText = `[Question ${currentTestQuestion + 1}/${totalTestQuestions}] Second change applied! (5s)`;
+                    sequenceTimer = setTimeout(() => { currentTestQuestion++; nextTestStep(); }, 5000); 
+                }, 5000); 
+            }, 5000); 
         }, 5000); 
     }
     
