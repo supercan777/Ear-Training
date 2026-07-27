@@ -307,7 +307,7 @@
     let revTimeSec = 2.5;
     let isFxBypassed = false; 
 
-    // --- 부드러운 아날로그 리버브 ---
+    // --- 리버브: 톤의 대비감을 줄이기 위해 Lowpass 필터 대역 상향 ---
     function createReverb(ctx, type, preDelayMs, revTime) {
         const inputNode = ctx.createGain();
         const outputNode = ctx.createGain();
@@ -340,30 +340,29 @@
         }
         convolver.buffer = impulse; 
         
+        // 컷오프 주파수를 2.5kHz에서 5kHz로 상향 조정 (먹먹함 줄임)
         const toneFilter = ctx.createBiquadFilter(); 
-        toneFilter.type = 'highshelf'; 
-        toneFilter.frequency.value = 3500; 
-        toneFilter.gain.value = -10; 
+        toneFilter.type = 'lowpass'; 
+        toneFilter.frequency.value = 5000; 
 
         inputNode.connect(preDelayNode); preDelayNode.connect(convolver); convolver.connect(toneFilter); toneFilter.connect(outputNode);
         return { input: inputNode, output: outputNode };
     }
 
-    // --- 수정된 트레몰로 (깊이 축소로 은은하게 변경) ---
     function createTremolo(ctx) {
         const inputNode = ctx.createGain(); 
         const outputNode = ctx.createGain(); 
         outputNode.gain.value = 1.0; 
         
         const tremoloGain = ctx.createGain(); 
-        tremoloGain.gain.value = 0.8; // 기본 볼륨
+        tremoloGain.gain.value = 0.8; 
         
         const lfo = ctx.createOscillator(); 
         lfo.type = 'sine'; 
-        lfo.frequency.value = 2.5; // 속도 살짝 조절
+        lfo.frequency.value = 2.5; 
         
         const lfoDepth = ctx.createGain(); 
-        lfoDepth.gain.value = 0.15; // ★ 기존 0.5에서 대폭 줄여 은은하고 자연스러운 떨림으로 변경
+        lfoDepth.gain.value = 0.15; 
         
         lfo.connect(lfoDepth); 
         lfoDepth.connect(tremoloGain.gain); 
@@ -376,11 +375,11 @@
         return { input: inputNode, output: outputNode };
     }
 
-    // --- 수정된 디스토션 (페이저 현상 제거) ---
+    // --- 디스토션: 톤 매칭을 위해 Lowpass 필터 대역 상향 ---
     function createDistortion(ctx) {
         const inputNode = ctx.createGain(); 
         const outputNode = ctx.createGain(); 
-        outputNode.gain.value = 0.6; // 게인 보정
+        outputNode.gain.value = 0.6; 
         
         const distortion = ctx.createWaveShaper();
         
@@ -396,11 +395,16 @@
             return curve;
         }
         
-        distortion.curve = makeCurve(100); // 디스토션 양을 약간 다듬음
-        distortion.oversample = 'none'; // ★ 핵심: '4x' 오버샘플링이 일으키는 미세 딜레이(페이저/콤브 필터 현상) 제거
+        distortion.curve = makeCurve(100); 
+        distortion.oversample = 'none'; 
+        
+        const cabFilter = ctx.createBiquadFilter();
+        cabFilter.type = 'lowpass';
+        cabFilter.frequency.value = 5000; // 3kHz에서 5kHz로 상향
         
         inputNode.connect(distortion); 
-        distortion.connect(outputNode);
+        distortion.connect(cabFilter); 
+        cabFilter.connect(outputNode);
         
         return { input: inputNode, output: outputNode };
     }
@@ -463,7 +467,6 @@
         document.getElementById('main-menu').style.display = 'flex';
     }
 
-    // --- 모드 초기화 ---
     function init(mode, category = 'eq', testQs = 5) { 
         stopAudio();
         document.getElementById('main-menu').style.display = 'none';
@@ -527,7 +530,6 @@
         }
     }
 
-    // --- FX 로직 ---
     function toggleFxBypass() {
         isFxBypassed = !isFxBypassed;
         const btn = document.getElementById('btn-fx-toggle');
@@ -557,11 +559,20 @@
 
     const fxMixSettings = { 'reverb': 0.30, 'tremolo': 0.30, 'distortion': 0.30 };
 
+    // --- 수정됨: 미세 볼륨 찌꺼기가 남지 않도록 linearRampToValueAtTime 사용 ---
     function applyFixedMix() {
         if (!dryGainNode || !wetGainNode || !audioCtx) return;
         let mix = document.getElementById('slider-fxmix').value / 100.0;
-        dryGainNode.gain.setTargetAtTime(Math.cos(mix * 0.5 * Math.PI), audioCtx.currentTime, 0.02);
-        wetGainNode.gain.setTargetAtTime(Math.sin(mix * 0.5 * Math.PI), audioCtx.currentTime, 0.02);
+        let dGain = Math.cos(mix * 0.5 * Math.PI);
+        let wGain = Math.sin(mix * 0.5 * Math.PI);
+
+        dryGainNode.gain.cancelScheduledValues(audioCtx.currentTime);
+        dryGainNode.gain.setValueAtTime(dryGainNode.gain.value, audioCtx.currentTime);
+        dryGainNode.gain.linearRampToValueAtTime(dGain, audioCtx.currentTime + 0.03);
+
+        wetGainNode.gain.cancelScheduledValues(audioCtx.currentTime);
+        wetGainNode.gain.setValueAtTime(wetGainNode.gain.value, audioCtx.currentTime);
+        wetGainNode.gain.linearRampToValueAtTime(wGain, audioCtx.currentTime + 0.03);
     }
     
     function updateFxMix() {
@@ -569,19 +580,38 @@
         if (isPlaying && currentMode === 'fx-explore' && !isFxBypassed) applyFixedMix();
     }
 
+    // --- 수정됨: 미세 볼륨 찌꺼기가 남지 않도록 linearRampToValueAtTime 사용 ---
     function setEffectActive(isActive) {
         if (currentQuizCategory === 'eq') {
-            if(biquadFilter) biquadFilter.gain.setTargetAtTime(isActive ? targetGain : 0, audioCtx.currentTime, 0.02);
+            if(biquadFilter) {
+                biquadFilter.gain.cancelScheduledValues(audioCtx.currentTime);
+                biquadFilter.gain.setValueAtTime(biquadFilter.gain.value, audioCtx.currentTime);
+                biquadFilter.gain.linearRampToValueAtTime(isActive ? targetGain : 0, audioCtx.currentTime + 0.03);
+            }
         } else {
             if (!dryGainNode || !wetGainNode || !audioCtx) return;
             if (isActive) {
                 if (currentMode === 'practice' || currentMode === 'test') {
                     let quizMix = ['room', 'chamber', 'plate', 'hall'].includes(activeFxCategory) ? fxMixSettings['reverb'] : (fxMixSettings[activeFxCategory] || 0.30);
-                    dryGainNode.gain.setTargetAtTime(Math.cos(quizMix * 0.5 * Math.PI), audioCtx.currentTime, 0.02);
-                    wetGainNode.gain.setTargetAtTime(Math.sin(quizMix * 0.5 * Math.PI), audioCtx.currentTime, 0.02);
+                    let dGain = Math.cos(quizMix * 0.5 * Math.PI);
+                    let wGain = Math.sin(quizMix * 0.5 * Math.PI);
+
+                    dryGainNode.gain.cancelScheduledValues(audioCtx.currentTime);
+                    dryGainNode.gain.setValueAtTime(dryGainNode.gain.value, audioCtx.currentTime);
+                    dryGainNode.gain.linearRampToValueAtTime(dGain, audioCtx.currentTime + 0.03);
+
+                    wetGainNode.gain.cancelScheduledValues(audioCtx.currentTime);
+                    wetGainNode.gain.setValueAtTime(wetGainNode.gain.value, audioCtx.currentTime);
+                    wetGainNode.gain.linearRampToValueAtTime(wGain, audioCtx.currentTime + 0.03);
                 } else applyFixedMix(); 
             } else {
-                dryGainNode.gain.setTargetAtTime(1.0, audioCtx.currentTime, 0.02); wetGainNode.gain.setTargetAtTime(0.0, audioCtx.currentTime, 0.02); 
+                dryGainNode.gain.cancelScheduledValues(audioCtx.currentTime);
+                dryGainNode.gain.setValueAtTime(dryGainNode.gain.value, audioCtx.currentTime);
+                dryGainNode.gain.linearRampToValueAtTime(1.0, audioCtx.currentTime + 0.03);
+
+                wetGainNode.gain.cancelScheduledValues(audioCtx.currentTime);
+                wetGainNode.gain.setValueAtTime(wetGainNode.gain.value, audioCtx.currentTime);
+                wetGainNode.gain.linearRampToValueAtTime(0.0, audioCtx.currentTime + 0.03); 
             }
         }
     }
@@ -610,7 +640,6 @@
         if(currentMode === 'fx-explore') { if(isPlaying) updateFxStatusText(); else document.getElementById('status').innerText = `READY: ${type.toUpperCase()}`; }
     }
 
-    // --- 퀴즈 및 테스트 로직 ---
     function handleQuizAnswer(answer) {
         if (currentMode !== 'practice' || !isPracticeActive) { if (currentMode === 'practice') alert("Please press 'START QUIZ' first."); return; }
         stopAudio(); isPracticeActive = false; const display = document.getElementById('answer-display');
