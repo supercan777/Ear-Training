@@ -49,10 +49,10 @@
 
         .content-area { padding: 25px; display: flex; flex-direction: column; flex: 1; overflow-y: auto; }
         
-        /* 새로운 메가 메뉴 버튼 (텍스트 중심의 깔끔한 디자인) */
+        /* 1, 2단계 공통 메가 버튼 스타일 */
         .mega-btn {
             width: 100%;
-            max-width: 320px;
+            max-width: 340px;
             padding: 22px;
             border-radius: 16px;
             border: 2px solid var(--border-color);
@@ -64,13 +64,19 @@
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             box-shadow: 0 4px 15px rgba(0,0,0,0.03);
             letter-spacing: 1px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
         }
+        .mega-btn span { font-size: 0.75em; color: #94a3b8; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; }
         .mega-btn:hover {
             border-color: var(--primary-color);
             color: var(--primary-color);
             transform: translateY(-3px);
             box-shadow: 0 8px 25px rgba(74, 144, 226, 0.15);
         }
+        .mega-btn:hover span { color: var(--primary-color); opacity: 0.8; }
 
         #app-view { display: none; flex-direction: column; }
         #view-title { font-size: 1.2em; font-weight: 800; text-align: center; margin-bottom: 20px; color: var(--primary-color); }
@@ -158,17 +164,34 @@
         
         <!-- STEP 1: 메인 모드 선택 -->
         <div id="main-menu" style="display:flex; flex-direction:column; align-items:center; justify-content:center; flex:1; gap:20px;">
-            <button class="mega-btn" onclick="selectMainMenu('practice')">PRACTICE</button>
-            <button class="mega-btn" onclick="selectMainMenu('test')">TEST</button>
+            <div style="font-size:1.1em; font-weight:800; color:var(--text-muted); margin-bottom:5px; letter-spacing:1px;">1. SELECT MODE</div>
+            <button class="mega-btn" onclick="selectMainMenu('practice')">
+                PRACTICE
+                <span>Listen & Explore</span>
+            </button>
+            <button class="mega-btn" onclick="selectMainMenu('test')">
+                TEST
+                <span>Quizzes & Exams</span>
+            </button>
         </div>
 
-        <!-- STEP 2: 서브 카테고리 (과목) 선택 -->
+        <!-- STEP 2: 과목 선택 -->
         <div id="sub-menu" style="display:none; flex-direction:column; align-items:center; justify-content:center; flex:1; gap:15px;">
             <div style="font-size:1.1em; font-weight:800; color:var(--primary-color); margin-bottom:10px; letter-spacing:1px;" id="sub-menu-title">MODE</div>
-            <button class="mega-btn" onclick="selectSubject('sine')">SINE WAVE</button>
-            <button class="mega-btn" onclick="selectSubject('eq')">EQ (SOURCE)</button>
-            <button class="mega-btn" onclick="selectSubject('fx')">FX & FILTER</button>
+            <div style="font-size:0.9em; font-weight:800; color:var(--text-muted); margin-bottom:5px; letter-spacing:1px;">2. SELECT SUBJECT</div>
+            <button class="mega-btn" onclick="selectSubject('sine')">SINE WAVE<span>31-Band</span></button>
+            <button class="mega-btn" onclick="selectSubject('eq')">EQ (SOURCE)<span>10-Band</span></button>
+            <button class="mega-btn" onclick="selectSubject('fx')">FX & FILTER<span>Reverb, Dist, LPF...</span></button>
             <button class="return-btn" style="margin-top:20px;" onclick="showMainMenu()">BACK</button>
+        </div>
+
+        <!-- STEP 3: 테스트 상세 선택 (TEST 선택시에만 노출) -->
+        <div id="test-type-menu" style="display:none; flex-direction:column; align-items:center; justify-content:center; flex:1; gap:15px;">
+            <div style="font-size:1.1em; font-weight:800; color:var(--primary-color); margin-bottom:10px; letter-spacing:1px;">TEST SETTINGS</div>
+            <button class="mega-btn" onclick="selectTestType('explore')">EXPLORE QUIZ<span>Endless Questions</span></button>
+            <button class="mega-btn" onclick="selectTestType('test2')">SHORT TEST<span>2 Questions</span></button>
+            <button class="mega-btn" onclick="selectTestType('test5')">FULL TEST<span>5 Questions</span></button>
+            <button class="return-btn" style="margin-top:20px;" onclick="showSubMenu()">BACK TO SUBJECTS</button>
         </div>
 
         <!-- 훈련 화면 (앱 뷰) -->
@@ -252,14 +275,6 @@
         <h2 style="margin-top: 0; color: #0f172a; font-size: 1.6em; margin-bottom: 30px; font-weight: 800;">Settings</h2>
         
         <div class="settings-group">
-            <div class="settings-label">Test Questions</div>
-            <div class="row">
-                <button class="btn tq-btn" onclick="setTestQs(2, this)" style="flex:1;">2 Qs</button>
-                <button class="btn tq-btn active" onclick="setTestQs(5, this)" style="flex:1;">5 Qs</button>
-            </div>
-        </div>
-
-        <div class="settings-group">
             <div class="settings-label">Audio Source</div>
             <div class="row">
                 <button id="btn-src-pn" class="btn active" style="flex:1;" onclick="setSource('pn')">PN</button>
@@ -306,7 +321,7 @@
     
     // 네비게이션 제어용 변수
     let userSelectedMain = 'practice';
-    let testQuestionCount = 5;
+    let userSelectedSubject = 'eq';
 
     let currentMode = 'listen'; 
     let currentQuizCategory = 'eq'; 
@@ -366,27 +381,46 @@
 
     function showMainMenu() {
         document.getElementById('sub-menu').style.display = 'none';
+        document.getElementById('test-type-menu').style.display = 'none';
         document.getElementById('main-menu').style.display = 'flex';
     }
 
     function selectSubject(subject) {
-        if (userSelectedMain === 'test') {
-            init('test', subject, testQuestionCount);
+        userSelectedSubject = subject;
+        if (userSelectedMain === 'practice') {
+            // 연습 모드면 바로 탐색화면 진입
+            if(subject === 'fx') init('fx-explore', subject);
+            else init('listen', subject);
         } else {
-            init('practice', subject);
+            // 테스트 모드면 테스트 종류 선택 메뉴
+            document.getElementById('sub-menu').style.display = 'none';
+            document.getElementById('test-type-menu').style.display = 'flex';
+        }
+    }
+
+    function showSubMenu() {
+        document.getElementById('test-type-menu').style.display = 'none';
+        document.getElementById('sub-menu').style.display = 'flex';
+    }
+
+    function selectTestType(type) {
+        if (type === 'explore') {
+            init('practice', userSelectedSubject);
+        } else if (type === 'test2') {
+            init('test', userSelectedSubject, 2);
+        } else if (type === 'test5') {
+            init('test', userSelectedSubject, 5);
         }
     }
 
     function returnToMenu() {
         stopAudio();
         document.getElementById('app-view').style.display = 'none';
-        document.getElementById('sub-menu').style.display = 'flex';
-    }
-
-    function setTestQs(num, btn) {
-        testQuestionCount = num;
-        document.querySelectorAll('.tq-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
+        if (userSelectedMain === 'practice') {
+            document.getElementById('sub-menu').style.display = 'flex';
+        } else {
+            document.getElementById('test-type-menu').style.display = 'flex';
+        }
     }
 
     // --- 오디오 효과 노드 생성 ---
@@ -496,8 +530,9 @@
     // --- UI 초기화 ---
     function init(mode, category = 'eq', testQs = 5) { 
         stopAudio();
-        document.getElementById('main-menu').style.display = 'none';
-        document.getElementById('sub-menu').style.display = 'none';
+        document.getElementById('main-mode-menu').style.display = 'none';
+        document.getElementById('sub-category-menu').style.display = 'none';
+        document.getElementById('test-type-menu').style.display = 'none';
         document.getElementById('app-view').style.display = 'flex';
 
         currentMode = mode;
@@ -506,7 +541,7 @@
         isPracticeActive = false;
         
         let catText = category === 'eq' ? 'EQ (SOURCE)' : (category === 'sine' ? 'SINE WAVE' : 'FX & FILTER');
-        let titleMap = { 'listen': `${catText} : Explore`, 'fx-explore': `${catText} : Explore`, 'practice': `${catText} : Practice`, 'test': `${catText} : Test (${testQs} Qs)` };
+        let titleMap = { 'listen': `${catText} : Practice`, 'fx-explore': `${catText} : Practice`, 'practice': `${catText} : Explore Quiz`, 'test': `${catText} : Test (${testQs} Qs)` };
         document.getElementById('view-title').innerText = titleMap[mode];
         
         document.getElementById('answer-display').style.display = 'none'; document.getElementById('status').innerText = "Ready";
@@ -537,7 +572,6 @@
                 actions.innerHTML = `
                     <button class="btn primary" onclick="playListenAudio()">${category === 'sine' ? 'PLAY SINE' : 'PLAY (FLAT)'}</button> 
                     <button class="btn" onclick="stopAudio()" style="background:var(--danger-color); color:white; border-color:var(--danger-color);">STOP</button>
-                    <button class="btn" style="grid-column: 1 / -1; background:#f1f5f9; color:#475569; border:none;" onclick="init('practice', '${category}')">SWITCH TO QUIZ MODE</button>
                 `;
                 currentListenFreq = null; 
             } else if(mode === 'fx-explore') {
@@ -547,17 +581,12 @@
                     <button class="btn primary" onclick="playListenAudio()">PLAY</button> 
                     <button id="btn-fx-toggle" class="btn active" style="background-color:#8b5cf6; border-color:#8b5cf6;" onclick="toggleFxBypass()">FX: ON</button> 
                     <button class="btn" onclick="stopAudio()" style="background:var(--danger-color); color:white; border-color:var(--danger-color);">STOP</button>
-                    <button class="btn" style="grid-column: 1 / -1; background:#f1f5f9; color:#475569; border:none;" onclick="init('practice', '${category}')">SWITCH TO QUIZ MODE</button>
                 `;
                 applyFxSetup(); 
             } else if(mode === 'practice') {
                 actions.style.gridTemplateColumns = '1fr 1fr';
                 if(category === 'eq' || category === 'sine') freqControls.style.display = 'grid'; else fxQuizControls.style.display = 'grid';
-                let listenModeArg = category === 'fx' ? 'fx-explore' : 'listen';
-                actions.innerHTML = `
-                    <button class="btn primary" style="grid-column: 1 / -1;" onclick="runPractice()">START QUIZ</button>
-                    <button class="btn" style="grid-column: 1 / -1; background:#f1f5f9; color:#475569; border:none;" onclick="init('${listenModeArg}', '${category}')">SWITCH TO EXPLORE MODE</button>
-                `;
+                actions.innerHTML = `<button class="btn primary" style="grid-column: 1 / -1;" onclick="runPractice()">START QUIZ</button>`;
             }
         }
     }
@@ -706,9 +735,7 @@
     function cancelPractice() {
         stopAudio(); isPracticeActive = false; document.getElementById('answer-display').style.display = 'none';
         document.getElementById('status').innerText = "Canceled. Ready to start.";
-        let listenModeArg = currentQuizCategory === 'fx' ? 'fx-explore' : 'listen';
-        document.getElementById('action-btns').innerHTML = `<button class="btn primary" style="grid-column: 1 / -1;" onclick="runPractice()">START QUIZ</button>
-        <button class="btn" style="grid-column: 1 / -1; background:#f1f5f9; color:#475569; border:none;" onclick="init('${listenModeArg}', '${currentQuizCategory}')">SWITCH TO EXPLORE MODE</button>`;
+        document.getElementById('action-btns').innerHTML = `<button class="btn primary" style="grid-column: 1 / -1;" onclick="runPractice()">START QUIZ</button>`;
     }
 
     async function runPractice() {
