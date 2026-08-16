@@ -77,7 +77,6 @@
         .freq-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; width: 100%; }
         .freq-grid .btn { padding: 12px 2px; font-size: 0.85em; }
         
-        /* 31밴드 전용 스타일 */
         .freq31-grid { grid-template-columns: repeat(6, 1fr); gap: 5px; }
         .freq31-grid .btn { padding: 10px 1px; font-size: 0.75em; border-radius: 8px;}
 
@@ -140,7 +139,6 @@
     </div>
 
     <div class="content-area">
-        <!-- 메인 메뉴 화면 -->
         <div id="main-menu">
             <h2 style="margin: 0; font-size: 1.5em; text-align: center; color: #0f172a;">Select Mode</h2>
             
@@ -174,7 +172,6 @@
             </div>
         </div>
 
-        <!-- 훈련 화면 -->
         <div id="app-view">
             <div id="view-title">Mode Title</div>
             
@@ -344,6 +341,9 @@
     let revTimeSec = 2.5;
     let isFxBypassed = false; 
 
+    // RTA 막대들의 현재 높이를 저장할 배열 (부드러운 움직임을 위해)
+    let rtaBars = new Array(50).fill(5);
+
     function createReverb(ctx, type, preDelayMs, revTime) {
         const inputNode = ctx.createGain();
         const outputNode = ctx.createGain();
@@ -448,7 +448,6 @@
         return { input: inputNode, output: outputNode };
     }
 
-    // --- 필터 노드 생성 로직 ---
     function createFilter(ctx, type, freq) {
         const inputNode = ctx.createGain();
         const outputNode = ctx.createGain();
@@ -456,7 +455,7 @@
         
         filter.type = type === 'hpf' ? 'highpass' : (type === 'lpf' ? 'lowpass' : 'bandpass');
         filter.frequency.value = freq;
-        filter.Q.value = type === 'bpf' ? 2.0 : 0.71; // 밴드패스는 폭을 좁게
+        filter.Q.value = type === 'bpf' ? 2.0 : 0.71; 
         
         inputNode.connect(filter);
         filter.connect(outputNode);
@@ -549,7 +548,6 @@
         
         freqControls.innerHTML = ''; actions.innerHTML = '';
         
-        // 31밴드와 10밴드 레이아웃 분기
         if (category === 'sine') {
             freqControls.className = 'freq-grid freq31-grid';
             bands31.forEach(f => { freqControls.innerHTML += `<button id="btn-freq-${f}" class="btn freq-item" onclick="handleFreqClick(${f})">${f}</button>`; });
@@ -617,7 +615,6 @@
         else if (fxType === 'tremolo') currentEffectNode = createTremolo(audioCtx);
         else if (fxType === 'distortion') currentEffectNode = createDistortion(audioCtx);
         else if (['hpf', 'lpf', 'bpf'].includes(fxType)) {
-            // 연습/평가 모드일 경우 각 필터의 뚜렷한 특징 주파수 고정
             let f = filterFreq;
             if (currentMode === 'practice' || currentMode === 'test') {
                 if(fxType === 'hpf') f = 1000;
@@ -632,7 +629,7 @@
         }
     }
 
-    const fxMixSettings = { 'reverb': 0.30, 'tremolo': 0.30, 'distortion': 0.30, 'filter': 1.0 }; // 필터는 기본 100% Wet
+    const fxMixSettings = { 'reverb': 0.30, 'tremolo': 0.30, 'distortion': 0.30, 'filter': 1.0 }; 
 
     function applyFixedMix() {
         if (!dryGainNode || !wetGainNode || !audioCtx) return;
@@ -667,7 +664,7 @@
                 if (currentMode === 'practice' || currentMode === 'test') {
                     let quizMix = 0.30;
                     if(['room', 'chamber', 'plate', 'hall'].includes(activeFxCategory)) quizMix = fxMixSettings['reverb'];
-                    else if(['hpf', 'lpf', 'bpf'].includes(activeFxCategory)) quizMix = 1.0; // 필터는 100% Wet
+                    else if(['hpf', 'lpf', 'bpf'].includes(activeFxCategory)) quizMix = 1.0; 
                     else quizMix = fxMixSettings[activeFxCategory] || 0.30;
                     
                     let dGain = Math.cos(quizMix * 0.5 * Math.PI);
@@ -833,7 +830,7 @@
             targetSineFreq = answer;
             startAudioSource();
             document.getElementById('status').innerText = "Listen carefully (Sine Wave)...";
-            return; // 사인파는 정답을 고를 때까지 계속 재생
+            return; 
         }
         
         if (currentQuizCategory === 'eq') {
@@ -904,7 +901,6 @@
         }
     }
 
-    // 사인파 전용 테스트 시퀀스 (원음 비교 없이 5초 재생 후 대기)
     function nextSineTestStep() {
         if (currentTestQuestion >= totalTestQuestions) {
             document.getElementById('status').innerText = "TEST COMPLETED! Check ANSWERS.";
@@ -947,7 +943,6 @@
     function startAudioSource() {
         if (!audioCtx) return; 
         
-        // 사인파 재생 로직 추가
         if (currentQuizCategory === 'sine') {
             activeSource = audioCtx.createOscillator();
             activeSource.type = 'sine';
@@ -957,11 +952,11 @@
             sineGain.gain.value = 0; 
             activeSource.connect(sineGain);
             sineGain.connect(masterGain);
-            masterGain.gain.value = 0.15; // 사인파 귀 보호를 위해 볼륨 확보 및 제한
+            masterGain.gain.value = 0.15; 
             
             activeSource.start();
-            sineGain.gain.linearRampToValueAtTime(1.0, audioCtx.currentTime + 0.05); // 부드러운 페이드 인
-            activeSource.gainNode = sineGain; // 페이드 아웃을 위해 참조 저장
+            sineGain.gain.linearRampToValueAtTime(1.0, audioCtx.currentTime + 0.05); 
+            activeSource.gainNode = sineGain; 
             isPlaying = true;
             return;
         }
@@ -992,7 +987,7 @@
     function stopAudio() {
         clearTimeout(sequenceTimer);
         if (activeSource) { 
-            if (activeSource.gainNode) { // 사인파 부드러운 페이드 아웃
+            if (activeSource.gainNode) { 
                 activeSource.gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.05);
                 setTimeout(() => { try { activeSource.stop(); activeSource.disconnect(); } catch(e){} activeSource = null; }, 50);
             } else {
@@ -1016,15 +1011,14 @@
         const canvas = document.getElementById('rta-canvas'); const ctx = canvas.getContext('2d'); ctx.clearRect(0,0,1000,300);
         
         if (currentQuizCategory === 'sine' && isPlaying) {
-            // 사인파 동적 시각화 모니터
             ctx.beginPath();
             ctx.strokeStyle = '#20c997';
             ctx.lineWidth = 4;
             let freqRatio = Math.max(0.01, targetSineFreq / 20000);
-            let waves = 2 + (freqRatio * 60); // 주파수에 따라 파형 밀도 변화
+            let waves = 2 + (freqRatio * 60); 
             for(let i=0; i<1000; i++) {
-                // 시간(currentTime)을 더해 파형이 흐르도록 애니메이션
-                let y = 150 + Math.sin(i * waves * 0.03 + (audioCtx ? audioCtx.currentTime * 15 : 0)) * 100;
+                // 속도를 줄여 부드럽게 넘어가도록 함 (15 -> 3)
+                let y = 150 + Math.sin(i * waves * 0.03 + (audioCtx ? audioCtx.currentTime * 3 : 0)) * 100;
                 if(i===0) ctx.moveTo(i, y); else ctx.lineTo(i, y);
             }
             ctx.stroke();
@@ -1032,18 +1026,33 @@
         else if (customBuffer) { 
             ctx.drawImage(waveformCanvas, 0, 0, 1000, 300); const startX = (fileStartTime / customBuffer.duration) * 1000; ctx.fillStyle = '#ffeb3b'; ctx.fillRect(startX, 0, 3, 300);
         } else { 
-            for(let i=0; i<50; i++) { let h = Math.random()*150+20; ctx.fillStyle='#4A90E2'; ctx.fillRect(i*20, 300-h, 15, h); } 
+            // ★ 수정됨: RTA 막대의 무작위 튀는 현상을 보간법(Easing)으로 부드럽게 변경
+            let time = Date.now() * 0.002; 
+            for(let i=0; i<50; i++) { 
+                let target = 5; 
+                if (isPlaying) {
+                    let wave = Math.sin(i * 0.3 + time) + Math.cos(i * 0.5 - time * 0.8) + Math.sin(i * 0.1 + time * 1.2);
+                    target = Math.abs(wave) * 40 + 30 + (Math.random() * 15);
+                }
+                rtaBars[i] += (target - rtaBars[i]) * 0.15; 
+                let h = Math.max(5, rtaBars[i]);
+                
+                ctx.fillStyle='#4A90E2'; 
+                ctx.fillRect(i*20, 300-h, 15, h); 
+            } 
         }
         
-        // 애니메이션 최적화 프레임
-        setTimeout(() => requestAnimationFrame(drawRTA), currentQuizCategory === 'sine' ? 30 : 150); 
+        // setTimeout 대신 requestAnimationFrame 만 호출하여 60fps 부드러운 애니메이션 확보
+        requestAnimationFrame(drawRTA); 
     } 
     document.getElementById('display-area').addEventListener('click', function(e) {
         if (!customBuffer || currentQuizCategory === 'sine' || (currentMode !== 'listen' && currentMode !== 'test' && currentMode !== 'fx-explore')) return;
         const rect = this.getBoundingClientRect(); const x = e.clientX - rect.left; fileStartTime = customBuffer.duration * (x / rect.width);
         if (isPlaying) { if (activeSource) { try { activeSource.stop(); activeSource.disconnect(); } catch(err) {} activeSource = null; } isPlaying = false; startAudioSource(); }
     });
-    drawRTA();
+    
+    // 초기 실행
+    requestAnimationFrame(drawRTA);
 </script>
 </body>
 </html>
