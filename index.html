@@ -49,7 +49,7 @@
 
         .content-area { padding: 25px; display: flex; flex-direction: column; flex: 1; overflow-y: auto; }
         
-        /* 1, 2단계 공통 메가 버튼 스타일 */
+        /* 메가 버튼 깔끔하게 텍스트 중앙정렬로 수정 */
         .mega-btn {
             width: 100%;
             max-width: 340px;
@@ -64,19 +64,14 @@
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             box-shadow: 0 4px 15px rgba(0,0,0,0.03);
             letter-spacing: 1px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 5px;
+            text-align: center;
         }
-        .mega-btn span { font-size: 0.75em; color: #94a3b8; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; }
         .mega-btn:hover {
             border-color: var(--primary-color);
             color: var(--primary-color);
             transform: translateY(-3px);
             box-shadow: 0 8px 25px rgba(74, 144, 226, 0.15);
         }
-        .mega-btn:hover span { color: var(--primary-color); opacity: 0.8; }
 
         #app-view { display: none; flex-direction: column; }
         #view-title { font-size: 1.2em; font-weight: 800; text-align: center; margin-bottom: 20px; color: var(--primary-color); }
@@ -164,33 +159,25 @@
         
         <!-- STEP 1: 메인 모드 선택 -->
         <div id="main-menu" style="display:flex; flex-direction:column; align-items:center; justify-content:center; flex:1; gap:20px;">
-            <div style="font-size:1.1em; font-weight:800; color:var(--text-muted); margin-bottom:5px; letter-spacing:1px;">1. SELECT MODE</div>
-            <button class="mega-btn" onclick="selectMainMenu('practice')">
-                PRACTICE
-                <span>Listen & Explore</span>
-            </button>
-            <button class="mega-btn" onclick="selectMainMenu('test')">
-                TEST
-                <span>Quizzes & Exams</span>
-            </button>
+            <button class="mega-btn" onclick="selectMainMenu('practice')">PRACTICE</button>
+            <button class="mega-btn" onclick="selectMainMenu('test')">TEST</button>
         </div>
 
         <!-- STEP 2: 과목 선택 -->
         <div id="sub-menu" style="display:none; flex-direction:column; align-items:center; justify-content:center; flex:1; gap:15px;">
             <div style="font-size:1.1em; font-weight:800; color:var(--primary-color); margin-bottom:10px; letter-spacing:1px;" id="sub-menu-title">MODE</div>
-            <div style="font-size:0.9em; font-weight:800; color:var(--text-muted); margin-bottom:5px; letter-spacing:1px;">2. SELECT SUBJECT</div>
-            <button class="mega-btn" onclick="selectSubject('sine')">SINE WAVE<span>31-Band</span></button>
-            <button class="mega-btn" onclick="selectSubject('eq')">EQ (SOURCE)<span>10-Band</span></button>
-            <button class="mega-btn" onclick="selectSubject('fx')">FX & FILTER<span>Reverb, Dist, LPF...</span></button>
+            <button class="mega-btn" onclick="selectSubject('sine')">SINE WAVE</button>
+            <button class="mega-btn" onclick="selectSubject('eq')">EQ (SOURCE)</button>
+            <button class="mega-btn" onclick="selectSubject('fx')">FX</button>
             <button class="return-btn" style="margin-top:20px;" onclick="showMainMenu()">BACK</button>
         </div>
 
         <!-- STEP 3: 테스트 상세 선택 (TEST 선택시에만 노출) -->
         <div id="test-type-menu" style="display:none; flex-direction:column; align-items:center; justify-content:center; flex:1; gap:15px;">
             <div style="font-size:1.1em; font-weight:800; color:var(--primary-color); margin-bottom:10px; letter-spacing:1px;">TEST SETTINGS</div>
-            <button class="mega-btn" onclick="selectTestType('explore')">EXPLORE QUIZ<span>Endless Questions</span></button>
-            <button class="mega-btn" onclick="selectTestType('test2')">SHORT TEST<span>2 Questions</span></button>
-            <button class="mega-btn" onclick="selectTestType('test5')">FULL TEST<span>5 Questions</span></button>
+            <button class="mega-btn" onclick="selectTestType('explore')">EXPLORE QUIZ</button>
+            <button class="mega-btn" onclick="selectTestType('test2')">SHORT TEST</button>
+            <button class="mega-btn" onclick="selectTestType('test5')">FULL TEST</button>
             <button class="return-btn" style="margin-top:20px;" onclick="showSubMenu()">BACK TO SUBJECTS</button>
         </div>
 
@@ -530,11 +517,9 @@
     // --- UI 초기화 ---
     function init(mode, category = 'eq', testQs = 5) { 
         stopAudio();
-        document.getElementById('main-menu').style.display = 'none';
+        document.getElementById('main-mode-menu').style.display = 'none';
         document.getElementById('sub-menu').style.display = 'none';
         document.getElementById('test-type-menu').style.display = 'none';
-        
-        // ★ ID 에러를 고친 핵심 부분: app-view를 정상적으로 보여줍니다. ★
         document.getElementById('app-view').style.display = 'flex';
 
         currentMode = mode;
@@ -542,7 +527,7 @@
         totalTestQuestions = testQs;
         isPracticeActive = false;
         
-        let catText = category === 'eq' ? 'EQ (SOURCE)' : (category === 'sine' ? 'SINE WAVE' : 'FX & FILTER');
+        let catText = category === 'eq' ? 'EQ (SOURCE)' : (category === 'sine' ? 'SINE WAVE' : 'FX');
         let titleMap = { 'listen': `${catText} : Practice`, 'fx-explore': `${catText} : Practice`, 'practice': `${catText} : Explore Quiz`, 'test': `${catText} : Test (${testQs} Qs)` };
         document.getElementById('view-title').innerText = titleMap[mode];
         
