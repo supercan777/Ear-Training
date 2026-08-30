@@ -530,9 +530,11 @@
     // --- UI 초기화 ---
     function init(mode, category = 'eq', testQs = 5) { 
         stopAudio();
-        document.getElementById('main-mode-menu').style.display = 'none';
-        document.getElementById('sub-category-menu').style.display = 'none';
+        document.getElementById('main-menu').style.display = 'none';
+        document.getElementById('sub-menu').style.display = 'none';
         document.getElementById('test-type-menu').style.display = 'none';
+        
+        // ★ ID 에러를 고친 핵심 부분: app-view를 정상적으로 보여줍니다. ★
         document.getElementById('app-view').style.display = 'flex';
 
         currentMode = mode;
