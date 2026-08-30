@@ -49,7 +49,6 @@
 
         .content-area { padding: 25px; display: flex; flex-direction: column; flex: 1; overflow-y: auto; }
         
-        /* 메가 버튼 깔끔하게 텍스트 중앙정렬로 수정 */
         .mega-btn {
             width: 100%;
             max-width: 340px;
@@ -165,7 +164,6 @@
 
         <!-- STEP 2: 과목 선택 -->
         <div id="sub-menu" style="display:none; flex-direction:column; align-items:center; justify-content:center; flex:1; gap:15px;">
-            <div style="font-size:1.1em; font-weight:800; color:var(--primary-color); margin-bottom:10px; letter-spacing:1px;" id="sub-menu-title">MODE</div>
             <button class="mega-btn" onclick="selectSubject('sine')">SINE WAVE</button>
             <button class="mega-btn" onclick="selectSubject('eq')">EQ (SOURCE)</button>
             <button class="mega-btn" onclick="selectSubject('fx')">FX</button>
@@ -174,7 +172,6 @@
 
         <!-- STEP 3: 테스트 상세 선택 (TEST 선택시에만 노출) -->
         <div id="test-type-menu" style="display:none; flex-direction:column; align-items:center; justify-content:center; flex:1; gap:15px;">
-            <div style="font-size:1.1em; font-weight:800; color:var(--primary-color); margin-bottom:10px; letter-spacing:1px;">TEST SETTINGS</div>
             <button class="mega-btn" onclick="selectTestType('explore')">EXPLORE QUIZ</button>
             <button class="mega-btn" onclick="selectTestType('test2')">SHORT TEST</button>
             <button class="mega-btn" onclick="selectTestType('test5')">FULL TEST</button>
@@ -363,7 +360,6 @@
         userSelectedMain = mode;
         document.getElementById('main-menu').style.display = 'none';
         document.getElementById('sub-menu').style.display = 'flex';
-        document.getElementById('sub-menu-title').innerText = mode === 'practice' ? 'PRACTICE MODE' : 'TEST MODE';
     }
 
     function showMainMenu() {
@@ -517,9 +513,11 @@
     // --- UI 초기화 ---
     function init(mode, category = 'eq', testQs = 5) { 
         stopAudio();
-        document.getElementById('main-mode-menu').style.display = 'none';
+        document.getElementById('main-menu').style.display = 'none';
         document.getElementById('sub-menu').style.display = 'none';
         document.getElementById('test-type-menu').style.display = 'none';
+        
+        // ★ 여기서 화면을 보여줍니다 ★
         document.getElementById('app-view').style.display = 'flex';
 
         currentMode = mode;
