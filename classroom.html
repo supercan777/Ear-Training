@@ -156,13 +156,13 @@
     <div class="content-area">
         
         <!-- STEP 1: 메인 모드 선택 -->
-        <div id="main-menu" style="display:flex; flex-direction:column; align-items:center; flex:1; gap:25px;">
+        <div id="main-menu" style="display:flex; flex-direction:column; align-items:center; flex:1; gap:25px; justify-content:center;">
             <button class="mega-btn" onclick="selectMainMenu('practice')">PRACTICE (Explore)</button>
             <button class="mega-btn" onclick="selectMainMenu('test')">TEST (Exam)</button>
         </div>
 
         <!-- STEP 2: 과목 선택 -->
-        <div id="sub-menu" style="display:none; flex-direction:column; align-items:center; flex:1; gap:20px;">
+        <div id="sub-menu" style="display:none; flex-direction:column; align-items:center; flex:1; gap:20px; justify-content:center;">
             <button class="mega-btn" onclick="selectSubject('sine')">SINE WAVE</button>
             <button class="mega-btn" onclick="selectSubject('eq')">EQ (SOURCE)</button>
             <button class="mega-btn" onclick="selectSubject('fx')">FX & FILTER</button>
@@ -235,6 +235,19 @@
                 </div>
             </div>
 
+            <!-- 하단 퀴즈 정답 버튼 영역 (TEST 모드에서는 숨김 처리됨) -->
+            <div id="fx-quiz-controls" class="fx-quiz-grid" style="display:none;">
+                <button class="btn" onclick="handleFxClick('room')">ROOM</button>
+                <button class="btn" onclick="handleFxClick('chamber')">CHAMBER</button>
+                <button class="btn" onclick="handleFxClick('plate')">PLATE</button>
+                <button class="btn" onclick="handleFxClick('hall')">HALL</button>
+                <button class="btn" onclick="handleFxClick('tremolo')">TREMOLO</button>
+                <button class="btn" onclick="handleFxClick('distortion')">DISTORTION</button>
+                <button class="btn" onclick="handleFxClick('hpf')">HPF</button>
+                <button class="btn" onclick="handleFxClick('lpf')">LPF</button>
+                <button class="btn" onclick="handleFxClick('bpf')">BPF</button>
+            </div>
+
             <button class="return-btn" onclick="returnToMenu()">← BACK TO MENU</button>
         </div>
     </div>
@@ -251,9 +264,9 @@
             </div>
         </div>
 
-        <!-- ★ 새롭게 추가된 글로벌 FX 셋업 기능 ★ -->
+        <!-- 글로벌 FX 셋업 (테스트 중에도 조절 가능) -->
         <div class="settings-group">
-            <div class="settings-label">FX Setup</div>
+            <div class="settings-label">Global FX Setup</div>
             <div class="row" style="align-items: center; margin-bottom: 10px;">
                 <span style="font-weight: 800; font-size: 0.85em; width: 100px; color: #475569;">FX Mix</span>
                 <input type="range" id="set-mix" min="0" max="100" step="1" value="30" oninput="syncParam('mix', this.value)" style="flex:1; cursor: pointer; accent-color: var(--primary-color);">
@@ -351,6 +364,7 @@
     let isPlaying = false; 
     let currentTestQuestion = 0;
     let isTestCompleted = false;
+    let isExamRunning = false; // 진행중인 시험상태 구분
 
     let fileStartTime = 0;
     let waveformCanvas = document.createElement('canvas');
@@ -391,7 +405,7 @@
             if(subject === 'fx') init('fx-explore', subject);
             else init('listen', subject);
         } else {
-            // TEST 모드일 경우 바로 시험 화면으로 진입하여 버튼 숨김
+            // TEST 모드는 바로 셋업화면 렌더링
             init('test', subject, testQuestionCount);
         }
     }
@@ -414,26 +428,34 @@
     // --- 글로벌 파라미터 씽크 ---
     function syncParam(type, value) {
         if (type === 'mix') {
-            document.getElementById('slider-fxmix').value = value;
-            document.getElementById('val-fxmix').innerText = value + ' %';
+            if(document.getElementById('slider-fxmix')) {
+                document.getElementById('slider-fxmix').value = value;
+                document.getElementById('val-fxmix').innerText = value + ' %';
+            }
             document.getElementById('set-mix').value = value;
             document.getElementById('set-val-mix').innerText = value + ' %';
             updateFxMix();
         } else if (type === 'predelay') {
-            document.getElementById('slider-predelay').value = value;
-            document.getElementById('val-predelay').innerText = value + ' ms';
+            if(document.getElementById('slider-predelay')) {
+                document.getElementById('slider-predelay').value = value;
+                document.getElementById('val-predelay').innerText = value + ' ms';
+            }
             document.getElementById('set-predelay').value = value;
             document.getElementById('set-val-predelay').innerText = value + ' ms';
             updateReverbParams();
         } else if (type === 'revtime') {
-            document.getElementById('slider-revtime').value = value;
-            document.getElementById('val-revtime').innerText = value + ' s';
+            if(document.getElementById('slider-revtime')) {
+                document.getElementById('slider-revtime').value = value;
+                document.getElementById('val-revtime').innerText = value + ' s';
+            }
             document.getElementById('set-revtime').value = value;
             document.getElementById('set-val-revtime').innerText = value + ' s';
             updateReverbParams();
         } else if (type === 'filfreq') {
-            document.getElementById('slider-filfreq').value = value;
-            document.getElementById('val-filfreq').innerText = value + ' Hz';
+            if(document.getElementById('slider-filfreq')) {
+                document.getElementById('slider-filfreq').value = value;
+                document.getElementById('val-filfreq').innerText = value + ' Hz';
+            }
             document.getElementById('set-filfreq').value = value;
             document.getElementById('set-val-filfreq').innerText = value + ' Hz';
             updateFilterParams();
@@ -551,38 +573,44 @@
         currentMode = mode;
         currentQuizCategory = category;
         totalTestQuestions = testQs;
+        isPracticeActive = false;
+        isExamRunning = false;
         
         let catText = category === 'eq' ? 'EQ' : (category === 'sine' ? 'SINE WAVE' : 'FX');
         let titleMap = { 'listen': `${catText} : Explore`, 'fx-explore': `${catText} : Explore`, 'test': `${catText} : Exam (${testQs} Qs)` };
         document.getElementById('view-title').innerText = titleMap[mode] || titleMap['listen'];
         
-        document.getElementById('answer-display').style.display = 'none'; document.getElementById('status').innerText = "Ready";
+        document.getElementById('answer-display').style.display = 'none'; 
+        document.getElementById('status').innerText = "Ready";
         
         const freqControls = document.getElementById('freq-controls'); 
         const fxControls = document.getElementById('fx-controls');
+        const fxQuizControls = document.getElementById('fx-quiz-controls');
         const actions = document.getElementById('action-btns');
         
-        freqControls.innerHTML = ''; actions.innerHTML = '';
-        
-        if (category === 'sine') {
-            freqControls.className = 'freq-grid freq31-grid'; bands31.forEach(f => { freqControls.innerHTML += `<button id="btn-freq-${f}" class="btn freq-item" onclick="handleFreqClick(${f})">${f}</button>`; });
-        } else {
-            freqControls.className = 'freq-grid'; bands.forEach(f => { freqControls.innerHTML += `<button id="btn-freq-${f}" class="btn freq-item" onclick="handleFreqClick(${f})">${f}</button>`; });
-        }
-
-        // ★ 공통: 일단 버튼 패널들을 모두 숨깁니다 ★
+        // 일단 모든 하단 조작기능 초기화
         freqControls.style.display = 'none'; 
         fxControls.style.display = 'none'; 
+        fxQuizControls.style.display = 'none';
 
         if (mode === 'test') {
-            // ★ 테스트 모드에서는 하단 패널들을 숨긴 상태로 유지합니다 ★
-            actions.innerHTML = `
-                <button class="btn primary" onclick="runTest()">▶ START EXAM</button> 
-                <button class="btn" onclick="listenAgain()">🎧 LISTEN AGAIN</button> 
-                <button class="btn" onclick="showAnswers()">👁️ ALL ANSWERS</button> 
-                <button class="btn" onclick="stopAudio()" style="background:var(--danger-color); color:white; border-color:var(--danger-color);">⏹ STOP</button>`;
+            // ★ FX의 경우, 시험을 시작하기 전(PRE-EXAM)에 미리보기 셋업 화면을 보여줌
+            if (category === 'fx') {
+                fxControls.style.display = 'flex';
+                actions.innerHTML = `
+                    <button class="btn primary" onclick="runTest()">▶ START EXAM</button> 
+                    <button class="btn" onclick="previewFxTest()">🔊 PREVIEW SETTING</button> 
+                    <button class="btn" onclick="stopAudio()" style="background:var(--danger-color); color:white; border-color:var(--danger-color);">⏹ STOP</button>`;
+                document.getElementById('status').innerText = "Adjust FX parameters below, then START EXAM.";
+                applyFxSetup();
+            } else {
+                actions.innerHTML = `
+                    <button class="btn primary" onclick="runTest()">▶ START EXAM</button> 
+                    <button class="btn" onclick="stopAudio()" style="background:var(--danger-color); color:white; border-color:var(--danger-color);">⏹ STOP</button>`;
+                document.getElementById('status').innerText = "Click START EXAM to begin.";
+            }
         } else {
-            // 연습/탐색 모드일 때는 해당 조작 패널을 보여줍니다
+            // 연습/탐색 모드
             if(category === 'eq' || category === 'sine') {
                 freqControls.style.display = 'grid'; 
                 actions.innerHTML = `
@@ -600,6 +628,15 @@
                 applyFxSetup(); 
             }
         }
+    }
+
+    // 시험 시작 전 프리뷰 버튼 로직
+    async function previewFxTest() {
+        if (isPlaying) return; 
+        if (audioCtx && audioCtx.state === 'suspended') await audioCtx.resume();
+        startAudioSource(); 
+        let type = activeFxCategory === 'reverb' ? activeReverbType : (activeFxCategory === 'filter' ? activeFilterType : activeFxCategory); 
+        document.getElementById('status').innerText = `PREVIEWING: ${type.toUpperCase()}`;
     }
 
     function toggleFxBypass() {
@@ -624,11 +661,11 @@
         else if (fxType === 'distortion') currentEffectNode = createDistortion(audioCtx);
         else if (['hpf', 'lpf', 'bpf'].includes(fxType)) {
             let f = filterFreq;
-            if (currentMode === 'test') { if(fxType === 'hpf') f = 1000; else if(fxType === 'lpf') f = 1000; else if(fxType === 'bpf') f = 1000; }
+            if (currentMode === 'test' && isExamRunning) { if(fxType === 'hpf') f = 1000; else if(fxType === 'lpf') f = 1000; else if(fxType === 'bpf') f = 1000; }
             currentEffectNode = createFilter(audioCtx, fxType, f);
         }
         
-        if (fxInputNode && wetGainNode && (currentMode === 'fx-explore' || currentMode === 'test')) {
+        if (fxInputNode && wetGainNode) {
             fxInputNode.connect(currentEffectNode.input); currentEffectNode.output.connect(wetGainNode); 
         }
     }
@@ -637,15 +674,14 @@
 
     function applyFixedMix() {
         if (!dryGainNode || !wetGainNode || !audioCtx) return;
-        let mix = document.getElementById('slider-fxmix').value / 100.0;
+        let mix = document.getElementById('set-mix').value / 100.0;
         let dGain = Math.cos(mix * 0.5 * Math.PI); let wGain = Math.sin(mix * 0.5 * Math.PI);
         dryGainNode.gain.cancelScheduledValues(audioCtx.currentTime); dryGainNode.gain.setValueAtTime(dryGainNode.gain.value, audioCtx.currentTime); dryGainNode.gain.linearRampToValueAtTime(dGain, audioCtx.currentTime + 0.03);
         wetGainNode.gain.cancelScheduledValues(audioCtx.currentTime); wetGainNode.gain.setValueAtTime(wetGainNode.gain.value, audioCtx.currentTime); wetGainNode.gain.linearRampToValueAtTime(wGain, audioCtx.currentTime + 0.03);
     }
     
     function updateFxMix() {
-        document.getElementById('val-fxmix').innerText = document.getElementById('slider-fxmix').value + " %";
-        if (isPlaying && (currentMode === 'listen' || currentMode === 'fx-explore') && !isFxBypassed) applyFixedMix();
+        if (isPlaying && !isFxBypassed) applyFixedMix();
     }
 
     function setEffectActive(isActive) {
@@ -654,7 +690,7 @@
         } else if (currentQuizCategory === 'fx') {
             if (!dryGainNode || !wetGainNode || !audioCtx) return;
             if (isActive) {
-                if (currentMode === 'test') {
+                if (currentMode === 'test' && isExamRunning) {
                     let quizMix = 0.30;
                     if(['room', 'chamber', 'plate', 'hall'].includes(activeFxCategory)) quizMix = fxMixSettings['reverb'];
                     else if(['hpf', 'lpf', 'bpf'].includes(activeFxCategory)) quizMix = 1.0; 
@@ -675,22 +711,30 @@
         activeFxCategory = category; document.querySelectorAll('.fx-categories .btn').forEach(b => b.classList.remove('active')); document.getElementById(`btn-cat-${category}`).classList.add('active');
         document.getElementById('reverb-only-params').style.display = (category === 'reverb') ? 'flex' : 'none'; document.getElementById('filter-only-params').style.display = (category === 'filter') ? 'flex' : 'none';
         let defaultMix = (category === 'filter') ? 100 : (fxMixSettings[category] ? fxMixSettings[category] * 100 : 30);
-        syncParam('mix', defaultMix); applyFxSetup(); if (isPlaying && (currentMode === 'listen' || currentMode === 'fx-explore') && !isFxBypassed) applyFixedMix();
+        syncParam('mix', defaultMix); applyFxSetup(); if (isPlaying && !isFxBypassed) applyFixedMix();
     }
     
     function setReverbType(type) { activeReverbType = type; document.querySelectorAll('.rev-type-btn').forEach(b => b.classList.remove('active')); document.getElementById(`btn-rev-${type}`).classList.add('active'); applyFxSetup(); }
     function setFilterType(type) { activeFilterType = type; document.querySelectorAll('.fil-type-btn').forEach(b => b.classList.remove('active')); document.getElementById(`btn-fil-${type}`).classList.add('active'); applyFxSetup(); }
 
     function updateReverbParams() {
-        revPreDelayMs = document.getElementById('slider-predelay').value; revTimeSec = document.getElementById('slider-revtime').value;
-        document.getElementById('val-predelay').innerText = revPreDelayMs + " ms"; document.getElementById('val-revtime').innerText = revTimeSec + " s";
+        if(document.getElementById('slider-predelay')) revPreDelayMs = document.getElementById('slider-predelay').value;
+        else revPreDelayMs = document.getElementById('set-predelay').value;
+        
+        if(document.getElementById('slider-revtime')) revTimeSec = document.getElementById('slider-revtime').value;
+        else revTimeSec = document.getElementById('set-revtime').value;
+        
         if (activeFxCategory === 'reverb' && isPlaying) applyFxSetup(); 
     }
-    function updateFilterParams() { filterFreq = document.getElementById('slider-filfreq').value; document.getElementById('val-filfreq').innerText = filterFreq + " Hz"; if (activeFxCategory === 'filter' && isPlaying) applyFxSetup();  }
+    function updateFilterParams() { 
+        if(document.getElementById('slider-filfreq')) filterFreq = document.getElementById('slider-filfreq').value;
+        else filterFreq = document.getElementById('set-filfreq').value;
+        if (activeFxCategory === 'filter' && isPlaying) applyFxSetup();  
+    }
 
     function applyFxSetup() {
         let type = activeFxCategory === 'reverb' ? activeReverbType : (activeFxCategory === 'filter' ? activeFilterType : activeFxCategory); 
-        setupFxNode(type); if(currentMode === 'listen' || currentMode === 'fx-explore') { if(isPlaying) updateFxStatusText(); else document.getElementById('status').innerText = `READY: ${type.toUpperCase()}`; }
+        setupFxNode(type); if(isPlaying && !isExamRunning) updateFxStatusText();
     }
 
     function handleFreqClick(freq) {
@@ -736,11 +780,14 @@
             if (currentQuizCategory === 'eq') { let g = currentEqMode === 'mix' ? (Math.random() > 0.5 ? currentGainAmount : -currentGainAmount) : (currentEqMode === 'boost' ? currentGainAmount : -currentGainAmount); testGains.push(g); }
         }
         if (customBuffer && currentQuizCategory !== 'sine') { const maxStart = Math.max(0, customBuffer.duration - (totalTestQuestions * 15)); fileStartTime = Math.random() * maxStart; }
-        isTestCompleted = false; currentTestQuestion = 0; startTestSequence(0);
+        isTestCompleted = false; isExamRunning = true; currentTestQuestion = 0; startTestSequence(0);
         
+        // 시험이 시작되면 설정패널 완전히 숨기기 (깔끔한 UI)
+        if(currentQuizCategory === 'fx') document.getElementById('fx-controls').style.display = 'none';
+
         document.getElementById('action-btns').innerHTML = `
             <button class="btn primary" onclick="runTest()">▶ RESTART EXAM</button> 
-            <button class="btn" onclick="listenAgain()">🎧 LISTEN AGAIN</button> 
+            <button class="btn" onclick="listenAgain()">🎧 AGAIN</button> 
             <button class="btn" onclick="showAnswers()">👁️ ALL ANSWERS</button> 
             <button class="btn" onclick="stopAudio()" style="background:var(--danger-color); color:white; border-color:var(--danger-color);">⏹ STOP</button>`;
     }
@@ -839,14 +886,16 @@
         activeSource.loop = true;
         if (!dryGainNode) { dryGainNode = audioCtx.createGain(); wetGainNode = audioCtx.createGain(); fxInputNode = audioCtx.createGain(); dryGainNode.connect(masterGain); wetGainNode.connect(masterGain); }
 
-        if (currentMode !== 'test' && currentQuizCategory === 'fx') {
+        if (currentQuizCategory === 'fx') {
             activeSource.connect(dryGainNode); activeSource.connect(fxInputNode); 
             if (currentEffectNode) { fxInputNode.connect(currentEffectNode.input); currentEffectNode.output.connect(wetGainNode); }
-            if (isFxBypassed) setEffectActive(false); else applyFixedMix(); 
-        } else if (currentMode === 'test' && currentQuizCategory === 'fx') {
-            activeSource.connect(dryGainNode); activeSource.connect(fxInputNode); 
-            if (currentEffectNode) { fxInputNode.connect(currentEffectNode.input); currentEffectNode.output.connect(wetGainNode); }
-            setEffectActive(false); 
+            
+            // 미리보기(Preview) 상황일 때는 효과를 강제로 켬, 시험중일때는 시퀀스가 제어하게 함
+            if (currentMode === 'test' && isExamRunning) {
+                setEffectActive(false); 
+            } else {
+                if (isFxBypassed) setEffectActive(false); else applyFixedMix();
+            }
         } else { activeSource.connect(biquadFilter); biquadFilter.connect(masterGain); }
         let offset = customBuffer ? fileStartTime : 0; activeSource.start(0, offset); isPlaying = true;
     }
