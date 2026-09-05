@@ -30,7 +30,7 @@
         
         #app-container { 
             width: 100%; 
-            max-width: 800px; /* 프로젝터/대형 화면에 맞게 약간 넓게 */
+            max-width: 800px; 
             background: var(--surface-color); 
             min-height: 100vh; 
             display: flex; 
@@ -50,7 +50,7 @@
 
         .content-area { padding: 30px; display: flex; flex-direction: column; flex: 1; overflow: hidden; }
         
-        /* 극도로 단순화된 메가 버튼 스타일 */
+        /* 1, 2, 3단계 공통 메가 버튼 스타일 */
         .mega-btn {
             width: 100%;
             max-width: 360px;
@@ -82,32 +82,53 @@
         
         #answer-display { position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(15, 23, 42, 0.95); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 10; text-align: center; padding: 20px; box-sizing: border-box; color: white; cursor: default; }
 
-        #status { flex: none; font-size: 1.05em; font-weight: 700; text-align: center; margin-bottom: 25px; min-height: 24px; color: var(--text-muted); background: #f8fafc; padding: 18px; border-radius: 12px; border: 1px solid var(--border-color); }
+        #status { flex: none; font-size: 1.05em; font-weight: 700; text-align: center; margin-bottom: 20px; min-height: 24px; color: var(--text-muted); background: #f8fafc; padding: 16px; border-radius: 12px; border: 1px solid var(--border-color); }
 
-        .action-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; margin-bottom: 25px; flex: none;}
+        /* ★ 재생/정지 버튼 전용 레이아웃 (플레이어처럼 모아서 중앙 정렬) ★ */
+        .action-btns { 
+            display: flex; 
+            flex-wrap: wrap; 
+            justify-content: center; 
+            align-items: center;
+            gap: 15px; 
+            width: 100%; 
+            margin-bottom: 25px; 
+            flex: none;
+        }
+        
+        .action-btns .btn {
+            flex: 0 1 auto;
+            min-width: 180px; /* 버튼의 최소 길이를 지정해 일관성 유지 */
+            max-width: 250px;
+            font-size: 1.05em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px; /* 아이콘과 텍스트 사이 간격 */
+        }
 
-        .btn { padding: 18px; border-radius: 12px; border: 1px solid var(--border-color); background: #ffffff; color: #334155; font-size: 1em; font-weight: 800; cursor: pointer; transition: all 0.2s ease; text-align: center; flex: 1; max-width: 250px;}
-        .btn:hover { background: #f8fafc; }
+        .btn { padding: 16px 20px; border-radius: 12px; border: 2px solid var(--border-color); background: #ffffff; color: #334155; font-size: 1em; font-weight: 800; cursor: pointer; transition: all 0.2s ease; text-align: center; flex: 1; max-width: 250px;}
+        .btn:hover { background: #f8fafc; border-color: var(--primary-color);}
         .btn:active { transform: scale(0.97); }
         .btn.active, .btn.primary { background: var(--primary-color); color: white; border-color: var(--primary-color); box-shadow: 0 4px 12px rgba(74, 144, 226, 0.25);}
         .btn.primary:hover { background: var(--primary-hover); }
 
         .freq-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; width: 100%; flex: none;}
-        .freq-grid .btn { padding: 15px 2px; font-size: 0.9em; max-width: none;}
+        .freq-grid .btn { padding: 15px 2px; font-size: 0.9em; max-width: none; border-width: 1px;}
         
         .freq31-grid { grid-template-columns: repeat(6, 1fr); gap: 6px; }
-        .freq31-grid .btn { padding: 12px 1px; font-size: 0.8em; border-radius: 8px;}
+        .freq31-grid .btn { padding: 12px 1px; font-size: 0.8em; border-radius: 8px; border-width: 1px;}
 
         .fx-quiz-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 100%; flex: none;}
-        .fx-quiz-grid .btn { padding: 15px 2px; font-size: 0.9em; max-width: none;}
+        .fx-quiz-grid .btn { padding: 15px 2px; font-size: 0.9em; max-width: none; border-width: 1px;}
 
         .fx-layout { display: flex; flex-direction: column; gap: 15px; flex: none;}
         .fx-categories { display: flex; gap: 8px; }
-        .fx-categories .btn { flex: 1; padding: 12px 2px; font-size: 0.8em; border-radius: 8px; max-width: none;}
+        .fx-categories .btn { flex: 1; padding: 12px 2px; font-size: 0.8em; border-radius: 8px; max-width: none; border-width: 1px;}
         .fx-sub-panel { background: #f8fafc; padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); display: none; flex-direction: column; gap: 18px; }
         .reverb-types, .filter-types { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
         .filter-types { grid-template-columns: repeat(3, 1fr); }
-        .reverb-types .btn, .filter-types .btn { padding: 12px 2px; font-size: 0.8em; max-width: none;}
+        .reverb-types .btn, .filter-types .btn { padding: 12px 2px; font-size: 0.8em; max-width: none; border-width: 1px;}
         
         .slider-group { display: flex; flex-direction: column; gap: 10px; }
         .slider-header { display: flex; justify-content: space-between; align-items: center; }
@@ -145,7 +166,6 @@
             <p style="margin: 0; color: var(--primary-color); font-weight: 800; letter-spacing: 2px; font-size: 0.9em;">CLASSROOM EDITION</p>
         </div>
         <input type="password" id="pw-input" placeholder="Enter Password">
-        <!-- flex: none; 을 추가하여 버튼이 세로로 늘어나는 버그 해결 -->
         <button class="btn primary" onclick="checkPassword()" style="width: 80%; max-width: 320px; font-size: 1.1em; padding: 20px; flex: none;">START APP</button>
     </div>
 
@@ -176,6 +196,7 @@
         <!-- STEP 3: 테스트 상세 선택 (TEST 선택시에만 노출) -->
         <div id="test-type-menu" style="display:none; flex-direction:column; align-items:center; justify-content:center; flex:1; gap:20px;">
             <button class="mega-btn" onclick="selectTestType('explore')">EXPLORE QUIZ</button>
+            <!-- 사용자가 직접 설정한 문항 수가 표시되는 버튼 -->
             <button class="mega-btn" onclick="selectTestType('test-custom')">START TEST (<span id="menu-test-btn-text">5</span> Qs)</button>
             <button class="return-btn" style="margin-top:25px;" onclick="showSubMenu()">BACK TO SUBJECTS</button>
         </div>
@@ -207,7 +228,7 @@
                     <div id="reverb-only-params" style="display: block;">
                         <div class="reverb-types" style="margin-bottom: 15px;">
                             <button id="btn-rev-room" class="btn rev-type-btn" onclick="setReverbType('room')">ROOM</button>
-                            <button id="btn-rev-chamber" class="btn rev-type-btn" onclick="setReverbType('chamber')">CHAMBER</button>
+                            <button id="btn-rev-chamber" class="btn rev-type-btn" onclick="setReverbType('chamber')">CHMBR</button>
                             <button id="btn-rev-plate" class="btn rev-type-btn" onclick="setReverbType('plate')">PLATE</button>
                             <button id="btn-rev-hall" class="btn rev-type-btn active" onclick="setReverbType('hall')">HALL</button>
                         </div>
@@ -260,6 +281,7 @@
     <div id="settings-menu">
         <h2 style="margin-top: 0; color: #0f172a; font-size: 1.8em; margin-bottom: 30px; font-weight: 800; letter-spacing: -0.5px;">Settings</h2>
         
+        <!-- 커스텀 문제 개수 설정 부분 -->
         <div class="settings-group">
             <div class="settings-label">Custom Test Questions</div>
             <div class="row" style="display: flex; gap: 10px; align-items: center;">
@@ -304,7 +326,6 @@
             </div>
         </div>
         
-        <!-- 설정창 닫기 버튼에도 flex: none;을 주어 찌그러지지 않게 방지 -->
         <button class="btn" onclick="toggleSettings()" style="margin-top: 20px; width:100%; background: #f1f5f9; color: #475569; border-color: transparent; max-width:none; flex: none;">Close Settings</button>
     </div>
 </div>
@@ -316,6 +337,7 @@
     let biquadFilter = null;
     let customBuffer = null;
     
+    // 문제 수 기본값
     let testQuestionCount = 5;
 
     let currentMode = 'practice'; 
@@ -366,11 +388,13 @@
     
     let rtaBars = new Array(50).fill(5);
 
+    // --- 문제 갯수 설정 적용 함수 ---
     function applyTestQs() {
         let val = parseInt(document.getElementById('test-q-input').value);
         if (val && val > 0) {
             testQuestionCount = val;
             document.getElementById('menu-test-btn-text').innerText = val;
+            
             if (currentMode === 'test') {
                 init('test', currentQuizCategory, testQuestionCount);
             }
@@ -380,6 +404,7 @@
         }
     }
 
+    // --- 오디오 효과 노드 생성 ---
     function createReverb(ctx, type, preDelayMs, revTime) {
         const inputNode = ctx.createGain(); const outputNode = ctx.createGain();
         const preDelayNode = ctx.createDelay(); preDelayNode.delayTime.value = preDelayMs / 1000.0;
@@ -437,6 +462,7 @@
         return { input: inputNode, output: outputNode };
     }
 
+    // --- 기본 시스템 ---
     async function checkPassword() {
         if (document.getElementById('pw-input').value === "ainstudio") { 
             document.getElementById('auth-overlay').style.display = 'none';
@@ -445,6 +471,9 @@
                 masterGain = audioCtx.createGain(); updateGainSettings(); masterGain.connect(audioCtx.destination);
             }
             if (audioCtx.state === 'suspended') await audioCtx.resume();
+            
+            // 초기 렌더링 화면
+            init('practice', 'eq');
         } else alert("Incorrect password.");
     }
     
@@ -482,67 +511,24 @@
         } catch (error) { alert(`'${trackNum}.mp3' 파일을 찾을 수 없습니다.`); document.getElementById('file-name').innerText = "Load Failed"; setSource('pn'); }
     }
 
-    function selectMainMenu(mode) {
-        userSelectedMain = mode;
-        document.getElementById('main-menu').style.display = 'none';
-        document.getElementById('sub-menu').style.display = 'flex';
-    }
-
-    function showMainMenu() {
-        document.getElementById('sub-menu').style.display = 'none';
-        document.getElementById('test-type-menu').style.display = 'none';
-        document.getElementById('main-menu').style.display = 'flex';
-    }
-
-    function selectSubject(subject) {
-        userSelectedSubject = subject;
-        if (userSelectedMain === 'practice') {
-            if(subject === 'fx') init('fx-explore', subject);
-            else init('listen', subject);
-        } else {
-            document.getElementById('sub-menu').style.display = 'none';
-            document.getElementById('test-type-menu').style.display = 'flex';
-        }
-    }
-
-    function showSubMenu() {
-        document.getElementById('test-type-menu').style.display = 'none';
-        document.getElementById('sub-menu').style.display = 'flex';
-    }
-
-    function selectTestType(type) {
-        if (type === 'explore') {
-            init('practice', userSelectedSubject);
-        } else if (type === 'test-custom') {
-            init('test', userSelectedSubject, testQuestionCount);
-        }
-    }
-
-    function returnToMenu() {
-        stopAudio();
-        document.getElementById('app-view').style.display = 'none';
-        if (userSelectedMain === 'practice') {
-            document.getElementById('sub-menu').style.display = 'flex';
-        } else {
-            document.getElementById('test-type-menu').style.display = 'flex';
-        }
-    }
-
+    // --- 메인 기능 초기화 (버튼 레이아웃 일관화) ---
     function init(mode, category = 'eq', testQs = testQuestionCount) { 
         stopAudio();
-        document.getElementById('main-menu').style.display = 'none';
-        document.getElementById('sub-menu').style.display = 'none';
-        document.getElementById('test-type-menu').style.display = 'none';
-        document.getElementById('app-view').style.display = 'flex';
-
+        
         currentMode = mode;
         currentQuizCategory = category;
         totalTestQuestions = testQs;
         isPracticeActive = false;
-        
-        let catText = category === 'eq' ? 'EQ' : (category === 'sine' ? 'SINE WAVE' : 'FX');
-        let titleMap = { 'listen': `${catText} : Explore`, 'fx-explore': `${catText} : Explore`, 'practice': `${catText} : Quiz`, 'test': `${catText} : Test (${testQs} Qs)` };
-        document.getElementById('view-title').innerText = titleMap[mode];
+
+        // 상단 타이틀
+        let catText = category === 'eq' ? 'EQ' : (category === 'sine' ? 'SINE WAVE' : 'FX & FILTER');
+        let titleMap = { 
+            'practice': `${catText} : Practice (Explore)`, 
+            'listen': `${catText} : Practice (Explore)`,
+            'fx-explore': `${catText} : Practice (Explore)`,
+            'test': `${catText} : Exam (${testQs} Qs)` 
+        };
+        document.getElementById('header-title').innerText = titleMap[mode] || titleMap['practice'];
         
         document.getElementById('answer-display').style.display = 'none'; document.getElementById('status').innerText = "Ready";
         
@@ -559,33 +545,48 @@
 
         freqControls.style.display = 'none'; fxControls.style.display = 'none'; fxQuizControls.style.display = 'none';
 
+        // ★ 여기서 플레이/스탑 등 컨트롤 바(action-btns)를 세팅합니다.
         if (mode === 'test') {
-            actions.style.gridTemplateColumns = '1fr 1fr';
-            actions.innerHTML = `<button class="btn primary" onclick="runTest()">START EXAM</button> <button class="btn" onclick="listenAgain()">LISTEN AGAIN</button> <button class="btn" onclick="showAnswers()">ANSWERS</button> <button class="btn" onclick="stopAudio()" style="background:var(--danger-color); color:white; border-color:var(--danger-color);">STOP</button>`;
-            if(category === 'eq' || category === 'sine') freqControls.style.display = 'grid'; else fxQuizControls.style.display = 'grid';
+            actions.innerHTML = `
+                <button class="btn primary" onclick="runTest()">▶ START EXAM</button> 
+                <button class="btn" onclick="listenAgain()">🎧 LISTEN AGAIN</button> 
+                <button class="btn" onclick="showAnswers()">👁️ ANSWERS</button> 
+                <button class="btn" onclick="stopAudio()" style="background:var(--danger-color); color:white; border-color:var(--danger-color);">⏹ STOP</button>`;
+            
+            if(category === 'eq' || category === 'sine') freqControls.style.display = 'grid'; 
+            else fxQuizControls.style.display = 'grid';
         } else {
-            if(mode === 'listen') {
-                actions.style.gridTemplateColumns = '1fr 1fr';
+            // 탐색(Practice/Listen) 모드
+            if(category === 'eq' || category === 'sine') {
                 freqControls.style.display = 'grid'; 
-                actions.innerHTML = `<button class="btn primary" onclick="playListenAudio()">${category === 'sine' ? 'PLAY SINE' : 'PLAY (FLAT)'}</button> <button class="btn" onclick="stopAudio()" style="background:var(--danger-color); color:white; border-color:var(--danger-color);">STOP</button>`;
+                actions.innerHTML = `
+                    <button class="btn primary" onclick="playListenAudio()">▶ ${category === 'sine' ? 'PLAY SINE' : 'PLAY (FLAT)'}</button> 
+                    <button class="btn" onclick="stopAudio()" style="background:var(--danger-color); color:white; border-color:var(--danger-color);">⏹ STOP</button>
+                `;
                 currentListenFreq = null; 
-            } else if(mode === 'fx-explore') {
-                actions.style.gridTemplateColumns = '1fr 1fr 1fr';
+            } else if(category === 'fx') {
                 fxControls.style.display = 'flex'; isFxBypassed = false; 
-                actions.innerHTML = `<button class="btn primary" onclick="playListenAudio()">PLAY</button> <button id="btn-fx-toggle" class="btn active" style="background-color:#8b5cf6; border-color:#8b5cf6;" onclick="toggleFxBypass()">FX: ON</button> <button class="btn" onclick="stopAudio()" style="background:var(--danger-color); color:white; border-color:var(--danger-color);">STOP</button>`;
+                actions.innerHTML = `
+                    <button class="btn primary" onclick="playListenAudio()">▶ PLAY</button> 
+                    <button id="btn-fx-toggle" class="btn active" style="background-color:#8b5cf6; border-color:#8b5cf6; color:white;" onclick="toggleFxBypass()">✨ FX: ON</button> 
+                    <button class="btn" onclick="stopAudio()" style="background:var(--danger-color); color:white; border-color:var(--danger-color);">⏹ STOP</button>
+                `;
                 applyFxSetup(); 
-            } else if(mode === 'practice') {
-                actions.style.gridTemplateColumns = '1fr';
-                if(category === 'eq' || category === 'sine') freqControls.style.display = 'grid'; else fxQuizControls.style.display = 'grid';
-                actions.innerHTML = `<button class="btn primary" onclick="runPractice()">START QUIZ</button>`;
             }
         }
+        
+        // 버튼을 누를때마다 화면이 갱신되므로 네비게이션 창들 모두 숨기고 app-view 보이기
+        document.getElementById('main-menu').style.display = 'none';
+        document.getElementById('sub-menu').style.display = 'none';
+        document.getElementById('test-type-menu').style.display = 'none';
+        document.getElementById('app-view').style.display = 'flex';
     }
 
+    // --- FX 로직 ---
     function toggleFxBypass() {
         isFxBypassed = !isFxBypassed; const btn = document.getElementById('btn-fx-toggle');
-        if (isFxBypassed) { if(btn) { btn.innerText = "BYPASS"; btn.style.backgroundColor = "#94a3b8"; btn.style.borderColor = "#94a3b8"; } setEffectActive(false); } 
-        else { if(btn) { btn.innerText = "FX: ON"; btn.style.backgroundColor = "#8b5cf6"; btn.style.borderColor = "#8b5cf6"; } setEffectActive(true); }
+        if (isFxBypassed) { if(btn) { btn.innerHTML = "✨ BYPASS"; btn.style.backgroundColor = "#94a3b8"; btn.style.borderColor = "#94a3b8"; } setEffectActive(false); } 
+        else { if(btn) { btn.innerHTML = "✨ FX: ON"; btn.style.backgroundColor = "#8b5cf6"; btn.style.borderColor = "#8b5cf6"; } setEffectActive(true); }
         updateFxStatusText();
     }
 
@@ -604,10 +605,11 @@
         else if (fxType === 'distortion') currentEffectNode = createDistortion(audioCtx);
         else if (['hpf', 'lpf', 'bpf'].includes(fxType)) {
             let f = filterFreq;
-            if (currentMode === 'practice' || currentMode === 'test') { if(fxType === 'hpf') f = 1000; else if(fxType === 'lpf') f = 1000; else if(fxType === 'bpf') f = 1000; }
+            if (currentMode === 'test') { if(fxType === 'hpf') f = 1000; else if(fxType === 'lpf') f = 1000; else if(fxType === 'bpf') f = 1000; }
             currentEffectNode = createFilter(audioCtx, fxType, f);
         }
-        if (fxInputNode && wetGainNode && (currentMode === 'fx-explore' || currentMode === 'practice' || currentMode === 'test')) {
+        
+        if (fxInputNode && wetGainNode) {
             fxInputNode.connect(currentEffectNode.input); currentEffectNode.output.connect(wetGainNode); 
         }
     }
@@ -624,7 +626,7 @@
     
     function updateFxMix() {
         document.getElementById('val-fxmix').innerText = document.getElementById('slider-fxmix').value + " %";
-        if (isPlaying && currentMode === 'fx-explore' && !isFxBypassed) applyFixedMix();
+        if (isPlaying && (currentMode === 'listen' || currentMode === 'practice' || currentMode === 'fx-explore') && !isFxBypassed) applyFixedMix();
     }
 
     function setEffectActive(isActive) {
@@ -633,7 +635,7 @@
         } else if (currentQuizCategory === 'fx') {
             if (!dryGainNode || !wetGainNode || !audioCtx) return;
             if (isActive) {
-                if (currentMode === 'practice' || currentMode === 'test') {
+                if (currentMode === 'test') {
                     let quizMix = 0.30;
                     if(['room', 'chamber', 'plate', 'hall'].includes(activeFxCategory)) quizMix = fxMixSettings['reverb'];
                     else if(['hpf', 'lpf', 'bpf'].includes(activeFxCategory)) quizMix = 1.0; 
@@ -652,9 +654,9 @@
 
     function selectFxCategory(category) {
         activeFxCategory = category; document.querySelectorAll('.fx-categories .btn').forEach(b => b.classList.remove('active')); document.getElementById(`btn-cat-${category}`).classList.add('active');
-        document.getElementById('reverb-only-params').style.display = (category === 'reverb') ? 'block' : 'none'; document.getElementById('filter-only-params').style.display = (category === 'filter') ? 'block' : 'none';
+        document.getElementById('reverb-only-params').style.display = (category === 'reverb') ? 'flex' : 'none'; document.getElementById('filter-only-params').style.display = (category === 'filter') ? 'flex' : 'none';
         let defaultMix = (category === 'filter') ? 100 : (fxMixSettings[category] ? fxMixSettings[category] * 100 : 30);
-        document.getElementById('slider-fxmix').value = defaultMix; updateFxMix(); applyFxSetup(); if (isPlaying && currentMode === 'fx-explore' && !isFxBypassed) applyFixedMix();
+        document.getElementById('slider-fxmix').value = defaultMix; updateFxMix(); applyFxSetup(); if (isPlaying && (currentMode === 'listen' || currentMode === 'practice' || currentMode === 'fx-explore') && !isFxBypassed) applyFixedMix();
     }
     
     function setReverbType(type) { activeReverbType = type; document.querySelectorAll('.rev-type-btn').forEach(b => b.classList.remove('active')); document.getElementById(`btn-rev-${type}`).classList.add('active'); applyFxSetup(); }
@@ -669,35 +671,35 @@
 
     function applyFxSetup() {
         let type = activeFxCategory === 'reverb' ? activeReverbType : (activeFxCategory === 'filter' ? activeFilterType : activeFxCategory); 
-        setupFxNode(type); if(currentMode === 'fx-explore') { if(isPlaying) updateFxStatusText(); else document.getElementById('status').innerText = `READY: ${type.toUpperCase()}`; }
+        setupFxNode(type); if(currentMode === 'listen' || currentMode === 'practice' || currentMode === 'fx-explore') { if(isPlaying) updateFxStatusText(); else document.getElementById('status').innerText = `READY: ${type.toUpperCase()}`; }
     }
 
+    // --- 퀴즈/테스트 정답 처리 로직 ---
     function handleQuizAnswer(answer) {
-        if (currentMode !== 'practice' && currentMode !== 'test') return;
-        if (currentMode === 'practice' && !isPracticeActive) { alert("Please press 'START QUIZ' first."); return; }
-        if (currentMode === 'test' && isTestCompleted) return;
+        if (currentMode !== 'test' || isTestCompleted) return;
 
-        stopAudio(); isPracticeActive = false; const display = document.getElementById('answer-display');
+        stopAudio(); 
+        const display = document.getElementById('answer-display');
         let targetText = currentQuizCategory === 'eq' ? `${currentPracticeAnswer} Hz (${currentQuestionGain > 0 ? '+' : ''}${currentQuestionGain}dB)` : (currentQuizCategory === 'sine' ? `${currentPracticeAnswer} Hz` : currentPracticeAnswer.toUpperCase());
         let userText = (currentQuizCategory === 'eq' || currentQuizCategory === 'sine') ? `${answer} Hz` : answer.toUpperCase();
 
         if (answer === currentPracticeAnswer) { display.innerHTML = `<span style="color:var(--success-color); font-size:1.4em;">Correct!</span><br><span style="font-size:1.8em;">${targetText}</span>`; } 
         else { display.innerHTML = `<span style="color:var(--danger-color); font-size:1.4em;">Incorrect!</span><br><span style="font-size:1.2em;">Answer: <span style="color:#ffeb3b; font-weight:900;">${targetText}</span></span><br><span style="font-size:0.8em; color:#94a3b8;">(Your choice: ${userText})</span>`; }
         
-        display.style.display = 'flex'; 
-
-        if (currentMode === 'test') {
-            document.getElementById('status').innerText = "Question Completed.";
-            isTestCompleted = true; // 개별 테스트 문항 종료 처리
-            document.getElementById('action-btns').innerHTML = `<button class="btn primary" onclick="runTest()">START NEW EXAM</button> <button class="btn" onclick="listenAgain()">LISTEN AGAIN</button> <button class="btn" onclick="showAnswers()">ALL ANSWERS</button>`;
-        } else {
-            document.getElementById('status').innerText = "Quiz Completed.";
-            document.getElementById('action-btns').innerHTML = `<button class="btn primary" onclick="runPractice()">NEXT QUESTION</button> <button class="btn" onclick="listenPracticeAgain()">LISTEN AGAIN</button>`;
-        }
+        display.style.display = 'flex'; document.getElementById('status').innerText = "Question Completed.";
+        
+        // 다시 시작 버튼 노출
+        const actions = document.getElementById('action-btns');
+        actions.innerHTML = `
+            <button class="btn primary" onclick="runTest()">▶ START NEW EXAM</button> 
+            <button class="btn" onclick="listenAgain()">🎧 LISTEN AGAIN</button> 
+            <button class="btn" onclick="showAnswers()">👁️ ALL ANSWERS</button>`;
+        
+        isTestCompleted = true; // 개별 테스트 문항 종료 처리
     }
 
     function handleFreqClick(freq) {
-        if (currentMode === 'listen') {
+        if (currentMode !== 'test') { // Practice(탐색) 모드
             document.querySelectorAll('.freq-item').forEach(btn => btn.classList.remove('active'));
             if (currentListenFreq === freq) { 
                 currentListenFreq = null; 
@@ -714,10 +716,12 @@
                     document.getElementById('status').innerText = isPlaying ? `PLAYING: ${freq}Hz (${targetGain > 0 ? '+' : ''}${targetGain}dB)` : `READY (${freq}Hz)`; 
                 }
             }
-        } else if (currentMode === 'practice' || currentMode === 'test') handleQuizAnswer(freq);
+        } else {
+            handleQuizAnswer(freq); // Test 모드
+        }
     }
     
-    function handleFxClick(fx) { if (currentMode === 'practice' || currentMode === 'test') handleQuizAnswer(fx); }
+    function handleFxClick(fx) { if (currentMode === 'test') handleQuizAnswer(fx); }
 
     function createOrUpdateFilter(freq, gain) {
         if (!biquadFilter) { biquadFilter = audioCtx.createBiquadFilter(); biquadFilter.type = "peaking"; biquadFilter.Q.value = 1.4; }
@@ -726,49 +730,12 @@
 
     async function playListenAudio() {
         if (isPlaying) return; if (audioCtx && audioCtx.state === 'suspended') await audioCtx.resume();
-        if (currentMode === 'listen') {
+        if (currentMode !== 'test') {
             if (currentQuizCategory === 'sine') { targetSineFreq = currentListenFreq || 1000; startAudioSource(); document.getElementById('status').innerText = currentListenFreq ? `PLAYING SINE: ${currentListenFreq}Hz` : "PLAYING SINE: 1000Hz"; } 
-            else { if (!biquadFilter) createOrUpdateFilter(1000, 0); startAudioSource(); document.getElementById('status').innerText = currentListenFreq ? `PLAYING: ${currentListenFreq}Hz (${targetGain > 0 ? '+' : ''}${targetGain}dB)` : "PLAYING: FLAT (Original)"; }
-        } else if (currentMode === 'fx-explore') { startAudioSource(); updateFxStatusText(); }
+            else if (currentQuizCategory === 'eq') { if (!biquadFilter) createOrUpdateFilter(1000, 0); startAudioSource(); document.getElementById('status').innerText = currentListenFreq ? `PLAYING: ${currentListenFreq}Hz (${targetGain > 0 ? '+' : ''}${targetGain}dB)` : "PLAYING: FLAT (Original)"; }
+            else { startAudioSource(); updateFxStatusText(); }
+        }
     }
-
-    function cancelPractice() {
-        stopAudio(); isPracticeActive = false; document.getElementById('answer-display').style.display = 'none';
-        document.getElementById('status').innerText = "Canceled. Ready to start.";
-        document.getElementById('action-btns').innerHTML = `<button class="btn primary" onclick="runPractice()">START QUIZ</button>`;
-    }
-
-    async function runPractice() {
-        if (audioCtx && audioCtx.state === 'suspended') await audioCtx.resume();
-        let pool = currentQuizCategory === 'eq' ? bands : (currentQuizCategory === 'sine' ? bands31 : fxPool); 
-        let newAnswer; do { newAnswer = pool[Math.floor(Math.random() * pool.length)]; } while (newAnswer === currentPracticeAnswer); currentPracticeAnswer = newAnswer;
-        if (currentQuizCategory === 'eq') { if (currentEqMode === 'mix') { currentQuestionGain = Math.random() > 0.5 ? currentGainAmount : -currentGainAmount; } else { currentQuestionGain = currentEqMode === 'boost' ? currentGainAmount : -currentGainAmount; } }
-        if (customBuffer && currentQuizCategory !== 'sine') { const maxStart = Math.max(0, customBuffer.duration - 32); fileStartTime = Math.random() * maxStart; }
-        isPracticeActive = true; document.getElementById('answer-display').style.display = 'none';
-        document.getElementById('action-btns').innerHTML = `<button class="btn" style="background:var(--danger-color); color:white; border-color:var(--danger-color);" onclick="cancelPractice()">STOP (Cancel)</button>`;
-        playPracticeSequence(currentPracticeAnswer);
-    }
-    
-    async function listenPracticeAgain() {
-        if (audioCtx && audioCtx.state === 'suspended') await audioCtx.resume();
-        isPracticeActive = true; document.getElementById('answer-display').style.display = 'none';
-        document.getElementById('action-btns').innerHTML = `<button class="btn" style="background:var(--danger-color); color:white; border-color:var(--danger-color);" onclick="cancelPractice()">STOP (Cancel)</button>`;
-        playPracticeSequence(currentPracticeAnswer);
-    }
-
-    function playPracticeSequence(answer) {
-        stopAudio(); document.getElementById('answer-display').style.display = 'none'; 
-        if (currentQuizCategory === 'sine') { targetSineFreq = answer; startAudioSource(); document.getElementById('status').innerText = "Listen carefully (Sine Wave)..."; return; }
-        
-        if (currentQuizCategory === 'eq') { biquadFilter = audioCtx.createBiquadFilter(); biquadFilter.type = "peaking"; biquadFilter.frequency.value = answer; biquadFilter.Q.value = 1.4; biquadFilter.gain.value = 0; targetGain = currentQuestionGain; } 
-        else { activeFxCategory = answer; setupFxNode(answer); }
-        startAudioSource(); document.getElementById('status').innerText = "Listen carefully...";
-        
-        function step1() { setEffectActive(false); sequenceTimer = setTimeout(step2, 5000); } function step2() { setEffectActive(true); sequenceTimer = setTimeout(step3, 5000); } function step3() { setEffectActive(false); sequenceTimer = setTimeout(step4, 5000); } function step4() { setEffectActive(true); sequenceTimer = setTimeout(step5, 5000); } function step5() { setEffectActive(false); sequenceTimer = setTimeout(finishPracticeSeq, 2000); } 
-        step1(); 
-    }
-    
-    function finishPracticeSeq() { stopAudio(); document.getElementById('status').innerText = "Select your answer!"; document.getElementById('action-btns').innerHTML = `<button class="btn primary" onclick="listenPracticeAgain()">LISTEN AGAIN</button> <button class="btn" onclick="cancelPractice()" style="background:var(--danger-color); color:white; border-color:var(--danger-color);">STOP</button>`; }
 
     async function runTest() {
         if (audioCtx && audioCtx.state === 'suspended') await audioCtx.resume();
@@ -780,7 +747,13 @@
         if (customBuffer && currentQuizCategory !== 'sine') { const maxStart = Math.max(0, customBuffer.duration - (totalTestQuestions * 15)); fileStartTime = Math.random() * maxStart; }
         isTestCompleted = false; currentTestQuestion = 0; startTestSequence(0);
         
-        document.getElementById('action-btns').innerHTML = `<button class="btn primary" onclick="runTest()">RESTART EXAM</button> <button class="btn" onclick="listenAgain()">LISTEN AGAIN</button> <button class="btn" onclick="showAnswers()">ANSWERS</button> <button class="btn" onclick="stopAudio()" style="background:var(--danger-color); color:white; border-color:var(--danger-color);">STOP</button>`;
+        // 버튼 갱신
+        const actions = document.getElementById('action-btns');
+        actions.innerHTML = `
+            <button class="btn primary" onclick="runTest()">▶ RESTART EXAM</button> 
+            <button class="btn" onclick="listenAgain()">🎧 LISTEN AGAIN</button> 
+            <button class="btn" onclick="showAnswers()">👁️ ANSWERS</button> 
+            <button class="btn" onclick="stopAudio()" style="background:var(--danger-color); color:white; border-color:var(--danger-color);">⏹ STOP</button>`;
     }
 
     async function listenAgain() { if (audioCtx && audioCtx.state === 'suspended') await audioCtx.resume(); if (currentMode === 'test') { if (testAnswers.length > 0) { let target = currentTestQuestion - 1; if (target < 0) target = 0; startTestSequence(target); } else alert("Press START EXAM first."); } }
@@ -792,7 +765,7 @@
                 let text = currentQuizCategory === 'eq' ? `${ans} Hz (${testGains[i] > 0 ? '+' : ''}${testGains[i]}dB)` : (currentQuizCategory === 'sine' ? `${ans} Hz` : ans.toUpperCase()); 
                 return `<div>Q${i+1}: <span style="color:#ffeb3b; font-weight:900;">${text}</span></div>`; 
             }).join('');
-            display.innerHTML = `<div style="font-size: 1em; color: #94a3b8; margin-bottom: 15px; letter-spacing: 1px;">[ ANSWERS ]</div> <div style="font-size: 1.1em; line-height: 1.5; display: grid; grid-template-columns: 1fr 1fr; gap: 8px 30px; text-align: left;"> ${answersHtml} </div>`; display.style.display = 'flex'; 
+            display.innerHTML = `<div style="font-size: 1.1em; color: #94a3b8; margin-bottom: 20px; letter-spacing: 1px;">[ EXAM ANSWERS ]</div> <div style="font-size: 1.2em; line-height: 1.6; display: grid; grid-template-columns: 1fr 1fr; gap: 10px 40px; text-align: left;"> ${answersHtml} </div>`; display.style.display = 'flex'; 
         }
     }
 
@@ -807,14 +780,18 @@
 
     function nextSineTestStep() {
         if (currentTestQuestion >= totalTestQuestions) { document.getElementById('status').innerText = "EXAM COMPLETED! Check ANSWERS."; isTestCompleted = true; return; }
-        targetSineFreq = testAnswers[currentTestQuestion]; currentPracticeAnswer = targetSineFreq;
+        targetSineFreq = testAnswers[currentTestQuestion]; 
+        currentPracticeAnswer = targetSineFreq;
         startAudioSource(); document.getElementById('status').innerText = `[Q ${currentTestQuestion + 1}/${totalTestQuestions}] Playing Sine Wave (5s)`;
         sequenceTimer = setTimeout(() => { stopAudio(); document.getElementById('status').innerText = `[Q ${currentTestQuestion + 1}/${totalTestQuestions}] Waiting... (5s)`; sequenceTimer = setTimeout(() => { currentTestQuestion++; nextSineTestStep(); }, 5000); }, 5000); 
     }
 
     function nextTestStep() {
         if (currentTestQuestion >= totalTestQuestions) { setEffectActive(false); document.getElementById('status').innerText = "All completed! Original source (3s)"; sequenceTimer = setTimeout(() => { stopAudio(); isTestCompleted = true; document.getElementById('status').innerText = "EXAM COMPLETED! Check ANSWERS."; }, 3000); return; }
-        currentPracticeAnswer = testAnswers[currentTestQuestion]; currentQuestionGain = testGains[currentTestQuestion];
+        
+        currentPracticeAnswer = testAnswers[currentTestQuestion];
+        currentQuestionGain = testGains[currentTestQuestion];
+
         setEffectActive(false); document.getElementById('status').innerText = `[Q ${currentTestQuestion + 1}/${totalTestQuestions}] Original (5s)`;
         sequenceTimer = setTimeout(() => {
             if (currentQuizCategory === 'eq') { biquadFilter.frequency.value = testAnswers[currentTestQuestion]; targetGain = testGains[currentTestQuestion]; } 
@@ -848,7 +825,7 @@
         activeSource.loop = true;
         if (!dryGainNode) { dryGainNode = audioCtx.createGain(); wetGainNode = audioCtx.createGain(); fxInputNode = audioCtx.createGain(); dryGainNode.connect(masterGain); wetGainNode.connect(masterGain); }
 
-        if (currentMode === 'practice' && currentQuizCategory === 'fx') {
+        if (currentMode !== 'test' && currentQuizCategory === 'fx') {
             activeSource.connect(dryGainNode); activeSource.connect(fxInputNode); 
             if (currentEffectNode) { fxInputNode.connect(currentEffectNode.input); currentEffectNode.output.connect(wetGainNode); }
             if (isFxBypassed) setEffectActive(false); else applyFixedMix(); 
@@ -867,7 +844,7 @@
             } else { try { activeSource.stop(); activeSource.disconnect(); } catch(e) {} activeSource = null; }
         }
         isPlaying = false; document.getElementById('status').innerText = "STOPPED";
-        if (currentMode === 'practice') { document.querySelectorAll('.freq-item').forEach(b => b.classList.remove('active')); currentListenFreq = null; }
+        if (currentMode !== 'test') { document.querySelectorAll('.freq-item').forEach(b => b.classList.remove('active')); currentListenFreq = null; }
     }
 
     function renderWaveform() {
@@ -898,7 +875,7 @@
         requestAnimationFrame(drawRTA); 
     } 
     document.getElementById('display-area').addEventListener('click', function(e) {
-        if (!customBuffer || currentQuizCategory === 'sine' || currentMode !== 'practice') return;
+        if (!customBuffer || currentQuizCategory === 'sine' || currentMode === 'test') return;
         const rect = this.getBoundingClientRect(); const x = e.clientX - rect.left; fileStartTime = customBuffer.duration * (x / rect.width);
         if (isPlaying) { if (activeSource) { try { activeSource.stop(); activeSource.disconnect(); } catch(err) {} activeSource = null; } isPlaying = false; startAudioSource(); }
     });
