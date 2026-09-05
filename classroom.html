@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ear Training - Classroom Pro</title>
+    <title>Ear Training - Classroom (Pro)</title>
     <style>
         :root {
             --bg-color: #f4f7f6;
@@ -15,7 +15,6 @@
             --text-color: #1e293b;
             --text-muted: #64748b;
             --border-color: #e2e8f0;
-            --sidebar-width: 250px;
         }
 
         body { 
@@ -25,205 +24,166 @@
             background: var(--bg-color); 
             color: var(--text-color); 
             display: flex;
+            justify-content: center;
             overflow: hidden; /* 스크롤 완벽 차단 */
         }
         
         #app-container { 
             width: 100%; 
-            display: flex; 
-            flex-direction: row; 
-            height: 100vh; 
-        }
-
-        /* 좌측 사이드바 (깔끔한 클래스룸 모드) */
-        .sidebar {
-            width: var(--sidebar-width);
-            background: var(--surface-color);
-            border-right: 1px solid var(--border-color);
-            display: flex;
-            flex-direction: column;
-            box-shadow: 2px 0 15px rgba(0,0,0,0.03);
-            z-index: 20;
-        }
-
-        .sidebar-header { padding: 25px 20px; border-bottom: 1px solid var(--border-color); text-align: center;}
-        .sidebar-header h1 { margin: 0; font-size: 1.3em; font-weight: 800; color: #0f172a; letter-spacing: -0.5px; }
-        .sidebar-header p { margin: 5px 0 0 0; color: var(--primary-color); font-size: 0.75em; font-weight: 700; letter-spacing: 1.5px;}
-
-        .nav-menu { display: flex; flex-direction: column; padding: 15px; gap: 4px; overflow-y: auto;}
-        
-        .nav-category {
-            font-size: 0.75em;
-            font-weight: 800;
-            color: #94a3b8;
-            letter-spacing: 1px;
-            margin: 20px 0 5px 10px;
-        }
-
-        .nav-btn {
-            padding: 12px 15px; 
-            border: none; 
-            background: transparent; 
-            text-align: left;
-            font-size: 0.95em; 
-            font-weight: 700; 
-            color: var(--text-muted);
-            border-radius: 8px; 
-            cursor: pointer; 
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
-        }
-        .nav-btn:hover { background: #f8fafc; color: #0f172a; transform: translateX(4px); }
-        .nav-btn.active { background: #eff6ff; color: var(--primary-color); }
-        .nav-btn.active::before { content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%); height: 60%; width: 4px; background: var(--primary-color); border-radius: 0 4px 4px 0; }
-
-        /* 메인 콘텐츠 영역 */
-        .main-content { 
-            flex: 1; 
+            max-width: 800px; /* 프로젝터/대형 화면에 맞게 약간 넓게 */
+            background: var(--surface-color); 
+            min-height: 100vh; 
             display: flex; 
             flex-direction: column; 
-            height: 100vh; 
-            position: relative;
+            position: relative; 
+            box-shadow: 0 0 40px rgba(0,0,0,0.08);
+            overflow: hidden;
         }
 
-        .top-bar { display: flex; justify-content: space-between; align-items: center; padding: 20px 30px; height: 70px; box-sizing: border-box;}
-        .top-bar h2 { margin: 0; font-size: 1.4em; font-weight: 800; color: #0f172a; letter-spacing: 1px; text-transform: uppercase;}
+        .top-bar { display: flex; justify-content: space-between; align-items: center; padding: 25px 30px; border-bottom: 1px solid var(--border-color); background: var(--surface-color); z-index: 10;}
+        .top-bar-titles { display: flex; flex-direction: column; }
+        .top-bar h2 { margin: 0; font-size: 1.5em; font-weight: 800; color: #0f172a; letter-spacing: -0.5px; }
+        .top-bar p { margin: 4px 0 0 0; color: var(--primary-color); font-size: 0.8em; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;}
         
-        #settings-trigger { font-size: 0.85em; font-weight: 800; letter-spacing: 1px; cursor: pointer; color: #94a3b8; padding: 8px 15px; border: 2px solid var(--border-color); border-radius: 8px; transition: all 0.2s; background: white;}
+        #settings-trigger { font-size: 0.85em; font-weight: 800; letter-spacing: 1px; cursor: pointer; color: #94a3b8; transition: all 0.3s ease; padding: 10px 15px; border: 1px solid #e2e8f0; border-radius: 8px; text-transform: uppercase; }
         #settings-trigger:hover { color: var(--primary-color); border-color: var(--primary-color); background: #eff6ff; }
 
-        /* 화면 꽉 차게 자동으로 늘어나는 레이아웃 (스크롤 없음) */
-        .content-area { 
-            padding: 0 30px 20px 30px; 
-            display: flex; 
-            flex-direction: column; 
-            flex: 1; 
-            max-width: 1400px; 
-            margin: 0 auto; 
-            width: 100%; 
-            box-sizing: border-box; 
-        }
+        .content-area { padding: 30px; display: flex; flex-direction: column; flex: 1; overflow: hidden; }
         
-        #display-area { 
-            flex: 1; /* 남는 공간을 모두 차지하도록 자동 조절 */
-            min-height: 150px; /* 창이 너무 작아져도 최소 높이 유지 */
-            position: relative; 
-            width: 100%; 
-            background: #1e293b; 
-            border-radius: 16px; 
-            overflow: hidden; 
-            margin-bottom: 20px; 
-            box-shadow: 0 10px 25px rgba(0,0,0,0.08); 
+        /* 극도로 단순화된 메가 버튼 스타일 */
+        .mega-btn {
+            width: 100%;
+            max-width: 360px;
+            padding: 24px;
+            border-radius: 16px;
+            border: 2px solid var(--border-color);
+            background: #ffffff;
+            color: #1e293b;
+            font-size: 1.25em;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+            letter-spacing: 1px;
+            text-align: center;
         }
+        .mega-btn:hover {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(74, 144, 226, 0.15);
+        }
+
+        #app-view { display: none; flex-direction: column; flex: 1;}
+        #view-title { font-size: 1.3em; font-weight: 800; text-align: center; margin-bottom: 25px; color: var(--primary-color); text-transform: uppercase; letter-spacing: 1px; flex: none;}
+
+        #display-area { flex: 1; min-height: 100px; position: relative; width: 100%; background: #1e293b; border-radius: 16px; overflow: hidden; margin-bottom: 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
         #rta-canvas { width: 100%; height: 100%; display: block; }
         
         #answer-display { position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(15, 23, 42, 0.95); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 10; text-align: center; padding: 20px; box-sizing: border-box; color: white; cursor: default; }
 
-        #status { font-size: 1.05em; font-weight: 700; text-align: center; margin-bottom: 15px; padding: 12px; color: var(--text-muted); background: var(--surface-color); border-radius: 12px; border: 1px solid var(--border-color); letter-spacing: 0.5px;}
+        #status { flex: none; font-size: 1.05em; font-weight: 700; text-align: center; margin-bottom: 25px; min-height: 24px; color: var(--text-muted); background: #f8fafc; padding: 18px; border-radius: 12px; border: 1px solid var(--border-color); }
 
-        /* 하단 컨트롤 (공간 최적화) */
-        .controls-container { 
-            background: var(--surface-color); 
-            padding: 20px; 
-            border-radius: 16px; 
-            border: 1px solid var(--border-color);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.02); 
-            margin-bottom: 0;
-            flex-shrink: 0; /* 컨트롤 영역은 찌그러지지 않도록 고정 */
-        }
-        
-        .action-btns { display: flex; justify-content: center; gap: 10px; width: 100%; margin-bottom: 15px; }
+        .action-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; margin-bottom: 25px; flex: none;}
 
-        .btn { padding: 14px 20px; border-radius: 10px; border: 1px solid var(--border-color); background: #ffffff; color: #334155; font-size: 0.9em; font-weight: 800; cursor: pointer; transition: all 0.2s ease; text-align: center; flex: 1; max-width: 250px;}
-        .btn:hover { background: #f8fafc; border-color: #cbd5e1; }
+        .btn { padding: 18px; border-radius: 12px; border: 1px solid var(--border-color); background: #ffffff; color: #334155; font-size: 1em; font-weight: 800; cursor: pointer; transition: all 0.2s ease; text-align: center; flex: 1; max-width: 250px;}
+        .btn:hover { background: #f8fafc; }
         .btn:active { transform: scale(0.97); }
         .btn.active, .btn.primary { background: var(--primary-color); color: white; border-color: var(--primary-color); box-shadow: 0 4px 12px rgba(74, 144, 226, 0.25);}
         .btn.primary:hover { background: var(--primary-hover); }
 
-        .freq-grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 6px; width: 100%; }
-        .freq-grid .btn { padding: 12px 2px; font-size: 0.85em; max-width: none;}
+        .freq-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; width: 100%; flex: none;}
+        .freq-grid .btn { padding: 15px 2px; font-size: 0.9em; max-width: none;}
         
-        /* 31밴드는 11칸씩 3줄로 배치하여 높이를 최소화 */
-        .freq31-grid { grid-template-columns: repeat(11, 1fr); gap: 5px; }
-        .freq31-grid .btn { padding: 10px 1px; font-size: 0.75em; border-radius: 6px;}
+        .freq31-grid { grid-template-columns: repeat(6, 1fr); gap: 6px; }
+        .freq31-grid .btn { padding: 12px 1px; font-size: 0.8em; border-radius: 8px;}
 
-        .fx-quiz-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; width: 100%; }
-        .fx-quiz-grid .btn { padding: 12px 5px; font-size: 0.85em; max-width: none;}
+        .fx-quiz-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 100%; flex: none;}
+        .fx-quiz-grid .btn { padding: 15px 2px; font-size: 0.9em; max-width: none;}
 
-        .fx-layout { display: flex; flex-direction: column; gap: 15px; }
+        .fx-layout { display: flex; flex-direction: column; gap: 15px; flex: none;}
         .fx-categories { display: flex; gap: 8px; }
-        .fx-categories .btn { flex: 1; max-width: none;}
+        .fx-categories .btn { flex: 1; padding: 12px 2px; font-size: 0.8em; border-radius: 8px; max-width: none;}
+        .fx-sub-panel { background: #f8fafc; padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); display: none; flex-direction: column; gap: 18px; }
+        .reverb-types, .filter-types { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+        .filter-types { grid-template-columns: repeat(3, 1fr); }
+        .reverb-types .btn, .filter-types .btn { padding: 12px 2px; font-size: 0.8em; max-width: none;}
         
-        .fx-sub-panel { background: #f8fafc; padding: 15px 20px; border-radius: 12px; border: 1px solid var(--border-color); display: none; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap;}
-        
-        /* 이펙터 세부 설정을 가로로 펼쳐 세로 공간 절약 */
-        .reverb-types, .filter-types { display: flex; gap: 5px; flex: 1; }
-        .reverb-types .btn, .filter-types .btn { padding: 10px 5px; font-size: 0.8em; max-width: none; }
-        
-        .slider-group { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 200px;}
-        .slider-group label { font-weight: 800; color: #475569; font-size: 0.8em; white-space: nowrap;}
-        .slider-group input[type="range"] { flex: 1; cursor: pointer; accent-color: var(--primary-color);}
-        .slider-value { font-weight: 800; color: var(--primary-color); font-size: 0.85em; width: 45px; text-align: right;}
+        .slider-group { display: flex; flex-direction: column; gap: 10px; }
+        .slider-header { display: flex; justify-content: space-between; align-items: center; }
+        .slider-group label { font-weight: 800; color: #475569; font-size: 0.9em; }
+        .slider-group input[type="range"] { width: 100%; cursor: pointer; accent-color: var(--primary-color);}
+        .slider-value { font-weight: 800; color: var(--primary-color); font-size: 0.9em;}
 
-        .mixer-panel { background: #eff6ff; border: 1px solid #bfdbfe; padding: 10px 15px; border-radius: 10px; flex: 1.5; min-width: 250px;}
+        .mixer-panel { background: #eff6ff; border: 2px solid #bfdbfe; padding: 18px; border-radius: 12px; margin-top: 5px; }
 
-        /* 오버레이 및 셋팅 메뉴 */
+        .return-btn { flex: none; margin-top: 15px; width: 100%; background: transparent; border: none; color: #94a3b8; font-weight: 800; text-decoration: underline; cursor: pointer; padding: 10px; font-size: 0.95em; letter-spacing: 0.5px;}
+        .return-btn:hover { color: var(--primary-color); }
+
         .full-overlay { position: absolute; top:0; left:0; width:100%; height:100%; background: var(--surface-color); z-index:999; display:flex; flex-direction:column; align-items:center; justify-content:center; }
-        #pw-input { padding: 18px; border-radius: 14px; border: 1px solid var(--border-color); font-size: 1.2em; background: #f8fafc; text-align: center; margin-bottom: 25px; width: 300px; outline: none; transition: all 0.2s; color: #0f172a; font-weight: 600;}
+        #pw-input { padding: 20px; border-radius: 14px; border: 1px solid var(--border-color); font-size: 1.2em; background: #f8fafc; text-align: center; margin-bottom: 25px; width: 80%; max-width: 320px; outline: none; transition: all 0.2s; color: #0f172a; font-weight: 600;}
         #pw-input:focus { border-color: var(--primary-color); box-shadow: 0 0 0 4px rgba(74, 144, 226, 0.15); background: white;}
 
         #settings-menu { 
-            position: fixed; top: 0; right: -420px; width: 420px; height: 100%; 
+            position: absolute; top: 0; right: -100%; width: 100%; height: 100%; 
             background: var(--surface-color); z-index: 150; transition: right 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); 
             padding: 30px; box-shadow: -10px 0 40px rgba(0,0,0,0.08); 
-            overflow-y: auto; box-sizing: border-box; border-left: 1px solid var(--border-color);
+            overflow-y: auto; box-sizing: border-box;
         }
         #settings-menu.open { right: 0; }
-        .settings-group { margin-bottom: 25px; }
-        .settings-label { margin-bottom: 12px; font-size: 0.8em; color: #94a3b8; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;}
-        .row { display: flex; gap: 8px; }
+        .settings-group { margin-bottom: 30px; }
+        .settings-label { margin-bottom: 12px; font-size: 0.85em; color: #94a3b8; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;}
+        .row { display: flex; gap: 10px; }
     </style>
 </head>
 <body>
 
-<div id="auth-overlay" class="full-overlay">
-    <div style="text-align: center; margin-bottom: 30px;">
-        <h2 style="margin-bottom: 8px; font-size: 2.5em; font-weight: 800; color: #0f172a; letter-spacing: -1px;">Ear Training</h2>
-        <p style="margin: 0; color: var(--primary-color); font-weight: 800; letter-spacing: 2px; font-size: 0.9em;">CLASSROOM PRO</p>
-    </div>
-    <input type="password" id="pw-input" placeholder="Enter Password">
-    <button class="btn primary" onclick="checkPassword()" style="width: 300px; font-size: 1.1em; padding: 18px; max-width:none;">START APP</button>
-</div>
-
 <div id="app-container">
-    <!-- 좌측 사이드바: 1,2단계 선택 과정을 하나로 합친 초간단 메뉴 -->
-    <div class="sidebar">
-        <div class="sidebar-header">
-            <h1>Ear Training</h1>
-            <p>CLASSROOM</p>
+    <div id="auth-overlay" class="full-overlay">
+        <div style="text-align: center; margin-bottom: 30px;">
+            <h2 style="margin-bottom: 8px; font-size: 2.5em; font-weight: 800; color: #0f172a; letter-spacing: -1px;">Ear Training</h2>
+            <p style="margin: 0; color: var(--primary-color); font-weight: 800; letter-spacing: 2px; font-size: 0.9em;">CLASSROOM EDITION</p>
         </div>
-        <div class="nav-menu">
-            <div class="nav-category">PRACTICE (EXPLORE)</div>
-            <button class="nav-btn" id="nav-practice-sine" onclick="init('practice', 'sine')">Sine Wave</button>
-            <button class="nav-btn active" id="nav-practice-eq" onclick="init('practice', 'eq')">EQ</button>
-            <button class="nav-btn" id="nav-practice-fx" onclick="init('practice', 'fx')">FX</button>
-            
-            <div class="nav-category">TEST (EXAM)</div>
-            <button class="nav-btn" id="nav-test-sine" onclick="init('test', 'sine', testQuestionCount)">Sine Wave</button>
-            <button class="nav-btn" id="nav-test-eq" onclick="init('test', 'eq', testQuestionCount)">EQ</button>
-            <button class="nav-btn" id="nav-test-fx" onclick="init('test', 'fx', testQuestionCount)">FX</button>
-        </div>
+        <input type="password" id="pw-input" placeholder="Enter Password">
+        <!-- flex: none; 을 추가하여 버튼이 세로로 늘어나는 버그 해결 -->
+        <button class="btn primary" onclick="checkPassword()" style="width: 80%; max-width: 320px; font-size: 1.1em; padding: 20px; flex: none;">START APP</button>
     </div>
 
-    <!-- 우측 메인 훈련 화면 -->
-    <div class="main-content">
-        <div class="top-bar">
-            <h2 id="header-title">EQ : Practice</h2>
-            <div id="settings-trigger" onclick="toggleSettings()">SETTINGS</div>
+    <div class="top-bar">
+        <div class="top-bar-titles">
+            <h2>Ear Training</h2>
+            <p>Classroom Edition</p>
+        </div>
+        <div id="settings-trigger" onclick="toggleSettings()">SETTINGS</div>
+    </div>
+
+    <div class="content-area">
+        
+        <!-- STEP 1: 메인 모드 선택 -->
+        <div id="main-menu" style="display:flex; flex-direction:column; align-items:center; justify-content:center; flex:1; gap:25px;">
+            <button class="mega-btn" onclick="selectMainMenu('practice')">PRACTICE</button>
+            <button class="mega-btn" onclick="selectMainMenu('test')">TEST</button>
         </div>
 
-        <div class="content-area">
-            <!-- 고무줄처럼 자동으로 늘어났다 줄어드는 디스플레이 -->
+        <!-- STEP 2: 과목 선택 -->
+        <div id="sub-menu" style="display:none; flex-direction:column; align-items:center; justify-content:center; flex:1; gap:20px;">
+            <button class="mega-btn" onclick="selectSubject('sine')">SINE WAVE</button>
+            <button class="mega-btn" onclick="selectSubject('eq')">EQ</button>
+            <button class="mega-btn" onclick="selectSubject('fx')">FX</button>
+            <button class="return-btn" style="margin-top:25px;" onclick="showMainMenu()">BACK</button>
+        </div>
+
+        <!-- STEP 3: 테스트 상세 선택 (TEST 선택시에만 노출) -->
+        <div id="test-type-menu" style="display:none; flex-direction:column; align-items:center; justify-content:center; flex:1; gap:20px;">
+            <button class="mega-btn" onclick="selectTestType('explore')">EXPLORE QUIZ</button>
+            <button class="mega-btn" onclick="selectTestType('test-custom')">START TEST (<span id="menu-test-btn-text">5</span> Qs)</button>
+            <button class="return-btn" style="margin-top:25px;" onclick="showSubMenu()">BACK TO SUBJECTS</button>
+        </div>
+
+        <!-- 훈련 화면 (앱 뷰) -->
+        <div id="app-view">
+            <div id="view-title">Mode Title</div>
+            
             <div id="display-area">
                 <canvas id="rta-canvas" width="1000" height="300"></canvas>
                 <div id="answer-display"></div>
@@ -231,129 +191,122 @@
             
             <div id="status">Ready</div>
             
-            <!-- 고정된 컨트롤 영역 -->
-            <div class="controls-container">
-                <div id="action-btns" class="action-btns"></div>
+            <div id="action-btns" class="action-btns"></div>
 
-                <div id="freq-controls" class="freq-grid" style="display:none;"></div>
+            <div id="freq-controls" class="freq-grid" style="display:none;"></div>
+            
+            <div id="fx-controls" class="fx-layout" style="display:none;">
+                <div class="fx-categories">
+                    <button id="btn-cat-reverb" class="btn active" onclick="selectFxCategory('reverb')">REVERB</button>
+                    <button id="btn-cat-tremolo" class="btn" onclick="selectFxCategory('tremolo')">TREMOLO</button>
+                    <button id="btn-cat-distortion" class="btn" onclick="selectFxCategory('distortion')">DISTORTION</button>
+                    <button id="btn-cat-filter" class="btn" onclick="selectFxCategory('filter')">FILTER</button>
+                </div>
                 
-                <div id="fx-controls" class="fx-layout" style="display:none;">
-                    <div class="fx-categories">
-                        <button id="btn-cat-reverb" class="btn active" onclick="selectFxCategory('reverb')">REVERB</button>
-                        <button id="btn-cat-tremolo" class="btn" onclick="selectFxCategory('tremolo')">TREMOLO</button>
-                        <button id="btn-cat-distortion" class="btn" onclick="selectFxCategory('distortion')">DISTORTION</button>
-                        <button id="btn-cat-filter" class="btn" onclick="selectFxCategory('filter')">FILTER</button>
+                <div id="fx-param-panel" class="fx-sub-panel" style="display:flex;">
+                    <div id="reverb-only-params" style="display: block;">
+                        <div class="reverb-types" style="margin-bottom: 15px;">
+                            <button id="btn-rev-room" class="btn rev-type-btn" onclick="setReverbType('room')">ROOM</button>
+                            <button id="btn-rev-chamber" class="btn rev-type-btn" onclick="setReverbType('chamber')">CHAMBER</button>
+                            <button id="btn-rev-plate" class="btn rev-type-btn" onclick="setReverbType('plate')">PLATE</button>
+                            <button id="btn-rev-hall" class="btn rev-type-btn active" onclick="setReverbType('hall')">HALL</button>
+                        </div>
+                        <div class="slider-group" style="margin-bottom: 15px;">
+                            <div class="slider-header"><label>Pre-Delay</label><div class="slider-value" id="val-predelay">30 ms</div></div>
+                            <input type="range" id="slider-predelay" min="0" max="200" step="1" value="30" oninput="updateReverbParams()">
+                        </div>
+                        <div class="slider-group">
+                            <div class="slider-header"><label>Reverb Time</label><div class="slider-value" id="val-revtime">2.5 s</div></div>
+                            <input type="range" id="slider-revtime" min="0.1" max="5.0" step="0.1" value="2.5" oninput="updateReverbParams()">
+                        </div>
                     </div>
                     
-                    <div id="fx-param-panel" class="fx-sub-panel" style="display:flex;">
-                        <div id="reverb-only-params" style="display: flex; gap: 20px; flex: 2; align-items: center;">
-                            <div class="reverb-types">
-                                <button id="btn-rev-room" class="btn rev-type-btn" onclick="setReverbType('room')">ROOM</button>
-                                <button id="btn-rev-chamber" class="btn rev-type-btn" onclick="setReverbType('chamber')">CHAMBER</button>
-                                <button id="btn-rev-plate" class="btn rev-type-btn" onclick="setReverbType('plate')">PLATE</button>
-                                <button id="btn-rev-hall" class="btn rev-type-btn active" onclick="setReverbType('hall')">HALL</button>
-                            </div>
-                            <div style="display: flex; flex-direction: column; gap: 8px; flex: 1;">
-                                <div class="slider-group">
-                                    <label>Pre-Delay</label>
-                                    <input type="range" id="slider-predelay" min="0" max="200" step="1" value="30" oninput="updateReverbParams()">
-                                    <div class="slider-value" id="val-predelay">30 ms</div>
-                                </div>
-                                <div class="slider-group">
-                                    <label>Reverb Time</label>
-                                    <input type="range" id="slider-revtime" min="0.1" max="5.0" step="0.1" value="2.5" oninput="updateReverbParams()">
-                                    <div class="slider-value" id="val-revtime">2.5 s</div>
-                                </div>
-                            </div>
+                    <div id="filter-only-params" style="display: none;">
+                        <div class="filter-types" style="margin-bottom: 15px;">
+                            <button id="btn-fil-hpf" class="btn fil-type-btn" onclick="setFilterType('hpf')">HPF</button>
+                            <button id="btn-fil-lpf" class="btn fil-type-btn active" onclick="setFilterType('lpf')">LPF</button>
+                            <button id="btn-fil-bpf" class="btn fil-type-btn" onclick="setFilterType('bpf')">BPF</button>
                         </div>
-                        
-                        <div id="filter-only-params" style="display: none; gap: 20px; flex: 2; align-items: center;">
-                            <div class="filter-types">
-                                <button id="btn-fil-hpf" class="btn fil-type-btn" onclick="setFilterType('hpf')">HPF</button>
-                                <button id="btn-fil-lpf" class="btn fil-type-btn active" onclick="setFilterType('lpf')">LPF</button>
-                                <button id="btn-fil-bpf" class="btn fil-type-btn" onclick="setFilterType('bpf')">BPF</button>
-                            </div>
-                            <div class="slider-group" style="flex: 1;">
-                                <label>Cutoff Freq</label>
-                                <input type="range" id="slider-filfreq" min="20" max="20000" step="1" value="1000" oninput="updateFilterParams()">
-                                <div class="slider-value" id="val-filfreq" style="width: 60px;">1000 Hz</div>
-                            </div>
-                        </div>
-
-                        <div class="slider-group mixer-panel">
-                            <label style="color:var(--primary-color);">🎛️ FX MIX</label>
-                            <input type="range" id="slider-fxmix" min="0" max="100" step="1" value="30" oninput="updateFxMix()">
-                            <div class="slider-value" id="val-fxmix">30 %</div>
+                        <div class="slider-group">
+                            <div class="slider-header"><label>Cutoff Freq</label><div class="slider-value" id="val-filfreq">1000 Hz</div></div>
+                            <input type="range" id="slider-filfreq" min="20" max="20000" step="1" value="1000" oninput="updateFilterParams()">
                         </div>
                     </div>
-                </div>
 
-                <div id="fx-quiz-controls" class="fx-quiz-grid" style="display:none;">
-                    <button class="btn" onclick="handleFxClick('room')">ROOM</button>
-                    <button class="btn" onclick="handleFxClick('chamber')">CHAMBER</button>
-                    <button class="btn" onclick="handleFxClick('plate')">PLATE</button>
-                    <button class="btn" onclick="handleFxClick('hall')">HALL</button>
-                    <button class="btn" onclick="handleFxClick('tremolo')">TREMOLO</button>
-                    <button class="btn" onclick="handleFxClick('distortion')">DISTORTION</button>
-                    <button class="btn" onclick="handleFxClick('hpf')">HPF</button>
-                    <button class="btn" onclick="handleFxClick('lpf')">LPF</button>
-                    <button class="btn" onclick="handleFxClick('bpf')">BPF</button>
+                    <div class="slider-group mixer-panel">
+                        <div class="slider-header"><label style="color:var(--primary-color);">🎛️ FX MIX</label><div class="slider-value" id="val-fxmix">30 %</div></div>
+                        <input type="range" id="slider-fxmix" min="0" max="100" step="1" value="30" oninput="updateFxMix()">
+                    </div>
                 </div>
             </div>
+
+            <div id="fx-quiz-controls" class="fx-quiz-grid" style="display:none;">
+                <button class="btn" onclick="handleFxClick('room')">ROOM</button>
+                <button class="btn" onclick="handleFxClick('chamber')">CHAMBER</button>
+                <button class="btn" onclick="handleFxClick('plate')">PLATE</button>
+                <button class="btn" onclick="handleFxClick('hall')">HALL</button>
+                <button class="btn" onclick="handleFxClick('tremolo')">TREMOLO</button>
+                <button class="btn" onclick="handleFxClick('distortion')">DISTORTION</button>
+                <button class="btn" onclick="handleFxClick('hpf')">HPF</button>
+                <button class="btn" onclick="handleFxClick('lpf')">LPF</button>
+                <button class="btn" onclick="handleFxClick('bpf')">BPF</button>
+            </div>
+
+            <button class="return-btn" onclick="returnToMenu()">BACK TO MENU</button>
         </div>
     </div>
-</div>
 
-<div id="settings-menu">
-    <h2 style="margin-top: 0; color: #0f172a; font-size: 1.8em; margin-bottom: 30px; font-weight: 800; letter-spacing: -0.5px;">Settings</h2>
-    
-    <!-- 사용자가 직접 문항 수를 입력하고 적용하는 창 -->
-    <div class="settings-group">
-        <div class="settings-label">Custom Test Questions</div>
-        <div class="row" style="align-items: center;">
-            <input type="number" id="test-q-input" value="5" min="1" max="100" style="flex:1; padding: 12px; border-radius: 8px; border: 1px solid var(--border-color); font-size: 1.1em; text-align: center; font-weight: 800; color: #0f172a; outline:none; background: #f8fafc;">
-            <button class="btn primary" onclick="applyTestQs()" style="padding: 12px 20px; max-width: none;">APPLY</button>
-        </div>
-    </div>
-
-    <div class="settings-group">
-        <div class="settings-label">Audio Source</div>
-        <div class="row">
-            <button id="btn-src-pn" class="btn active" style="flex:1; padding:12px; max-width:none;" onclick="setSource('pn')">PN</button>
-            <button id="btn-src-file" class="btn" style="flex:1; padding:12px; max-width:none;" onclick="setSource('file')">FILE</button>
-            <button id="btn-src-track" class="btn" style="flex:1; padding:12px; max-width:none;" onclick="setSource('track')">TRACKS</button>
-            <input type="file" id="file-input" style="display:none;" accept="audio/*" onchange="handleFileUpload(event)">
-        </div>
-        <div id="track-input-group" style="display:none; margin-top:10px; width:100%;">
-            <div class="row" style="justify-content:center;">
-                <button class="btn" style="flex:1; padding:10px; background:#f1f5f9; border-color:transparent; max-width:none;" onclick="loadTrack('1')">1</button>
-                <button class="btn" style="flex:1; padding:10px; background:#f1f5f9; border-color:transparent; max-width:none;" onclick="loadTrack('2')">2</button>
-                <button class="btn" style="flex:1; padding:10px; background:#f1f5f9; border-color:transparent; max-width:none;" onclick="loadTrack('3')">3</button>
-                <button class="btn" style="flex:1; padding:10px; background:#f1f5f9; border-color:transparent; max-width:none;" onclick="loadTrack('4')">4</button>
-                <button class="btn" style="flex:1; padding:10px; background:#f1f5f9; border-color:transparent; max-width:none;" onclick="loadTrack('5')">5</button>
+    <!-- 설정 화면 -->
+    <div id="settings-menu">
+        <h2 style="margin-top: 0; color: #0f172a; font-size: 1.8em; margin-bottom: 30px; font-weight: 800; letter-spacing: -0.5px;">Settings</h2>
+        
+        <div class="settings-group">
+            <div class="settings-label">Custom Test Questions</div>
+            <div class="row" style="display: flex; gap: 10px; align-items: center;">
+                <input type="number" id="test-q-input" value="5" min="1" max="100" style="flex:1; padding: 15px; border-radius: 12px; border: 1px solid var(--border-color); font-size: 1.1em; text-align: center; font-weight: 800; color: #0f172a; outline:none; background: #f8fafc;">
+                <button class="btn primary" onclick="applyTestQs()" style="padding: 15px 25px; flex: none; max-width: none;">APPLY</button>
             </div>
         </div>
-        <div id="file-name" style="font-size:0.85em; color:var(--primary-color); margin-top:15px; text-align:center; font-weight:700; background: #eff6ff; padding: 10px; border-radius: 8px;">Pink Noise</div>
-    </div>
-    
-    <div class="settings-group">
-        <div class="settings-label">Gain Amount (Difficulty)</div>
-        <div class="row">
-            <button class="btn gain-btn" onclick="setGainAmount(6, this)" style="flex:1; max-width:none;">6 dB</button>
-            <button class="btn gain-btn active" onclick="setGainAmount(12, this)" style="flex:1; max-width:none;">12 dB</button>
+
+        <div class="settings-group">
+            <div class="settings-label">Audio Source</div>
+            <div class="row">
+                <button id="btn-src-pn" class="btn active" style="flex:1; padding:12px; max-width:none;" onclick="setSource('pn')">PN</button>
+                <button id="btn-src-file" class="btn" style="flex:1; padding:12px; max-width:none;" onclick="setSource('file')">FILE</button>
+                <button id="btn-src-track" class="btn" style="flex:1; padding:12px; max-width:none;" onclick="setSource('track')">TRACKS</button>
+                <input type="file" id="file-input" style="display:none;" accept="audio/*" onchange="handleFileUpload(event)">
+            </div>
+            <div id="track-input-group" style="display:none; margin-top:10px; width:100%;">
+                <div class="row" style="justify-content:center;">
+                    <button class="btn" style="flex:1; padding:10px; background:#f1f5f9; border-color:transparent; max-width:none;" onclick="loadTrack('1')">1</button>
+                    <button class="btn" style="flex:1; padding:10px; background:#f1f5f9; border-color:transparent; max-width:none;" onclick="loadTrack('2')">2</button>
+                    <button class="btn" style="flex:1; padding:10px; background:#f1f5f9; border-color:transparent; max-width:none;" onclick="loadTrack('3')">3</button>
+                    <button class="btn" style="flex:1; padding:10px; background:#f1f5f9; border-color:transparent; max-width:none;" onclick="loadTrack('4')">4</button>
+                    <button class="btn" style="flex:1; padding:10px; background:#f1f5f9; border-color:transparent; max-width:none;" onclick="loadTrack('5')">5</button>
+                </div>
+            </div>
+            <div id="file-name" style="font-size:0.85em; color:var(--primary-color); margin-top:15px; text-align:center; font-weight:700; background: #eff6ff; padding: 10px; border-radius: 8px;">Pink Noise</div>
         </div>
-    </div>
-    
-    <div class="settings-group">
-        <div class="settings-label">EQ Mode</div>
-        <div class="row">
-            <button class="btn eq-btn active" onclick="setEqMode('boost', this)" style="flex:1; max-width:none;">BOOST</button>
-            <button class="btn eq-btn" onclick="setEqMode('cut', this)" style="flex:1; max-width:none;">CUT</button>
-            <button class="btn eq-btn" onclick="setEqMode('mix', this)" style="flex:1; max-width:none;">MIX</button>
+        
+        <div class="settings-group">
+            <div class="settings-label">Gain Amount (Difficulty)</div>
+            <div class="row">
+                <button class="btn gain-btn" onclick="setGainAmount(6, this)" style="flex:1; max-width:none;">6 dB</button>
+                <button class="btn gain-btn active" onclick="setGainAmount(12, this)" style="flex:1; max-width:none;">12 dB</button>
+            </div>
         </div>
+        <div class="settings-group">
+            <div class="settings-label">EQ Mode</div>
+            <div class="row">
+                <button class="btn eq-btn active" onclick="setEqMode('boost', this)" style="flex:1; max-width:none;">BOOST</button>
+                <button class="btn eq-btn" onclick="setEqMode('cut', this)" style="flex:1; max-width:none;">CUT</button>
+                <button class="btn eq-btn" onclick="setEqMode('mix', this)" style="flex:1; max-width:none;">MIX</button>
+            </div>
+        </div>
+        
+        <!-- 설정창 닫기 버튼에도 flex: none;을 주어 찌그러지지 않게 방지 -->
+        <button class="btn" onclick="toggleSettings()" style="margin-top: 20px; width:100%; background: #f1f5f9; color: #475569; border-color: transparent; max-width:none; flex: none;">Close Settings</button>
     </div>
-    
-    <button class="btn" onclick="toggleSettings()" style="margin-top: 20px; width:100%; background: #f1f5f9; color: #475569; border-color: transparent; max-width:none;">Close Settings</button>
 </div>
 
 <script>
@@ -363,7 +316,6 @@
     let biquadFilter = null;
     let customBuffer = null;
     
-    // 문제 수 기본값
     let testQuestionCount = 5;
 
     let currentMode = 'practice'; 
@@ -414,13 +366,11 @@
     
     let rtaBars = new Array(50).fill(5);
 
-    // --- 문제 갯수 설정 적용 함수 ---
     function applyTestQs() {
         let val = parseInt(document.getElementById('test-q-input').value);
         if (val && val > 0) {
             testQuestionCount = val;
-            
-            // 만약 현재 테스트 화면이라면 바뀐 문항 수로 다시 초기화
+            document.getElementById('menu-test-btn-text').innerText = val;
             if (currentMode === 'test') {
                 init('test', currentQuizCategory, testQuestionCount);
             }
@@ -430,7 +380,6 @@
         }
     }
 
-    // --- 오디오 효과 노드 생성 ---
     function createReverb(ctx, type, preDelayMs, revTime) {
         const inputNode = ctx.createGain(); const outputNode = ctx.createGain();
         const preDelayNode = ctx.createDelay(); preDelayNode.delayTime.value = preDelayMs / 1000.0;
@@ -488,7 +437,6 @@
         return { input: inputNode, output: outputNode };
     }
 
-    // --- 기본 시스템 ---
     async function checkPassword() {
         if (document.getElementById('pw-input').value === "ainstudio") { 
             document.getElementById('auth-overlay').style.display = 'none';
@@ -497,9 +445,6 @@
                 masterGain = audioCtx.createGain(); updateGainSettings(); masterGain.connect(audioCtx.destination);
             }
             if (audioCtx.state === 'suspended') await audioCtx.resume();
-            
-            // 초기 렌더링 화면
-            init('practice', 'eq');
         } else alert("Incorrect password.");
     }
     
@@ -508,7 +453,7 @@
     function updateGainSettings() {
         if (currentEqMode === 'mix') { targetGain = currentGainAmount; } else { targetGain = currentEqMode === 'boost' ? currentGainAmount : -currentGainAmount; }
         if (masterGain) masterGain.gain.value = (currentEqMode === 'boost' || currentEqMode === 'mix') && currentGainAmount === 12 ? 0.15 : 0.3;
-        if (currentMode === 'practice' && currentListenFreq && biquadFilter && currentQuizCategory === 'eq') { biquadFilter.gain.setTargetAtTime(targetGain, audioCtx.currentTime, 0.02); }
+        if (currentMode === 'listen' && currentListenFreq && biquadFilter && currentQuizCategory === 'eq') { biquadFilter.gain.setTargetAtTime(targetGain, audioCtx.currentTime, 0.02); }
     }
     
     function setEqMode(mode, btn) { currentEqMode = mode; document.querySelectorAll('.eq-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); updateGainSettings(); }
@@ -537,27 +482,67 @@
         } catch (error) { alert(`'${trackNum}.mp3' 파일을 찾을 수 없습니다.`); document.getElementById('file-name').innerText = "Load Failed"; setSource('pn'); }
     }
 
-    // --- UI 초기화 (탐색기능은 모두 Practice로 통합) ---
+    function selectMainMenu(mode) {
+        userSelectedMain = mode;
+        document.getElementById('main-menu').style.display = 'none';
+        document.getElementById('sub-menu').style.display = 'flex';
+    }
+
+    function showMainMenu() {
+        document.getElementById('sub-menu').style.display = 'none';
+        document.getElementById('test-type-menu').style.display = 'none';
+        document.getElementById('main-menu').style.display = 'flex';
+    }
+
+    function selectSubject(subject) {
+        userSelectedSubject = subject;
+        if (userSelectedMain === 'practice') {
+            if(subject === 'fx') init('fx-explore', subject);
+            else init('listen', subject);
+        } else {
+            document.getElementById('sub-menu').style.display = 'none';
+            document.getElementById('test-type-menu').style.display = 'flex';
+        }
+    }
+
+    function showSubMenu() {
+        document.getElementById('test-type-menu').style.display = 'none';
+        document.getElementById('sub-menu').style.display = 'flex';
+    }
+
+    function selectTestType(type) {
+        if (type === 'explore') {
+            init('practice', userSelectedSubject);
+        } else if (type === 'test-custom') {
+            init('test', userSelectedSubject, testQuestionCount);
+        }
+    }
+
+    function returnToMenu() {
+        stopAudio();
+        document.getElementById('app-view').style.display = 'none';
+        if (userSelectedMain === 'practice') {
+            document.getElementById('sub-menu').style.display = 'flex';
+        } else {
+            document.getElementById('test-type-menu').style.display = 'flex';
+        }
+    }
+
     function init(mode, category = 'eq', testQs = testQuestionCount) { 
         stopAudio();
-        
+        document.getElementById('main-menu').style.display = 'none';
+        document.getElementById('sub-menu').style.display = 'none';
+        document.getElementById('test-type-menu').style.display = 'none';
+        document.getElementById('app-view').style.display = 'flex';
+
         currentMode = mode;
         currentQuizCategory = category;
         totalTestQuestions = testQs;
         isPracticeActive = false;
         
-        // 사이드바 액티브 갱신
-        document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
-        let navId = `nav-${mode}-${category}`;
-        if(document.getElementById(navId)) document.getElementById(navId).classList.add('active');
-
-        // 상단 타이틀
-        let catText = category === 'eq' ? 'EQ' : (category === 'sine' ? 'SINE WAVE' : 'FX & FILTER');
-        let titleMap = { 
-            'practice': `${catText} : Practice (Explore)`, 
-            'test': `${catText} : Exam (${testQs} Qs)` 
-        };
-        document.getElementById('header-title').innerText = titleMap[mode];
+        let catText = category === 'eq' ? 'EQ' : (category === 'sine' ? 'SINE WAVE' : 'FX');
+        let titleMap = { 'listen': `${catText} : Explore`, 'fx-explore': `${catText} : Explore`, 'practice': `${catText} : Quiz`, 'test': `${catText} : Test (${testQs} Qs)` };
+        document.getElementById('view-title').innerText = titleMap[mode];
         
         document.getElementById('answer-display').style.display = 'none'; document.getElementById('status').innerText = "Ready";
         
@@ -575,31 +560,28 @@
         freqControls.style.display = 'none'; fxControls.style.display = 'none'; fxQuizControls.style.display = 'none';
 
         if (mode === 'test') {
+            actions.style.gridTemplateColumns = '1fr 1fr';
             actions.innerHTML = `<button class="btn primary" onclick="runTest()">START EXAM</button> <button class="btn" onclick="listenAgain()">LISTEN AGAIN</button> <button class="btn" onclick="showAnswers()">ANSWERS</button> <button class="btn" onclick="stopAudio()" style="background:var(--danger-color); color:white; border-color:var(--danger-color);">STOP</button>`;
-            if(category === 'eq' || category === 'sine') freqControls.style.display = 'grid'; 
-            else fxQuizControls.style.display = 'grid';
+            if(category === 'eq' || category === 'sine') freqControls.style.display = 'grid'; else fxQuizControls.style.display = 'grid';
         } else {
-            // Practice 모드 (자유 탐색)
-            if(category === 'eq' || category === 'sine') {
+            if(mode === 'listen') {
+                actions.style.gridTemplateColumns = '1fr 1fr';
                 freqControls.style.display = 'grid'; 
-                actions.innerHTML = `
-                    <button class="btn primary" onclick="playListenAudio()">${category === 'sine' ? 'PLAY SINE' : 'PLAY (FLAT)'}</button> 
-                    <button class="btn" onclick="stopAudio()" style="background:var(--danger-color); color:white; border-color:var(--danger-color);">STOP</button>
-                `;
+                actions.innerHTML = `<button class="btn primary" onclick="playListenAudio()">${category === 'sine' ? 'PLAY SINE' : 'PLAY (FLAT)'}</button> <button class="btn" onclick="stopAudio()" style="background:var(--danger-color); color:white; border-color:var(--danger-color);">STOP</button>`;
                 currentListenFreq = null; 
-            } else if(category === 'fx') {
+            } else if(mode === 'fx-explore') {
+                actions.style.gridTemplateColumns = '1fr 1fr 1fr';
                 fxControls.style.display = 'flex'; isFxBypassed = false; 
-                actions.innerHTML = `
-                    <button class="btn primary" onclick="playListenAudio()">PLAY</button> 
-                    <button id="btn-fx-toggle" class="btn active" style="background-color:#8b5cf6; border-color:#8b5cf6;" onclick="toggleFxBypass()">FX: ON</button> 
-                    <button class="btn" onclick="stopAudio()" style="background:var(--danger-color); color:white; border-color:var(--danger-color);">STOP</button>
-                `;
+                actions.innerHTML = `<button class="btn primary" onclick="playListenAudio()">PLAY</button> <button id="btn-fx-toggle" class="btn active" style="background-color:#8b5cf6; border-color:#8b5cf6;" onclick="toggleFxBypass()">FX: ON</button> <button class="btn" onclick="stopAudio()" style="background:var(--danger-color); color:white; border-color:var(--danger-color);">STOP</button>`;
                 applyFxSetup(); 
+            } else if(mode === 'practice') {
+                actions.style.gridTemplateColumns = '1fr';
+                if(category === 'eq' || category === 'sine') freqControls.style.display = 'grid'; else fxQuizControls.style.display = 'grid';
+                actions.innerHTML = `<button class="btn primary" onclick="runPractice()">START QUIZ</button>`;
             }
         }
     }
 
-    // --- FX 로직 ---
     function toggleFxBypass() {
         isFxBypassed = !isFxBypassed; const btn = document.getElementById('btn-fx-toggle');
         if (isFxBypassed) { if(btn) { btn.innerText = "BYPASS"; btn.style.backgroundColor = "#94a3b8"; btn.style.borderColor = "#94a3b8"; } setEffectActive(false); } 
@@ -622,11 +604,10 @@
         else if (fxType === 'distortion') currentEffectNode = createDistortion(audioCtx);
         else if (['hpf', 'lpf', 'bpf'].includes(fxType)) {
             let f = filterFreq;
-            if (currentMode === 'test') { if(fxType === 'hpf') f = 1000; else if(fxType === 'lpf') f = 1000; else if(fxType === 'bpf') f = 1000; }
+            if (currentMode === 'practice' || currentMode === 'test') { if(fxType === 'hpf') f = 1000; else if(fxType === 'lpf') f = 1000; else if(fxType === 'bpf') f = 1000; }
             currentEffectNode = createFilter(audioCtx, fxType, f);
         }
-        
-        if (fxInputNode && wetGainNode) {
+        if (fxInputNode && wetGainNode && (currentMode === 'fx-explore' || currentMode === 'practice' || currentMode === 'test')) {
             fxInputNode.connect(currentEffectNode.input); currentEffectNode.output.connect(wetGainNode); 
         }
     }
@@ -643,7 +624,7 @@
     
     function updateFxMix() {
         document.getElementById('val-fxmix').innerText = document.getElementById('slider-fxmix').value + " %";
-        if (isPlaying && currentMode === 'practice' && !isFxBypassed) applyFixedMix();
+        if (isPlaying && currentMode === 'fx-explore' && !isFxBypassed) applyFixedMix();
     }
 
     function setEffectActive(isActive) {
@@ -652,7 +633,7 @@
         } else if (currentQuizCategory === 'fx') {
             if (!dryGainNode || !wetGainNode || !audioCtx) return;
             if (isActive) {
-                if (currentMode === 'test') {
+                if (currentMode === 'practice' || currentMode === 'test') {
                     let quizMix = 0.30;
                     if(['room', 'chamber', 'plate', 'hall'].includes(activeFxCategory)) quizMix = fxMixSettings['reverb'];
                     else if(['hpf', 'lpf', 'bpf'].includes(activeFxCategory)) quizMix = 1.0; 
@@ -671,9 +652,9 @@
 
     function selectFxCategory(category) {
         activeFxCategory = category; document.querySelectorAll('.fx-categories .btn').forEach(b => b.classList.remove('active')); document.getElementById(`btn-cat-${category}`).classList.add('active');
-        document.getElementById('reverb-only-params').style.display = (category === 'reverb') ? 'flex' : 'none'; document.getElementById('filter-only-params').style.display = (category === 'filter') ? 'flex' : 'none';
+        document.getElementById('reverb-only-params').style.display = (category === 'reverb') ? 'block' : 'none'; document.getElementById('filter-only-params').style.display = (category === 'filter') ? 'block' : 'none';
         let defaultMix = (category === 'filter') ? 100 : (fxMixSettings[category] ? fxMixSettings[category] * 100 : 30);
-        document.getElementById('slider-fxmix').value = defaultMix; updateFxMix(); applyFxSetup(); if (isPlaying && currentMode === 'practice' && !isFxBypassed) applyFixedMix();
+        document.getElementById('slider-fxmix').value = defaultMix; updateFxMix(); applyFxSetup(); if (isPlaying && currentMode === 'fx-explore' && !isFxBypassed) applyFixedMix();
     }
     
     function setReverbType(type) { activeReverbType = type; document.querySelectorAll('.rev-type-btn').forEach(b => b.classList.remove('active')); document.getElementById(`btn-rev-${type}`).classList.add('active'); applyFxSetup(); }
@@ -688,37 +669,35 @@
 
     function applyFxSetup() {
         let type = activeFxCategory === 'reverb' ? activeReverbType : (activeFxCategory === 'filter' ? activeFilterType : activeFxCategory); 
-        setupFxNode(type); if(currentMode === 'practice') { if(isPlaying) updateFxStatusText(); else document.getElementById('status').innerText = `READY: ${type.toUpperCase()}`; }
+        setupFxNode(type); if(currentMode === 'fx-explore') { if(isPlaying) updateFxStatusText(); else document.getElementById('status').innerText = `READY: ${type.toUpperCase()}`; }
     }
 
-    // --- 퀴즈/테스트 정답 처리 로직 ---
     function handleQuizAnswer(answer) {
-        if (currentMode !== 'test' || !isTestCompleted) {
-            // 시험 중 정답을 선택한 경우
-            if (currentMode === 'test') {
-                stopAudio(); 
-                const display = document.getElementById('answer-display');
-                let targetText = currentQuizCategory === 'eq' ? `${currentPracticeAnswer} Hz (${currentQuestionGain > 0 ? '+' : ''}${currentQuestionGain}dB)` : (currentQuizCategory === 'sine' ? `${currentPracticeAnswer} Hz` : currentPracticeAnswer.toUpperCase());
-                let userText = (currentQuizCategory === 'eq' || currentQuizCategory === 'sine') ? `${answer} Hz` : answer.toUpperCase();
+        if (currentMode !== 'practice' && currentMode !== 'test') return;
+        if (currentMode === 'practice' && !isPracticeActive) { alert("Please press 'START QUIZ' first."); return; }
+        if (currentMode === 'test' && isTestCompleted) return;
 
-                if (answer === currentPracticeAnswer) { display.innerHTML = `<span style="color:var(--success-color); font-size:1.4em;">Correct!</span><br><span style="font-size:1.8em;">${targetText}</span>`; } 
-                else { display.innerHTML = `<span style="color:var(--danger-color); font-size:1.4em;">Incorrect!</span><br><span style="font-size:1.2em;">Answer: <span style="color:#ffeb3b; font-weight:900;">${targetText}</span></span><br><span style="font-size:0.8em; color:#94a3b8;">(Your choice: ${userText})</span>`; }
-                
-                display.style.display = 'flex'; document.getElementById('status').innerText = "Question Completed.";
-                
-                // 다시 시작 버튼 노출
-                const actions = document.getElementById('action-btns');
-                actions.innerHTML = `<button class="btn primary" onclick="runTest()">START NEW EXAM</button> <button class="btn" onclick="listenAgain()">LISTEN AGAIN</button> <button class="btn" onclick="showAnswers()">ALL ANSWERS</button>`;
-                
-                // 단일 문항이었으니 테스트 종료 처리
-                isTestCompleted = true;
-            }
-            return; 
+        stopAudio(); isPracticeActive = false; const display = document.getElementById('answer-display');
+        let targetText = currentQuizCategory === 'eq' ? `${currentPracticeAnswer} Hz (${currentQuestionGain > 0 ? '+' : ''}${currentQuestionGain}dB)` : (currentQuizCategory === 'sine' ? `${currentPracticeAnswer} Hz` : currentPracticeAnswer.toUpperCase());
+        let userText = (currentQuizCategory === 'eq' || currentQuizCategory === 'sine') ? `${answer} Hz` : answer.toUpperCase();
+
+        if (answer === currentPracticeAnswer) { display.innerHTML = `<span style="color:var(--success-color); font-size:1.4em;">Correct!</span><br><span style="font-size:1.8em;">${targetText}</span>`; } 
+        else { display.innerHTML = `<span style="color:var(--danger-color); font-size:1.4em;">Incorrect!</span><br><span style="font-size:1.2em;">Answer: <span style="color:#ffeb3b; font-weight:900;">${targetText}</span></span><br><span style="font-size:0.8em; color:#94a3b8;">(Your choice: ${userText})</span>`; }
+        
+        display.style.display = 'flex'; 
+
+        if (currentMode === 'test') {
+            document.getElementById('status').innerText = "Question Completed.";
+            isTestCompleted = true; // 개별 테스트 문항 종료 처리
+            document.getElementById('action-btns').innerHTML = `<button class="btn primary" onclick="runTest()">START NEW EXAM</button> <button class="btn" onclick="listenAgain()">LISTEN AGAIN</button> <button class="btn" onclick="showAnswers()">ALL ANSWERS</button>`;
+        } else {
+            document.getElementById('status').innerText = "Quiz Completed.";
+            document.getElementById('action-btns').innerHTML = `<button class="btn primary" onclick="runPractice()">NEXT QUESTION</button> <button class="btn" onclick="listenPracticeAgain()">LISTEN AGAIN</button>`;
         }
     }
 
     function handleFreqClick(freq) {
-        if (currentMode === 'practice') {
+        if (currentMode === 'listen') {
             document.querySelectorAll('.freq-item').forEach(btn => btn.classList.remove('active'));
             if (currentListenFreq === freq) { 
                 currentListenFreq = null; 
@@ -735,10 +714,10 @@
                     document.getElementById('status').innerText = isPlaying ? `PLAYING: ${freq}Hz (${targetGain > 0 ? '+' : ''}${targetGain}dB)` : `READY (${freq}Hz)`; 
                 }
             }
-        } else if (currentMode === 'test') handleQuizAnswer(freq);
+        } else if (currentMode === 'practice' || currentMode === 'test') handleQuizAnswer(freq);
     }
     
-    function handleFxClick(fx) { if (currentMode === 'test') handleQuizAnswer(fx); }
+    function handleFxClick(fx) { if (currentMode === 'practice' || currentMode === 'test') handleQuizAnswer(fx); }
 
     function createOrUpdateFilter(freq, gain) {
         if (!biquadFilter) { biquadFilter = audioCtx.createBiquadFilter(); biquadFilter.type = "peaking"; biquadFilter.Q.value = 1.4; }
@@ -747,12 +726,49 @@
 
     async function playListenAudio() {
         if (isPlaying) return; if (audioCtx && audioCtx.state === 'suspended') await audioCtx.resume();
-        if (currentMode === 'practice') {
+        if (currentMode === 'listen') {
             if (currentQuizCategory === 'sine') { targetSineFreq = currentListenFreq || 1000; startAudioSource(); document.getElementById('status').innerText = currentListenFreq ? `PLAYING SINE: ${currentListenFreq}Hz` : "PLAYING SINE: 1000Hz"; } 
-            else if (currentQuizCategory === 'eq') { if (!biquadFilter) createOrUpdateFilter(1000, 0); startAudioSource(); document.getElementById('status').innerText = currentListenFreq ? `PLAYING: ${currentListenFreq}Hz (${targetGain > 0 ? '+' : ''}${targetGain}dB)` : "PLAYING: FLAT (Original)"; }
-            else { startAudioSource(); updateFxStatusText(); }
-        }
+            else { if (!biquadFilter) createOrUpdateFilter(1000, 0); startAudioSource(); document.getElementById('status').innerText = currentListenFreq ? `PLAYING: ${currentListenFreq}Hz (${targetGain > 0 ? '+' : ''}${targetGain}dB)` : "PLAYING: FLAT (Original)"; }
+        } else if (currentMode === 'fx-explore') { startAudioSource(); updateFxStatusText(); }
     }
+
+    function cancelPractice() {
+        stopAudio(); isPracticeActive = false; document.getElementById('answer-display').style.display = 'none';
+        document.getElementById('status').innerText = "Canceled. Ready to start.";
+        document.getElementById('action-btns').innerHTML = `<button class="btn primary" onclick="runPractice()">START QUIZ</button>`;
+    }
+
+    async function runPractice() {
+        if (audioCtx && audioCtx.state === 'suspended') await audioCtx.resume();
+        let pool = currentQuizCategory === 'eq' ? bands : (currentQuizCategory === 'sine' ? bands31 : fxPool); 
+        let newAnswer; do { newAnswer = pool[Math.floor(Math.random() * pool.length)]; } while (newAnswer === currentPracticeAnswer); currentPracticeAnswer = newAnswer;
+        if (currentQuizCategory === 'eq') { if (currentEqMode === 'mix') { currentQuestionGain = Math.random() > 0.5 ? currentGainAmount : -currentGainAmount; } else { currentQuestionGain = currentEqMode === 'boost' ? currentGainAmount : -currentGainAmount; } }
+        if (customBuffer && currentQuizCategory !== 'sine') { const maxStart = Math.max(0, customBuffer.duration - 32); fileStartTime = Math.random() * maxStart; }
+        isPracticeActive = true; document.getElementById('answer-display').style.display = 'none';
+        document.getElementById('action-btns').innerHTML = `<button class="btn" style="background:var(--danger-color); color:white; border-color:var(--danger-color);" onclick="cancelPractice()">STOP (Cancel)</button>`;
+        playPracticeSequence(currentPracticeAnswer);
+    }
+    
+    async function listenPracticeAgain() {
+        if (audioCtx && audioCtx.state === 'suspended') await audioCtx.resume();
+        isPracticeActive = true; document.getElementById('answer-display').style.display = 'none';
+        document.getElementById('action-btns').innerHTML = `<button class="btn" style="background:var(--danger-color); color:white; border-color:var(--danger-color);" onclick="cancelPractice()">STOP (Cancel)</button>`;
+        playPracticeSequence(currentPracticeAnswer);
+    }
+
+    function playPracticeSequence(answer) {
+        stopAudio(); document.getElementById('answer-display').style.display = 'none'; 
+        if (currentQuizCategory === 'sine') { targetSineFreq = answer; startAudioSource(); document.getElementById('status').innerText = "Listen carefully (Sine Wave)..."; return; }
+        
+        if (currentQuizCategory === 'eq') { biquadFilter = audioCtx.createBiquadFilter(); biquadFilter.type = "peaking"; biquadFilter.frequency.value = answer; biquadFilter.Q.value = 1.4; biquadFilter.gain.value = 0; targetGain = currentQuestionGain; } 
+        else { activeFxCategory = answer; setupFxNode(answer); }
+        startAudioSource(); document.getElementById('status').innerText = "Listen carefully...";
+        
+        function step1() { setEffectActive(false); sequenceTimer = setTimeout(step2, 5000); } function step2() { setEffectActive(true); sequenceTimer = setTimeout(step3, 5000); } function step3() { setEffectActive(false); sequenceTimer = setTimeout(step4, 5000); } function step4() { setEffectActive(true); sequenceTimer = setTimeout(step5, 5000); } function step5() { setEffectActive(false); sequenceTimer = setTimeout(finishPracticeSeq, 2000); } 
+        step1(); 
+    }
+    
+    function finishPracticeSeq() { stopAudio(); document.getElementById('status').innerText = "Select your answer!"; document.getElementById('action-btns').innerHTML = `<button class="btn primary" onclick="listenPracticeAgain()">LISTEN AGAIN</button> <button class="btn" onclick="cancelPractice()" style="background:var(--danger-color); color:white; border-color:var(--danger-color);">STOP</button>`; }
 
     async function runTest() {
         if (audioCtx && audioCtx.state === 'suspended') await audioCtx.resume();
@@ -764,9 +780,7 @@
         if (customBuffer && currentQuizCategory !== 'sine') { const maxStart = Math.max(0, customBuffer.duration - (totalTestQuestions * 15)); fileStartTime = Math.random() * maxStart; }
         isTestCompleted = false; currentTestQuestion = 0; startTestSequence(0);
         
-        // 버튼 갱신
-        const actions = document.getElementById('action-btns');
-        actions.innerHTML = `<button class="btn primary" onclick="runTest()">RESTART EXAM</button> <button class="btn" onclick="listenAgain()">LISTEN AGAIN</button> <button class="btn" onclick="showAnswers()">ANSWERS</button> <button class="btn" onclick="stopAudio()" style="background:var(--danger-color); color:white; border-color:var(--danger-color);">STOP</button>`;
+        document.getElementById('action-btns').innerHTML = `<button class="btn primary" onclick="runTest()">RESTART EXAM</button> <button class="btn" onclick="listenAgain()">LISTEN AGAIN</button> <button class="btn" onclick="showAnswers()">ANSWERS</button> <button class="btn" onclick="stopAudio()" style="background:var(--danger-color); color:white; border-color:var(--danger-color);">STOP</button>`;
     }
 
     async function listenAgain() { if (audioCtx && audioCtx.state === 'suspended') await audioCtx.resume(); if (currentMode === 'test') { if (testAnswers.length > 0) { let target = currentTestQuestion - 1; if (target < 0) target = 0; startTestSequence(target); } else alert("Press START EXAM first."); } }
@@ -778,14 +792,12 @@
                 let text = currentQuizCategory === 'eq' ? `${ans} Hz (${testGains[i] > 0 ? '+' : ''}${testGains[i]}dB)` : (currentQuizCategory === 'sine' ? `${ans} Hz` : ans.toUpperCase()); 
                 return `<div>Q${i+1}: <span style="color:#ffeb3b; font-weight:900;">${text}</span></div>`; 
             }).join('');
-            display.innerHTML = `<div style="font-size: 1.1em; color: #94a3b8; margin-bottom: 20px; letter-spacing: 1px;">[ EXAM ANSWERS ]</div> <div style="font-size: 1.2em; line-height: 1.6; display: grid; grid-template-columns: 1fr 1fr; gap: 10px 40px; text-align: left;"> ${answersHtml} </div>`; display.style.display = 'flex'; 
+            display.innerHTML = `<div style="font-size: 1em; color: #94a3b8; margin-bottom: 15px; letter-spacing: 1px;">[ ANSWERS ]</div> <div style="font-size: 1.1em; line-height: 1.5; display: grid; grid-template-columns: 1fr 1fr; gap: 8px 30px; text-align: left;"> ${answersHtml} </div>`; display.style.display = 'flex'; 
         }
     }
 
     function startTestSequence(questionIndex) {
         stopAudio(); document.getElementById('answer-display').style.display = 'none'; isTestCompleted = false; currentTestQuestion = questionIndex;
-        
-        // 현재 문제 정답 세팅 (개별 클릭 시 정답 확인용)
         currentPracticeAnswer = testAnswers[questionIndex];
         currentQuestionGain = testGains[questionIndex] || 12;
 
@@ -795,18 +807,14 @@
 
     function nextSineTestStep() {
         if (currentTestQuestion >= totalTestQuestions) { document.getElementById('status').innerText = "EXAM COMPLETED! Check ANSWERS."; isTestCompleted = true; return; }
-        targetSineFreq = testAnswers[currentTestQuestion]; 
-        currentPracticeAnswer = targetSineFreq;
+        targetSineFreq = testAnswers[currentTestQuestion]; currentPracticeAnswer = targetSineFreq;
         startAudioSource(); document.getElementById('status').innerText = `[Q ${currentTestQuestion + 1}/${totalTestQuestions}] Playing Sine Wave (5s)`;
         sequenceTimer = setTimeout(() => { stopAudio(); document.getElementById('status').innerText = `[Q ${currentTestQuestion + 1}/${totalTestQuestions}] Waiting... (5s)`; sequenceTimer = setTimeout(() => { currentTestQuestion++; nextSineTestStep(); }, 5000); }, 5000); 
     }
 
     function nextTestStep() {
         if (currentTestQuestion >= totalTestQuestions) { setEffectActive(false); document.getElementById('status').innerText = "All completed! Original source (3s)"; sequenceTimer = setTimeout(() => { stopAudio(); isTestCompleted = true; document.getElementById('status').innerText = "EXAM COMPLETED! Check ANSWERS."; }, 3000); return; }
-        
-        currentPracticeAnswer = testAnswers[currentTestQuestion];
-        currentQuestionGain = testGains[currentTestQuestion];
-
+        currentPracticeAnswer = testAnswers[currentTestQuestion]; currentQuestionGain = testGains[currentTestQuestion];
         setEffectActive(false); document.getElementById('status').innerText = `[Q ${currentTestQuestion + 1}/${totalTestQuestions}] Original (5s)`;
         sequenceTimer = setTimeout(() => {
             if (currentQuizCategory === 'eq') { biquadFilter.frequency.value = testAnswers[currentTestQuestion]; targetGain = testGains[currentTestQuestion]; } 
