@@ -173,32 +173,33 @@
 </div>
 
 <div id="app-container">
+    <!-- 극도로 단순화된 사이드바 메뉴 -->
     <div class="sidebar">
         <div class="sidebar-header">
             <h1>Classroom Trainer</h1>
             <p>WEB EDITION</p>
         </div>
         <div class="nav-menu">
-            <div class="nav-category">Explore (Listen)</div>
-            <button class="nav-btn" id="nav-listen-sine" onclick="init('listen', 'sine')">〰️ Sine Wave (31-Band)</button>
-            <button class="nav-btn active" id="nav-listen-eq" onclick="init('listen', 'eq')">🎚️ EQ (10-Band)</button>
-            <button class="nav-btn" id="nav-listen-fx" onclick="init('fx-explore', 'fx')">🎛️ FX & Filter</button>
+            <div class="nav-category">EXPLORE</div>
+            <button class="nav-btn" id="nav-listen-sine" onclick="init('listen', 'sine')">Sine Wave</button>
+            <button class="nav-btn active" id="nav-listen-eq" onclick="init('listen', 'eq')">EQ</button>
+            <button class="nav-btn" id="nav-listen-fx" onclick="init('fx-explore', 'fx')">FX</button>
             
-            <div class="nav-category">Practice (Quiz)</div>
-            <button class="nav-btn" id="nav-practice-sine" onclick="init('practice', 'sine')">〰️ Sine Practice</button>
-            <button class="nav-btn" id="nav-practice-eq" onclick="init('practice', 'eq')">🎚️ EQ Practice</button>
-            <button class="nav-btn" id="nav-practice-fx" onclick="init('practice', 'fx')">🎛️ FX Practice</button>
+            <div class="nav-category">PRACTICE</div>
+            <button class="nav-btn" id="nav-practice-sine" onclick="init('practice', 'sine')">Sine Wave</button>
+            <button class="nav-btn" id="nav-practice-eq" onclick="init('practice', 'eq')">EQ</button>
+            <button class="nav-btn" id="nav-practice-fx" onclick="init('practice', 'fx')">FX</button>
             
-            <div class="nav-category">Assessment (Test)</div>
-            <button class="nav-btn" id="nav-test-sine" onclick="init('test', 'sine', testQuestionCount)">〰️ Sine Test</button>
-            <button class="nav-btn" id="nav-test-eq" onclick="init('test', 'eq', testQuestionCount)">🎚️ EQ Test</button>
-            <button class="nav-btn" id="nav-test-fx" onclick="init('test', 'fx', testQuestionCount)">🎛️ FX Test</button>
+            <div class="nav-category">TEST</div>
+            <button class="nav-btn" id="nav-test-sine" onclick="init('test', 'sine', testQuestionCount)">Sine Wave</button>
+            <button class="nav-btn" id="nav-test-eq" onclick="init('test', 'eq', testQuestionCount)">EQ</button>
+            <button class="nav-btn" id="nav-test-fx" onclick="init('test', 'fx', testQuestionCount)">FX</button>
         </div>
     </div>
 
     <div class="main-content">
         <div class="top-bar">
-            <h2 id="header-title">EQ Listen (Explore)</h2>
+            <h2 id="header-title">EQ : Explore</h2>
             <div id="settings-trigger" onclick="toggleSettings()">SETTINGS</div>
         </div>
 
@@ -448,7 +449,8 @@
 
     // --- 기본 시스템 ---
     async function checkPassword() {
-        if (document.getElementById('pw-input').value === "13579") { 
+        // ★ 요청하신 비밀번호로 변경 완료 ★
+        if (document.getElementById('pw-input').value === "ainstudio") { 
             document.getElementById('auth-overlay').style.display = 'none';
             if (!audioCtx) {
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -523,7 +525,8 @@
         else if (mode === 'test') navId = `nav-test-${category}`;
         if(document.getElementById(navId)) document.getElementById(navId).classList.add('active');
 
-        let catText = category === 'eq' ? 'EQ (SOURCE)' : (category === 'sine' ? 'SINE WAVE' : 'FX & FILTER');
+        // ★ 단순화된 메뉴 텍스트 적용 (모드별 메인 타이틀)
+        let catText = category === 'eq' ? 'EQ' : (category === 'sine' ? 'SINE WAVE' : 'FX');
         let titleMap = { 'listen': `${catText} : Explore`, 'fx-explore': `${catText} : Explore`, 'practice': `${catText} : Quiz`, 'test': `${catText} : Test (${testQs} Qs)` };
         document.getElementById('header-title').innerText = titleMap[mode];
         
