@@ -6,7 +6,7 @@
     <title>Ear Training - Classroom Pro</title>
     <style>
         :root {
-            --bg-color: #cbd5e1; /* 화면 밖 배경색 */
+            --bg-color: #cbd5e1; 
             --surface-color: #ffffff;
             --primary-color: #4A90E2; 
             --primary-hover: #357abd;
@@ -26,10 +26,9 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            overflow: hidden; /* ★ 전체 화면 스크롤 완벽 차단 */
+            overflow: hidden; 
         }
         
-        /* 모바일이 아닌, 프로젝터/모니터 16:9 가로형 데스크탑 레이아웃으로 변경 */
         #app-container { 
             width: 100%; 
             max-width: 1400px; 
@@ -39,29 +38,29 @@
             flex-direction: column; 
             position: relative; 
             box-shadow: 0 0 50px rgba(0,0,0,0.15);
-            overflow: hidden; /* 내부 스크롤도 차단 */
+            overflow: hidden; 
         }
 
-        .top-bar { display: flex; justify-content: space-between; align-items: center; padding: 25px 40px; border-bottom: 1px solid var(--border-color); background: var(--surface-color); z-index: 10; flex: none;}
+        /* 여백(padding)을 대폭 줄여 공간 확보 */
+        .top-bar { display: flex; justify-content: space-between; align-items: center; padding: 15px 40px; border-bottom: 1px solid var(--border-color); background: var(--surface-color); z-index: 10; flex: none;}
         .top-bar-titles { display: flex; flex-direction: column; }
-        .top-bar h2 { margin: 0; font-size: 1.6em; font-weight: 800; color: #0f172a; letter-spacing: -0.5px; }
-        .top-bar p { margin: 4px 0 0 0; color: var(--primary-color); font-size: 0.85em; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;}
+        .top-bar h2 { margin: 0; font-size: 1.4em; font-weight: 800; color: #0f172a; letter-spacing: -0.5px; }
+        .top-bar p { margin: 2px 0 0 0; color: var(--primary-color); font-size: 0.8em; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;}
         
-        #settings-trigger { font-size: 0.9em; font-weight: 800; letter-spacing: 1px; cursor: pointer; color: #94a3b8; transition: all 0.3s ease; padding: 10px 18px; border: 2px solid #e2e8f0; border-radius: 8px; text-transform: uppercase; }
+        #settings-trigger { font-size: 0.85em; font-weight: 800; letter-spacing: 1px; cursor: pointer; color: #94a3b8; transition: all 0.3s ease; padding: 8px 15px; border: 2px solid #e2e8f0; border-radius: 8px; text-transform: uppercase; }
         #settings-trigger:hover { color: var(--primary-color); border-color: var(--primary-color); background: #eff6ff; }
 
-        .content-area { padding: 30px 40px; display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+        .content-area { padding: 15px 40px; display: flex; flex-direction: column; flex: 1; overflow: hidden; }
         
-        /* 단순하고 큼직한 메가 버튼 */
         .mega-btn {
             width: 100%;
             max-width: 400px;
-            padding: 30px;
+            padding: 25px;
             border-radius: 16px;
             border: 2px solid var(--border-color);
             background: #ffffff;
             color: #1e293b;
-            font-size: 1.3em;
+            font-size: 1.25em;
             font-weight: 800;
             cursor: pointer;
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -77,55 +76,54 @@
         }
 
         #app-view { display: none; flex-direction: column; flex: 1; overflow: hidden;}
-        #view-title { font-size: 1.4em; font-weight: 800; text-align: center; margin-bottom: 25px; color: var(--primary-color); text-transform: uppercase; letter-spacing: 1px; flex: none;}
+        #view-title { font-size: 1.2em; font-weight: 800; text-align: center; margin-bottom: 10px; color: var(--primary-color); text-transform: uppercase; letter-spacing: 1px; flex: none;}
 
-        /* RTA 창이 남는 세로 공간을 꽉 채우도록 자동 리사이징 */
-        #display-area { flex: 1; min-height: 200px; position: relative; width: 100%; background: #1e293b; border-radius: 16px; overflow: hidden; margin-bottom: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        #display-area { flex: 1; min-height: 120px; position: relative; width: 100%; background: #1e293b; border-radius: 16px; overflow: hidden; margin-bottom: 15px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
         #rta-canvas { width: 100%; height: 100%; display: block; }
         
         #answer-display { position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(15, 23, 42, 0.95); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 10; text-align: center; padding: 20px; box-sizing: border-box; color: white; cursor: default; }
 
-        #status { flex: none; font-size: 1.1em; font-weight: 700; text-align: center; margin-bottom: 20px; min-height: 24px; color: var(--text-muted); background: #f8fafc; padding: 16px; border-radius: 12px; border: 1px solid var(--border-color); }
+        #status { flex: none; font-size: 1em; font-weight: 700; text-align: center; margin-bottom: 15px; color: var(--text-muted); background: #f8fafc; padding: 12px; border-radius: 12px; border: 1px solid var(--border-color); }
 
-        /* 하단 조작 버튼들을 가운데 모아서 배치 */
-        .action-btns { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 15px; width: 100%; margin-bottom: 25px; flex: none;}
-        .action-btns .btn { flex: 0 1 auto; min-width: 200px; max-width: 280px; font-size: 1.1em; }
+        .action-btns { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 10px; width: 100%; margin-bottom: 15px; flex: none;}
+        .action-btns .btn { flex: 0 1 auto; min-width: 180px; max-width: 250px; font-size: 1.05em; }
 
-        .btn { padding: 16px 20px; border-radius: 12px; border: 2px solid var(--border-color); background: #ffffff; color: #334155; font-size: 1em; font-weight: 800; cursor: pointer; transition: all 0.2s ease; text-align: center;}
+        .btn { padding: 12px 20px; border-radius: 12px; border: 2px solid var(--border-color); background: #ffffff; color: #334155; font-size: 0.95em; font-weight: 800; cursor: pointer; transition: all 0.2s ease; text-align: center;}
         .btn:hover { background: #f8fafc; border-color: var(--primary-color);}
         .btn:active { transform: scale(0.97); }
         .btn.active, .btn.primary { background: var(--primary-color); color: white; border-color: var(--primary-color); box-shadow: 0 4px 12px rgba(74, 144, 226, 0.25);}
         .btn.primary:hover { background: var(--primary-hover); }
 
-        .freq-grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 10px; width: 100%; flex: none;}
-        .freq-grid .btn { padding: 18px 5px; font-size: 0.95em; border-width: 1px;}
+        /* 주파수 버튼들의 높이를 컴팩트하게 조절 */
+        .freq-grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 8px; width: 100%; flex: none;}
+        .freq-grid .btn { padding: 14px 5px; font-size: 0.9em; border-width: 1px;}
         
-        .freq31-grid { grid-template-columns: repeat(11, 1fr); gap: 8px; }
-        .freq31-grid .btn { padding: 15px 2px; font-size: 0.85em; border-radius: 8px; border-width: 1px;}
+        .freq31-grid { grid-template-columns: repeat(11, 1fr); gap: 6px; }
+        .freq31-grid .btn { padding: 10px 1px; font-size: 0.8em; border-radius: 8px; border-width: 1px;}
 
-        .fx-quiz-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; width: 100%; flex: none;}
-        .fx-quiz-grid .btn { padding: 18px 5px; font-size: 0.9em; border-width: 1px;}
+        .fx-quiz-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; width: 100%; flex: none;}
+        .fx-quiz-grid .btn { padding: 14px 5px; font-size: 0.9em; border-width: 1px;}
 
-        .fx-layout { display: flex; flex-direction: column; gap: 15px; flex: none;}
-        .fx-categories { display: flex; gap: 10px; }
-        .fx-categories .btn { flex: 1; padding: 14px 2px; font-size: 0.9em; border-radius: 10px; border-width: 1px;}
-        .fx-sub-panel { background: #f8fafc; padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); display: none; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap;}
+        .fx-layout { display: flex; flex-direction: column; gap: 10px; flex: none;}
+        .fx-categories { display: flex; gap: 8px; }
+        .fx-categories .btn { flex: 1; padding: 12px 2px; font-size: 0.85em; border-radius: 10px; border-width: 1px;}
+        .fx-sub-panel { background: #f8fafc; padding: 15px; border-radius: 12px; border: 1px solid var(--border-color); display: none; align-items: center; justify-content: space-between; gap: 15px; flex-wrap: wrap;}
         
-        .reverb-types, .filter-types { display: flex; gap: 8px; flex: 1; }
-        .reverb-types .btn, .filter-types .btn { flex: 1; padding: 12px 5px; font-size: 0.85em; border-width: 1px; }
+        .reverb-types, .filter-types { display: flex; gap: 6px; flex: 1; }
+        .reverb-types .btn, .filter-types .btn { flex: 1; padding: 10px 5px; font-size: 0.8em; border-width: 1px; }
         
-        .slider-group { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 200px;}
-        .slider-group label { font-weight: 800; color: #475569; font-size: 0.9em; white-space: nowrap;}
+        .slider-group { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 200px;}
+        .slider-group label { font-weight: 800; color: #475569; font-size: 0.85em; white-space: nowrap;}
         .slider-group input[type="range"] { flex: 1; cursor: pointer; accent-color: var(--primary-color);}
-        .slider-value { font-weight: 800; color: var(--primary-color); font-size: 0.9em; width: 50px; text-align: right;}
+        .slider-value { font-weight: 800; color: var(--primary-color); font-size: 0.85em; width: 50px; text-align: right;}
 
-        .mixer-panel { background: #eff6ff; border: 1px solid #bfdbfe; padding: 15px 20px; border-radius: 12px; flex: 1.5; min-width: 250px;}
+        .mixer-panel { background: #eff6ff; border: 1px solid #bfdbfe; padding: 12px 15px; border-radius: 10px; flex: 1.5; min-width: 250px;}
 
-        .return-btn { flex: none; margin-top: 15px; width: 100%; background: transparent; border: none; color: #94a3b8; font-weight: 800; text-decoration: underline; cursor: pointer; padding: 10px; font-size: 0.95em; letter-spacing: 0.5px;}
+        .return-btn { flex: none; margin-top: 10px; width: 100%; background: transparent; border: none; color: #94a3b8; font-weight: 800; text-decoration: underline; cursor: pointer; padding: 8px; font-size: 0.9em; letter-spacing: 0.5px;}
         .return-btn:hover { color: var(--primary-color); }
 
         .full-overlay { position: absolute; top:0; left:0; width:100%; height:100%; background: var(--surface-color); z-index:999; display:flex; flex-direction:column; align-items:center; justify-content:center; }
-        #pw-input { padding: 20px; border-radius: 14px; border: 1px solid var(--border-color); font-size: 1.2em; background: #f8fafc; text-align: center; margin-bottom: 25px; width: 80%; max-width: 320px; outline: none; transition: all 0.2s; color: #0f172a; font-weight: 600;}
+        #pw-input { padding: 18px; border-radius: 14px; border: 1px solid var(--border-color); font-size: 1.2em; background: #f8fafc; text-align: center; margin-bottom: 25px; width: 80%; max-width: 320px; outline: none; transition: all 0.2s; color: #0f172a; font-weight: 600;}
         #pw-input:focus { border-color: var(--primary-color); box-shadow: 0 0 0 4px rgba(74, 144, 226, 0.15); background: white;}
 
         #settings-menu { 
@@ -135,9 +133,9 @@
             overflow-y: auto; box-sizing: border-box; border-left: 1px solid var(--border-color);
         }
         #settings-menu.open { right: 0; }
-        .settings-group { margin-bottom: 30px; }
-        .settings-label { margin-bottom: 12px; font-size: 0.85em; color: #94a3b8; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;}
-        .row { display: flex; gap: 10px; }
+        .settings-group { margin-bottom: 25px; }
+        .settings-label { margin-bottom: 10px; font-size: 0.85em; color: #94a3b8; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;}
+        .row { display: flex; gap: 8px; }
     </style>
 </head>
 <body>
@@ -149,7 +147,6 @@
             <p style="margin: 0; color: var(--primary-color); font-weight: 800; letter-spacing: 3px; font-size: 1em;">CLASSROOM EDITION</p>
         </div>
         <input type="password" id="pw-input" placeholder="Enter Password">
-        <!-- flex: none; 유지 -->
         <button class="btn primary" onclick="checkPassword()" style="width: 80%; max-width: 320px; font-size: 1.1em; padding: 20px; flex: none;">START APP</button>
     </div>
 
@@ -209,7 +206,7 @@
                 </div>
                 
                 <div id="fx-param-panel" class="fx-sub-panel" style="display:flex;">
-                    <div id="reverb-only-params" style="display: flex; gap: 20px; flex: 2; align-items: center;">
+                    <div id="reverb-only-params" style="display: flex; gap: 15px; flex: 2; align-items: center;">
                         <div class="reverb-types">
                             <button id="btn-rev-room" class="btn rev-type-btn" onclick="setReverbType('room')">ROOM</button>
                             <button id="btn-rev-chamber" class="btn rev-type-btn" onclick="setReverbType('chamber')">CHMBR</button>
@@ -230,7 +227,7 @@
                         </div>
                     </div>
                     
-                    <div id="filter-only-params" style="display: none; gap: 20px; flex: 2; align-items: center;">
+                    <div id="filter-only-params" style="display: none; gap: 15px; flex: 2; align-items: center;">
                         <div class="filter-types">
                             <button id="btn-fil-hpf" class="btn fil-type-btn" onclick="setFilterType('hpf')">HPF</button>
                             <button id="btn-fil-lpf" class="btn fil-type-btn active" onclick="setFilterType('lpf')">LPF</button>
@@ -269,34 +266,34 @@
 
     <!-- 설정 화면 -->
     <div id="settings-menu">
-        <h2 style="margin-top: 0; color: #0f172a; font-size: 1.8em; margin-bottom: 30px; font-weight: 800; letter-spacing: -0.5px;">Settings</h2>
+        <h2 style="margin-top: 0; color: #0f172a; font-size: 1.6em; margin-bottom: 30px; font-weight: 800; letter-spacing: -0.5px;">Settings</h2>
         
         <div class="settings-group">
-            <div class="settings-label">Test Questions Count</div>
+            <div class="settings-label">Custom Test Questions</div>
             <div class="row" style="display: flex; gap: 10px; align-items: center;">
-                <input type="number" id="test-q-input" value="5" min="1" max="100" style="flex:1; padding: 15px; border-radius: 12px; border: 2px solid var(--border-color); font-size: 1.2em; text-align: center; font-weight: 800; color: #0f172a; outline:none; background: #f8fafc;">
-                <button class="btn primary" onclick="applyTestQs()" style="padding: 15px 25px; flex: none; max-width: none;">APPLY</button>
+                <input type="number" id="test-q-input" value="5" min="1" max="100" style="flex:1; padding: 12px; border-radius: 8px; border: 2px solid var(--border-color); font-size: 1.1em; text-align: center; font-weight: 800; color: #0f172a; outline:none; background: #f8fafc;">
+                <button class="btn primary" onclick="applyTestQs()" style="padding: 12px 20px; flex: none; max-width: none;">APPLY</button>
             </div>
         </div>
 
         <div class="settings-group">
             <div class="settings-label">Audio Source</div>
             <div class="row">
-                <button id="btn-src-pn" class="btn active" style="flex:1; padding:15px; max-width:none;" onclick="setSource('pn')">PN</button>
-                <button id="btn-src-file" class="btn" style="flex:1; padding:15px; max-width:none;" onclick="setSource('file')">FILE</button>
-                <button id="btn-src-track" class="btn" style="flex:1; padding:15px; max-width:none;" onclick="setSource('track')">TRACKS</button>
+                <button id="btn-src-pn" class="btn active" style="flex:1; padding:12px; max-width:none;" onclick="setSource('pn')">PN</button>
+                <button id="btn-src-file" class="btn" style="flex:1; padding:12px; max-width:none;" onclick="setSource('file')">FILE</button>
+                <button id="btn-src-track" class="btn" style="flex:1; padding:12px; max-width:none;" onclick="setSource('track')">TRACKS</button>
                 <input type="file" id="file-input" style="display:none;" accept="audio/*" onchange="handleFileUpload(event)">
             </div>
             <div id="track-input-group" style="display:none; margin-top:10px; width:100%;">
                 <div class="row" style="justify-content:center;">
-                    <button class="btn" style="flex:1; padding:12px; background:#f1f5f9; border-color:transparent; max-width:none;" onclick="loadTrack('1')">1</button>
-                    <button class="btn" style="flex:1; padding:12px; background:#f1f5f9; border-color:transparent; max-width:none;" onclick="loadTrack('2')">2</button>
-                    <button class="btn" style="flex:1; padding:12px; background:#f1f5f9; border-color:transparent; max-width:none;" onclick="loadTrack('3')">3</button>
-                    <button class="btn" style="flex:1; padding:12px; background:#f1f5f9; border-color:transparent; max-width:none;" onclick="loadTrack('4')">4</button>
-                    <button class="btn" style="flex:1; padding:12px; background:#f1f5f9; border-color:transparent; max-width:none;" onclick="loadTrack('5')">5</button>
+                    <button class="btn" style="flex:1; padding:10px; background:#f1f5f9; border-color:transparent; max-width:none;" onclick="loadTrack('1')">1</button>
+                    <button class="btn" style="flex:1; padding:10px; background:#f1f5f9; border-color:transparent; max-width:none;" onclick="loadTrack('2')">2</button>
+                    <button class="btn" style="flex:1; padding:10px; background:#f1f5f9; border-color:transparent; max-width:none;" onclick="loadTrack('3')">3</button>
+                    <button class="btn" style="flex:1; padding:10px; background:#f1f5f9; border-color:transparent; max-width:none;" onclick="loadTrack('4')">4</button>
+                    <button class="btn" style="flex:1; padding:10px; background:#f1f5f9; border-color:transparent; max-width:none;" onclick="loadTrack('5')">5</button>
                 </div>
             </div>
-            <div id="file-name" style="font-size:0.9em; color:var(--primary-color); margin-top:15px; text-align:center; font-weight:700; background: #eff6ff; padding: 12px; border-radius: 8px;">Pink Noise</div>
+            <div id="file-name" style="font-size:0.85em; color:var(--primary-color); margin-top:10px; text-align:center; font-weight:700; background: #eff6ff; padding: 10px; border-radius: 8px;">Pink Noise</div>
         </div>
         
         <div class="settings-group">
@@ -315,7 +312,7 @@
             </div>
         </div>
         
-        <button class="btn" onclick="toggleSettings()" style="margin-top: 20px; width:100%; background: #f1f5f9; color: #475569; border-color: transparent; max-width:none; flex: none;">Close Settings</button>
+        <button class="btn" onclick="toggleSettings()" style="margin-top: 15px; width:100%; background: #f1f5f9; color: #475569; border-color: transparent; max-width:none; flex: none;">Close Settings</button>
     </div>
 </div>
 
@@ -326,9 +323,6 @@
     let biquadFilter = null;
     let customBuffer = null;
     
-    // 네비게이션 및 세팅 변수
-    let userSelectedMain = 'practice';
-    let userSelectedSubject = 'eq';
     let testQuestionCount = 5;
 
     let currentMode = 'listen'; 
@@ -379,7 +373,6 @@
     
     let rtaBars = new Array(50).fill(5);
 
-    // ★ 수정됨: 오류를 일으키던 자바스크립트 버그 완전 제거 ★
     function selectMainMenu(mode) {
         userSelectedMain = mode;
         document.getElementById('main-menu').style.display = 'none';
@@ -578,14 +571,14 @@
             if(category === 'eq' || category === 'sine') freqControls.style.display = 'grid'; 
             else fxQuizControls.style.display = 'grid';
         } else {
-            if(category === 'eq' || category === 'sine') {
+            if(mode === 'listen') {
                 freqControls.style.display = 'grid'; 
                 actions.innerHTML = `
                     <button class="btn primary" onclick="playListenAudio()">▶ ${category === 'sine' ? 'PLAY SINE' : 'PLAY (FLAT)'}</button> 
                     <button class="btn" onclick="stopAudio()" style="background:var(--danger-color); color:white; border-color:var(--danger-color);">⏹ STOP</button>
                 `;
                 currentListenFreq = null; 
-            } else if(category === 'fx') {
+            } else if(mode === 'fx-explore') {
                 fxControls.style.display = 'flex'; isFxBypassed = false; 
                 actions.innerHTML = `
                     <button class="btn primary" onclick="playListenAudio()">▶ PLAY</button> 
@@ -593,6 +586,9 @@
                     <button class="btn" onclick="stopAudio()" style="background:var(--danger-color); color:white; border-color:var(--danger-color);">⏹ STOP</button>
                 `;
                 applyFxSetup(); 
+            } else if(mode === 'practice') {
+                if(category === 'eq' || category === 'sine') freqControls.style.display = 'grid'; else fxQuizControls.style.display = 'grid';
+                actions.innerHTML = `<button class="btn primary" onclick="runPractice()">▶ START QUIZ</button>`;
             }
         }
     }
@@ -706,7 +702,7 @@
             document.getElementById('status').innerText = "Question Completed.";
             isTestCompleted = true; 
             document.getElementById('action-btns').innerHTML = `
-                <button class="btn primary" onclick="runTest()">▶ RESTART EXAM</button> 
+                <button class="btn primary" onclick="runTest()">▶ START NEW EXAM</button> 
                 <button class="btn" onclick="listenAgain()">🎧 LISTEN AGAIN</button> 
                 <button class="btn" onclick="showAnswers()">👁️ ALL ANSWERS</button>
                 <button class="btn" onclick="stopAudio()" style="background:var(--danger-color); color:white; border-color:var(--danger-color);">⏹ STOP</button>`;
@@ -803,7 +799,11 @@
         if (customBuffer && currentQuizCategory !== 'sine') { const maxStart = Math.max(0, customBuffer.duration - (totalTestQuestions * 15)); fileStartTime = Math.random() * maxStart; }
         isTestCompleted = false; currentTestQuestion = 0; startTestSequence(0);
         
-        document.getElementById('action-btns').innerHTML = `<button class="btn primary" onclick="runTest()">▶ RESTART EXAM</button> <button class="btn" onclick="listenAgain()">🎧 LISTEN AGAIN</button> <button class="btn" onclick="showAnswers()">👁️ ANSWERS</button> <button class="btn" onclick="stopAudio()" style="background:var(--danger-color); color:white; border-color:var(--danger-color);">⏹ STOP</button>`;
+        document.getElementById('action-btns').innerHTML = `
+            <button class="btn primary" onclick="runTest()">▶ RESTART EXAM</button> 
+            <button class="btn" onclick="listenAgain()">🎧 LISTEN AGAIN</button> 
+            <button class="btn" onclick="showAnswers()">👁️ ANSWERS</button> 
+            <button class="btn" onclick="stopAudio()" style="background:var(--danger-color); color:white; border-color:var(--danger-color);">⏹ STOP</button>`;
     }
 
     async function listenAgain() { if (audioCtx && audioCtx.state === 'suspended') await audioCtx.resume(); if (currentMode === 'test') { if (testAnswers.length > 0) { let target = currentTestQuestion - 1; if (target < 0) target = 0; startTestSequence(target); } else alert("Press START EXAM first."); } }
