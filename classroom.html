@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ear Training - Classroom Pro</title>
     
-    <!-- ★ Firebase SDK 추가 ★ -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
@@ -210,7 +209,7 @@
             <button class="return-btn" style="margin-top:25px; max-width:400px;" onclick="showSubMenu()">BACK TO SUBJECTS</button>
         </div>
 
-        <!-- 그룹 테스트 대시보드 (접속자 명단) -->
+        <!-- 그룹 테스트 대시보드 -->
         <div id="group-test-view">
             <div id="view-title" style="color: #8b5cf6;">Live Group Test : Lobby</div>
             
@@ -394,6 +393,59 @@
 </div>
 
 <script>
+    // 엔터키 입력 지원
+    document.getElementById('pw-input').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') checkPassword();
+    });
+
+    // ==========================================
+    // ★ 안전한 Firebase 연동 ★
+    // 아래 firebaseConfig 부분을 선생님 코드로 덮어쓰세요!
+    // ==========================================
+    let db = null;
+    const currentRoomPin = "7734"; 
+
+    try {
+        const firebaseConfig = {
+           apiKey: "AIzaSyD7ldX4co1tDyZlulM3bG0RM2gYP9rX6yM",
+    authDomain: "ear-training-ad2a1.firebaseapp.com",
+    databaseURL: "https://ear-training-ad2a1-default-rtdb.firebaseio.com",
+    projectId: "ear-training-ad2a1",
+    storageBucket: "ear-training-ad2a1.firebasestorage.app",
+    messagingSenderId: "735813738589",
+    appId: "1:735813738589:web:797e1eb0c3af9ebaeaedb4",
+    measurementId: "G-B6B462KBCB"
+        };
+        
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        db = firebase.database();
+
+        // 실시간 접속자 명단 리스너
+        db.ref('room/' + currentRoomPin + '/students').on('value', (snapshot) => {
+            const students = snapshot.val();
+            const listEl = document.getElementById('live-student-list');
+            const countEl = document.getElementById('live-student-count');
+            
+            if(listEl && countEl) {
+                listEl.innerHTML = '';
+                if(students) {
+                    countEl.innerText = Object.keys(students).length;
+                    for(let s in students) {
+                        listEl.innerHTML += `<span class="student-badge">${s}</span>`;
+                    }
+                } else {
+                    countEl.innerText = 0;
+                    listEl.innerHTML = '<span style="color:#94a3b8; font-weight:bold;">아직 접속한 학생이 없습니다...</span>';
+                }
+            }
+        });
+    } catch (error) {
+        console.warn("Firebase 설정이 올바르지 않아 라이브 연동이 중지되었습니다.");
+    }
+    // ==========================================
+
     // --- 글로벌 변수 선언 ---
     let audioCtx;
     let masterGain;
@@ -456,60 +508,19 @@
 
     let studentScores = {}; 
     let isGroupMode = false; 
-    let db = null;
-    const currentRoomPin = "7734"; 
 
-    // 엔터키 입력 지원
-    document.getElementById('pw-input').addEventListener('keypress', function (e) {
-        if (e.key === 'Enter') checkPassword();
-    });
-
-    // ==========================================
-    // ★ 안전한 Firebase 연동 (오류나도 화면 안 멈춤) ★
-    // 아래 firebaseConfig 부분을 선생님 코드로 덮어쓰세요!
-    // ==========================================
-    try {
-        const firebaseConfig = {
-         apiKey: "AIzaSyD7ldX4co1tDyZlulM3bG0RM2gYP9rX6yM",
-    authDomain: "ear-training-ad2a1.firebaseapp.com",
-    databaseURL: "https://ear-training-ad2a1-default-rtdb.firebaseio.com",
-    projectId: "ear-training-ad2a1",
-    storageBucket: "ear-training-ad2a1.firebasestorage.app",
-    messagingSenderId: "735813738589",
-    appId: "1:735813738589:web:797e1eb0c3af9ebaeaedb4",
-    measurementId: "G-B6B462KBCB"
-        };
-        
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-        }
-        db = firebase.database();
-
-        // 실시간 접속자 명단 리스너
-        db.ref('room/' + currentRoomPin + '/students').on('value', (snapshot) => {
-            const students = snapshot.val();
-            const listEl = document.getElementById('live-student-list');
-            const countEl = document.getElementById('live-student-count');
-            
-            if(listEl && countEl) {
-                listEl.innerHTML = '';
-                if(students) {
-                    countEl.innerText = Object.keys(students).length;
-                    for(let s in students) {
-                        listEl.innerHTML += `<span class="student-badge">${s}</span>`;
-                    }
-                } else {
-                    countEl.innerText = 0;
-                    listEl.innerHTML = '<span style="color:#94a3b8; font-weight:bold;">아직 접속한 학생이 없습니다...</span>';
-                }
+    // ★ 학생들에게 점수를 브로드캐스트하는 함수 ★
+    function broadcastScores() {
+        if (isGroupMode && db) {
+            let scorePayload = {};
+            for(let s in studentScores) {
+                scorePayload[s] = { correct: studentScores[s], total: totalTestQuestions };
             }
-        });
-    } catch (error) {
-        console.warn("Firebase 설정이 올바르지 않아 라이브 연동이 중지되었습니다. (개인 연습/시험 모드는 정상 작동합니다.)", error);
+            db.ref('room/' + currentRoomPin + '/scores').set(scorePayload);
+            db.ref('room/' + currentRoomPin + '/status').set('finished');
+        }
     }
-    // ==========================================
 
-    // 매 문항(5초)이 끝날 때마다 호출되어 학생들의 정답을 채점하는 함수
     function gradeCurrentQuestion(correctAnswer) {
         if (!isGroupMode || !db) return; 
 
@@ -698,8 +709,6 @@
                 masterGain = audioCtx.createGain(); updateGainSettings(); masterGain.connect(audioCtx.destination);
             }
             if (audioCtx.state === 'suspended') await audioCtx.resume();
-            
-            showMainMenu();
         } else alert("Incorrect password.");
     }
     
@@ -1010,9 +1019,9 @@
     async function runTest() {
         if (audioCtx && audioCtx.state === 'suspended') await audioCtx.resume();
         
-        // 학생들의 기본 점수를 0으로 셋팅
         studentScores = {};
         if (isGroupMode && db) {
+            // 새 시험이 시작되면 접속자들의 점수판을 0으로 초기화하고, 상태를 running으로 전송
             db.ref('room/' + currentRoomPin + '/students').once('value').then(snapshot => {
                 let students = snapshot.val();
                 if(students) {
@@ -1021,6 +1030,9 @@
                     }
                 }
             });
+            db.ref('room/' + currentRoomPin + '/status').set('running');
+            db.ref('room/' + currentRoomPin + '/scores').remove();
+            db.ref('room/' + currentRoomPin + '/answers').remove();
         }
 
         testAnswers = []; testGains = []; let pool = currentQuizCategory === 'eq' ? bands : (currentQuizCategory === 'sine' ? bands31 : fxPool); 
@@ -1059,6 +1071,9 @@
             }).join('');
 
             if (isGroupMode) {
+                // 수동으로 버튼을 누르거나 시험이 끝났을 때 점수 방송
+                broadcastScores(); 
+
                 let scoreHtml = `
                     <table class="score-table">
                         <tr><th>Name</th><th>Score</th><th>Accuracy</th></tr>
@@ -1114,6 +1129,7 @@
         if (currentTestQuestion >= totalTestQuestions) { 
             document.getElementById('status').innerText = "EXAM COMPLETED! Check ANSWERS."; 
             isTestCompleted = true; 
+            broadcastScores(); // 모든 문제가 끝나면 학생들에게 점수 방송
             return; 
         }
         targetSineFreq = testAnswers[currentTestQuestion]; 
@@ -1136,7 +1152,12 @@
         if (currentTestQuestion >= totalTestQuestions) { 
             setEffectActive(false); 
             document.getElementById('status').innerText = "All completed! Original source (3s)"; 
-            sequenceTimer = setTimeout(() => { stopAudio(); isTestCompleted = true; document.getElementById('status').innerText = "EXAM COMPLETED! Check ANSWERS."; }, 3000); 
+            sequenceTimer = setTimeout(() => { 
+                stopAudio(); 
+                isTestCompleted = true; 
+                document.getElementById('status').innerText = "EXAM COMPLETED! Check ANSWERS."; 
+                broadcastScores(); // 모든 문제가 끝나면 학생들에게 점수 방송
+            }, 3000); 
             return; 
         }
 
