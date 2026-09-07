@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ear Training - Classroom Pro</title>
     
+    <!-- ★ Firebase SDK 추가 ★ -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
@@ -158,7 +159,6 @@
 
         .results-panel { background: white; border: 1px solid var(--border-color); border-radius: 16px; flex: 1; padding: 25px; display: flex; flex-direction: column; overflow-y: auto;}
         
-        /* 접속한 학생 뱃지 및 점수판 스타일 */
         .student-badge { background: #e0f2fe; color: #0284c7; padding: 10px 18px; border-radius: 20px; font-weight: 800; font-size: 1.1em; border: 2px solid #bae6fd;}
         
         .score-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 1.1em; }
@@ -239,7 +239,6 @@
                             <span style="color:#94a3b8; font-weight:bold;">아직 접속한 학생이 없습니다...</span>
                         </div>
                         
-                        <!-- ★ 이 버튼을 눌러야 실제 오디오 훈련 화면으로 넘어갑니다! ★ -->
                         <button class="btn primary" style="width: 100%; font-size: 1.2em; padding: 20px; margin-top: auto;" onclick="startGroupExam()">▶ 출제 화면으로 이동 (시험 시작)</button>
                     </div>
                 </div>
@@ -395,70 +394,7 @@
 </div>
 
 <script>
-    // ==========================================
-    // ★ 선생님의 Firebase Config로 덮어쓰세요! ★
-    // ==========================================
-    const firebaseConfig = {
-      apiKey: "AIzaSyD7ldX4co1tDyZlulM3bG0RM2gYP9rX6yM",
-    authDomain: "ear-training-ad2a1.firebaseapp.com",
-    databaseURL: "https://ear-training-ad2a1-default-rtdb.firebaseio.com",
-    projectId: "ear-training-ad2a1",
-    storageBucket: "ear-training-ad2a1.firebasestorage.app",
-    messagingSenderId: "735813738589",
-    appId: "1:735813738589:web:797e1eb0c3af9ebaeaedb4",
-    measurementId: "G-B6B462KBCB"
-    };
-    
-    if (!firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig);
-    }
-    const db = firebase.database();
-    const currentRoomPin = "7734"; 
-
-    let studentScores = {}; 
-    let isGroupMode = false; // ★ 그룹 모드 여부 확인 변수
-
-    // 실시간 접속자 명단 렌더링
-    db.ref('room/' + currentRoomPin + '/students').on('value', (snapshot) => {
-        const students = snapshot.val();
-        const listEl = document.getElementById('live-student-list');
-        const countEl = document.getElementById('live-student-count');
-        
-        if(listEl && countEl) {
-            listEl.innerHTML = '';
-            if(students) {
-                countEl.innerText = Object.keys(students).length;
-                for(let s in students) {
-                    listEl.innerHTML += `<span class="student-badge">${s}</span>`;
-                }
-            } else {
-                countEl.innerText = 0;
-                listEl.innerHTML = '<span style="color:#94a3b8; font-weight:bold;">아직 접속한 학생이 없습니다...</span>';
-            }
-        }
-    });
-
-    // 매 문항(5초)이 끝날 때마다 호출되어 학생들의 정답을 채점하는 함수
-    function gradeCurrentQuestion(correctAnswer) {
-        if (!isGroupMode) return; // 싱글 모드일 때는 채점 안 함
-
-        db.ref('room/' + currentRoomPin + '/answers').once('value').then(snapshot => {
-            const ans = snapshot.val();
-            if(ans) {
-                for(let s in ans) {
-                    if(ans[s] == correctAnswer) {
-                        studentScores[s] = (studentScores[s] || 0) + 1;
-                    } else {
-                        studentScores[s] = studentScores[s] || 0;
-                    }
-                }
-            }
-            db.ref('room/' + currentRoomPin + '/answers').remove();
-        });
-    }
-    // ==========================================
-
-
+    // --- 글로벌 변수 선언 ---
     let audioCtx;
     let masterGain;
     let activeSource = null;
@@ -518,11 +454,85 @@
     
     let rtaBars = new Array(50).fill(5);
 
+    let studentScores = {}; 
+    let isGroupMode = false; 
+    let db = null;
+    const currentRoomPin = "7734"; 
+
+    // 엔터키 입력 지원
+    document.getElementById('pw-input').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') checkPassword();
+    });
+
+    // ==========================================
+    // ★ 안전한 Firebase 연동 (오류나도 화면 안 멈춤) ★
+    // 아래 firebaseConfig 부분을 선생님 코드로 덮어쓰세요!
+    // ==========================================
+    try {
+        const firebaseConfig = {
+         apiKey: "AIzaSyD7ldX4co1tDyZlulM3bG0RM2gYP9rX6yM",
+    authDomain: "ear-training-ad2a1.firebaseapp.com",
+    databaseURL: "https://ear-training-ad2a1-default-rtdb.firebaseio.com",
+    projectId: "ear-training-ad2a1",
+    storageBucket: "ear-training-ad2a1.firebasestorage.app",
+    messagingSenderId: "735813738589",
+    appId: "1:735813738589:web:797e1eb0c3af9ebaeaedb4",
+    measurementId: "G-B6B462KBCB"
+        };
+        
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        db = firebase.database();
+
+        // 실시간 접속자 명단 리스너
+        db.ref('room/' + currentRoomPin + '/students').on('value', (snapshot) => {
+            const students = snapshot.val();
+            const listEl = document.getElementById('live-student-list');
+            const countEl = document.getElementById('live-student-count');
+            
+            if(listEl && countEl) {
+                listEl.innerHTML = '';
+                if(students) {
+                    countEl.innerText = Object.keys(students).length;
+                    for(let s in students) {
+                        listEl.innerHTML += `<span class="student-badge">${s}</span>`;
+                    }
+                } else {
+                    countEl.innerText = 0;
+                    listEl.innerHTML = '<span style="color:#94a3b8; font-weight:bold;">아직 접속한 학생이 없습니다...</span>';
+                }
+            }
+        });
+    } catch (error) {
+        console.warn("Firebase 설정이 올바르지 않아 라이브 연동이 중지되었습니다. (개인 연습/시험 모드는 정상 작동합니다.)", error);
+    }
+    // ==========================================
+
+    // 매 문항(5초)이 끝날 때마다 호출되어 학생들의 정답을 채점하는 함수
+    function gradeCurrentQuestion(correctAnswer) {
+        if (!isGroupMode || !db) return; 
+
+        db.ref('room/' + currentRoomPin + '/answers').once('value').then(snapshot => {
+            const ans = snapshot.val();
+            if(ans) {
+                for(let s in ans) {
+                    if(ans[s] == correctAnswer) {
+                        studentScores[s] = (studentScores[s] || 0) + 1;
+                    } else {
+                        studentScores[s] = studentScores[s] || 0;
+                    }
+                }
+            }
+            db.ref('room/' + currentRoomPin + '/answers').remove();
+        });
+    }
+
     function selectMainMenu(mode) {
         userSelectedMain = mode;
-        isGroupMode = (mode === 'group'); // 그룹 모드 여부 저장
+        isGroupMode = (mode === 'group'); 
         document.getElementById('main-menu').style.display = 'none';
-        document.getElementById('sub-menu').style.display = 'flex'; // 항상 서브메뉴(과목선택)로 감
+        document.getElementById('sub-menu').style.display = 'flex'; 
     }
 
     function showMainMenu() {
@@ -552,7 +562,6 @@
             init('practice', userSelectedSubject);
         } else if (type === 'test-custom') {
             if (isGroupMode) {
-                // 그룹 모드면 시험화면 전에 로비 띄우기
                 document.getElementById('test-type-menu').style.display = 'none';
                 document.getElementById('group-test-view').style.display = 'flex';
             } else {
@@ -561,7 +570,6 @@
         }
     }
 
-    // ★ 로비에서 출제 화면으로 이동하는 함수 ★
     function startGroupExam() {
         document.getElementById('group-test-view').style.display = 'none';
         init('test', userSelectedSubject, testQuestionCount);
@@ -682,6 +690,21 @@
         return { input: inputNode, output: outputNode };
     }
 
+    async function checkPassword() {
+        if (document.getElementById('pw-input').value === "ainstudio") { 
+            document.getElementById('auth-overlay').style.display = 'none';
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                masterGain = audioCtx.createGain(); updateGainSettings(); masterGain.connect(audioCtx.destination);
+            }
+            if (audioCtx.state === 'suspended') await audioCtx.resume();
+            
+            showMainMenu();
+        } else alert("Incorrect password.");
+    }
+    
+    function toggleSettings() { document.getElementById('settings-menu').classList.toggle('open'); }
+    
     function updateGainSettings() {
         if (currentEqMode === 'mix') { targetGain = currentGainAmount; } else { targetGain = currentEqMode === 'boost' ? currentGainAmount : -currentGainAmount; }
         if (masterGain) masterGain.gain.value = (currentEqMode === 'boost' || currentEqMode === 'mix') && currentGainAmount === 12 ? 0.15 : 0.3;
@@ -760,12 +783,6 @@
                 <button class="btn" onclick="listenAgain()">🎧 AGAIN</button> 
                 <button class="btn" onclick="showAnswers()">👁️ ALL ANSWERS</button> 
                 <button class="btn" onclick="stopAudio()" style="background:var(--danger-color); color:white; border-color:var(--danger-color);">⏹ STOP</button>`;
-            
-            // FX 시험일 때만 설정 패널 보여주기
-            if(category === 'fx') {
-                fxControls.style.display = 'flex';
-                applyFxSetup();
-            }
         } 
         else if (mode === 'practice') {
             actions.innerHTML = `
@@ -993,9 +1010,9 @@
     async function runTest() {
         if (audioCtx && audioCtx.state === 'suspended') await audioCtx.resume();
         
-        // ★ 시험 시작 시 학생들의 기본 점수를 0으로 셋팅 ★
+        // 학생들의 기본 점수를 0으로 셋팅
         studentScores = {};
-        if (isGroupMode) {
+        if (isGroupMode && db) {
             db.ref('room/' + currentRoomPin + '/students').once('value').then(snapshot => {
                 let students = snapshot.val();
                 if(students) {
@@ -1014,9 +1031,6 @@
         if (customBuffer && currentQuizCategory !== 'sine') { const maxStart = Math.max(0, customBuffer.duration - (totalTestQuestions * 15)); fileStartTime = Math.random() * maxStart; }
         isTestCompleted = false; isExamRunning = true; currentTestQuestion = 0; startTestSequence(0);
         
-        // 시험 시작 시 FX 설정 패널 숨기기
-        if(currentQuizCategory === 'fx') document.getElementById('fx-controls').style.display = 'none';
-
         document.getElementById('action-btns').innerHTML = `
             <button class="btn primary" onclick="runTest()">▶ RESTART EXAM</button> 
             <button class="btn" onclick="listenAgain()">🎧 AGAIN</button> 
@@ -1035,7 +1049,6 @@
         } 
     }
 
-    // ★ 시험 종료 후 정답과 학생 랭킹(정답률)을 함께 보여줌 ★
     function showAnswers() {
         const display = document.getElementById('answer-display');
         if (currentMode === 'test' && testAnswers.length > 0) {
@@ -1045,7 +1058,6 @@
                 return `<div style="padding:4px 0;">Q${i+1}: <span style="color:#ffeb3b; font-weight:900;">${text}</span></div>`; 
             }).join('');
 
-            // 그룹 모드일 경우에만 점수판을 생성하여 좌우 분할로 표시
             if (isGroupMode) {
                 let scoreHtml = `
                     <table class="score-table">
@@ -1112,7 +1124,6 @@
             document.getElementById('status').innerText = `[Q ${currentTestQuestion + 1}/${totalTestQuestions}] Waiting... (5s)`; 
             
             sequenceTimer = setTimeout(() => { 
-                // ★ 다음 문제로 넘어가기 직전에 채점
                 gradeCurrentQuestion(targetSineFreq);
                 currentTestQuestion++; 
                 nextSineTestStep(); 
@@ -1144,7 +1155,6 @@
                     document.getElementById('status').innerText = `[Q ${currentTestQuestion + 1}/${totalTestQuestions}] Applied (5s)`;
                     
                     sequenceTimer = setTimeout(() => { 
-                        // ★ 다음 문제로 넘어가기 직전에 채점
                         gradeCurrentQuestion(testAnswers[currentTestQuestion]);
                         currentTestQuestion++; 
                         nextTestStep(); 
@@ -1179,6 +1189,8 @@
             
             if ((currentMode === 'test' || currentMode === 'practice') && isExamRunning) {
                 setEffectActive(false); 
+            } else if (currentMode === 'practice' && isPracticeActive) {
+                setEffectActive(false);
             } else {
                 if (isFxBypassed) setEffectActive(false); else applyFixedMix();
             }
