@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ear Training - Classroom Pro</title>
     
-    <!-- ★ Firebase SDK 추가 ★ -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
@@ -94,7 +93,7 @@
         #display-area { flex: 1; min-height: 120px; position: relative; width: 100%; background: #1e293b; border-radius: 16px; overflow: hidden; margin-bottom: 15px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
         #rta-canvas { width: 100%; height: 100%; display: block; }
         
-        #answer-display { position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(15, 23, 42, 0.95); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 10; text-align: center; padding: 20px; box-sizing: border-box; color: white; cursor: default; }
+        #answer-display { position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(15, 23, 42, 0.95); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 10; text-align: center; padding: 20px; box-sizing: border-box; color: white; cursor: default; overflow-y: auto;}
 
         #status { flex: none; font-size: 1em; font-weight: 700; text-align: center; margin-bottom: 15px; color: var(--text-muted); background: #f8fafc; padding: 12px; border-radius: 12px; border: 1px solid var(--border-color); }
 
@@ -157,12 +156,15 @@
         .student-counter h3 { margin: 0; font-size: 1em; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px;}
         .student-counter .count { font-size: 4em; font-weight: 900; margin: 5px 0 0 0; line-height: 1;}
 
-        .results-panel { background: white; border: 1px solid var(--border-color); border-radius: 16px; flex: 1; padding: 20px; display: flex; flex-direction: column; overflow-y: auto;}
-        .result-bar-container { display: flex; align-items: center; margin-bottom: 12px; gap: 15px;}
-        .result-label { width: 60px; font-weight: 800; color: #475569; font-size: 1.1em;}
-        .result-bar-bg { flex: 1; background: #f1f5f9; height: 24px; border-radius: 12px; overflow: hidden; position: relative;}
-        .result-bar-fill { height: 100%; background: var(--primary-color); width: 0%; transition: width 0.5s ease;}
-        .result-count { width: 40px; font-weight: 800; color: #0f172a; text-align: right;}
+        .results-panel { background: white; border: 1px solid var(--border-color); border-radius: 16px; flex: 1; padding: 25px; display: flex; flex-direction: column; overflow-y: auto;}
+        
+        /* 접속한 학생 뱃지 스타일 */
+        .student-badge { background: #e0f2fe; color: #0284c7; padding: 10px 18px; border-radius: 20px; font-weight: 800; font-size: 1.1em; border: 2px solid #bae6fd;}
+        
+        /* 스코어보드 테이블 스타일 */
+        .score-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 1.1em; }
+        .score-table th { padding: 15px 10px; border-bottom: 2px solid #e2e8f0; color: #64748b; font-weight: 800; text-transform: uppercase; }
+        .score-table td { padding: 15px 10px; border-bottom: 1px solid #f1f5f9; font-weight: bold; color: #0f172a; }
     </style>
 </head>
 <body>
@@ -209,16 +211,15 @@
             <button class="return-btn" style="margin-top:25px; max-width:400px;" onclick="showSubMenu()">BACK TO SUBJECTS</button>
         </div>
 
-        <!-- 그룹 테스트 대시보드 (진짜 실시간 연동 화면) -->
+        <!-- 그룹 테스트 대시보드 (접속자 명단만 띄움) -->
         <div id="group-test-view">
-            <div id="view-title" style="color: #8b5cf6;">Live Group Test : Live Dashboard</div>
+            <div id="view-title" style="color: #8b5cf6;">Live Group Test : Lobby</div>
             
             <div class="dashboard-container">
                 <div class="dashboard-left">
                     <h3 style="margin-top:0; color:#475569;">학생용 리모컨 접속</h3>
                     <h2 style="margin:5px 0 20px 0; color:#0f172a; font-size:1.1em; word-break: break-all;">supercan777.github.io/Ear-Training/student.html</h2>
                     
-                    <!-- 실시간 QR 코드 API 적용 -->
                     <div class="qr-placeholder">
                         <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://supercan777.github.io/Ear-Training/student.html" alt="Student QR Code" style="width: 200px; height: 200px; border-radius: 12px; border: 4px solid white; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
                     </div>
@@ -233,65 +234,10 @@
                         <p class="count" id="live-student-count">0</p>
                     </div>
                     <div class="results-panel">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
-                            <h3 style="margin:0; color:#0f172a; font-size:1.2em;">Live Answers (EQ)</h3>
-                            <div style="display:flex; gap:10px;">
-                                <button class="btn" style="padding: 8px 15px; color:var(--danger-color); border-color:var(--danger-color);" onclick="clearRealtimeAnswers()">초기화 (새 문제 출제)</button>
-                            </div>
-                        </div>
-
-                        <!-- 실시간 그래프 영역 -->
-                        <div id="live-results-area">
-                            <div class="result-bar-container">
-                                <div class="result-label">31.5</div>
-                                <div class="result-bar-bg"><div class="result-bar-fill" id="bar-31.5"></div></div>
-                                <div class="result-count" id="cnt-31.5">0</div>
-                            </div>
-                            <div class="result-bar-container">
-                                <div class="result-label">63</div>
-                                <div class="result-bar-bg"><div class="result-bar-fill" id="bar-63"></div></div>
-                                <div class="result-count" id="cnt-63">0</div>
-                            </div>
-                            <div class="result-bar-container">
-                                <div class="result-label">125</div>
-                                <div class="result-bar-bg"><div class="result-bar-fill" id="bar-125"></div></div>
-                                <div class="result-count" id="cnt-125">0</div>
-                            </div>
-                            <div class="result-bar-container">
-                                <div class="result-label">250</div>
-                                <div class="result-bar-bg"><div class="result-bar-fill" id="bar-250"></div></div>
-                                <div class="result-count" id="cnt-250">0</div>
-                            </div>
-                            <div class="result-bar-container">
-                                <div class="result-label">500</div>
-                                <div class="result-bar-bg"><div class="result-bar-fill" id="bar-500"></div></div>
-                                <div class="result-count" id="cnt-500">0</div>
-                            </div>
-                            <div class="result-bar-container">
-                                <div class="result-label">1K</div>
-                                <div class="result-bar-bg"><div class="result-bar-fill" id="bar-1000"></div></div>
-                                <div class="result-count" id="cnt-1000">0</div>
-                            </div>
-                            <div class="result-bar-container">
-                                <div class="result-label">2K</div>
-                                <div class="result-bar-bg"><div class="result-bar-fill" id="bar-2000"></div></div>
-                                <div class="result-count" id="cnt-2000">0</div>
-                            </div>
-                            <div class="result-bar-container">
-                                <div class="result-label">4K</div>
-                                <div class="result-bar-bg"><div class="result-bar-fill" id="bar-4000"></div></div>
-                                <div class="result-count" id="cnt-4000">0</div>
-                            </div>
-                            <div class="result-bar-container">
-                                <div class="result-label">8K</div>
-                                <div class="result-bar-bg"><div class="result-bar-fill" id="bar-8000"></div></div>
-                                <div class="result-count" id="cnt-8000">0</div>
-                            </div>
-                            <div class="result-bar-container">
-                                <div class="result-label">16K</div>
-                                <div class="result-bar-bg"><div class="result-bar-fill" id="bar-16000"></div></div>
-                                <div class="result-count" id="cnt-16000">0</div>
-                            </div>
+                        <h3 style="margin-top:0; margin-bottom:20px; color:#0f172a; font-size:1.4em;">접속자 명단</h3>
+                        <!-- 접속한 학생들의 닉네임이 여기에 배지 형태로 뜹니다 -->
+                        <div id="live-student-list" style="display:flex; flex-wrap:wrap; gap:10px;">
+                            <span style="color:#94a3b8; font-weight:bold;">아직 접속한 학생이 없습니다...</span>
                         </div>
                     </div>
                 </div>
@@ -300,7 +246,7 @@
             <button class="return-btn" onclick="returnToMenu()">← BACK TO MENU</button>
         </div>
 
-        <!-- 기존 개인 훈련 화면 (앱 뷰) -->
+        <!-- 훈련/시험 메인 뷰 -->
         <div id="app-view">
             <div id="view-title">Mode Title</div>
             
@@ -451,7 +397,7 @@
     // ★ 선생님의 Firebase Config로 덮어쓰세요! ★
     // ==========================================
     const firebaseConfig = {
-          apiKey: "AIzaSyD7ldX4co1tDyZlulM3bG0RM2gYP9rX6yM",
+      apiKey: "AIzaSyD7ldX4co1tDyZlulM3bG0RM2gYP9rX6yM",
     authDomain: "ear-training-ad2a1.firebaseapp.com",
     databaseURL: "https://ear-training-ad2a1-default-rtdb.firebaseio.com",
     projectId: "ear-training-ad2a1",
@@ -467,43 +413,45 @@
     const db = firebase.database();
     const currentRoomPin = "7734"; 
 
-    // 실시간 접속자 수 업데이트 리스너
+    let studentScores = {}; // 학생들의 점수를 누적할 객체
+
+    // 실시간 접속자 명단(닉네임) 렌더링
     db.ref('room/' + currentRoomPin + '/students').on('value', (snapshot) => {
         const students = snapshot.val();
-        const count = students ? Object.keys(students).length : 0;
+        const listEl = document.getElementById('live-student-list');
         const countEl = document.getElementById('live-student-count');
-        if (countEl) countEl.innerText = count;
-    });
-
-    // 실시간 정답 수집 및 그래프 업데이트 리스너 (EQ 10밴드 기준)
-    db.ref('room/' + currentRoomPin + '/answers').on('value', (snapshot) => {
-        const answers = snapshot.val();
         
-        // 표시할 10밴드 주파수 대역
-        let counts = { '31.5': 0, '63': 0, '125': 0, '250': 0, '500': 0, '1000': 0, '2000': 0, '4000': 0, '8000': 0, '16000': 0 }; 
-        let total = 0;
-
-        if (answers) {
-            for (let student in answers) {
-                let ans = answers[student];
-                if (counts[ans] !== undefined) counts[ans]++;
-                total++;
-            }
-        }
-
-        for (let freq in counts) {
-            let elCount = document.getElementById('cnt-' + freq);
-            let elBar = document.getElementById('bar-' + freq);
-            if(elCount && elBar) {
-                elCount.innerText = counts[freq];
-                let pct = total > 0 ? (counts[freq] / total) * 100 : 0;
-                elBar.style.width = pct + '%';
+        if(listEl && countEl) {
+            listEl.innerHTML = '';
+            if(students) {
+                countEl.innerText = Object.keys(students).length;
+                for(let s in students) {
+                    listEl.innerHTML += `<span class="student-badge">${s}</span>`;
+                }
+            } else {
+                countEl.innerText = 0;
+                listEl.innerHTML = '<span style="color:#94a3b8; font-weight:bold;">아직 접속한 학생이 없습니다...</span>';
             }
         }
     });
 
-    function clearRealtimeAnswers() {
-        db.ref('room/' + currentRoomPin + '/answers').remove();
+    // 매 문항(5초)이 끝날 때마다 호출되어 학생들의 정답을 채점하는 함수
+    function gradeCurrentQuestion(correctAnswer) {
+        db.ref('room/' + currentRoomPin + '/answers').once('value').then(snapshot => {
+            const ans = snapshot.val();
+            if(ans) {
+                for(let s in ans) {
+                    // 학생이 제출한 답과 현재 문제의 정답이 일치하면 점수 +1
+                    if(ans[s] == correctAnswer) {
+                        studentScores[s] = (studentScores[s] || 0) + 1;
+                    } else {
+                        studentScores[s] = studentScores[s] || 0;
+                    }
+                }
+            }
+            // 채점 후 다음 문제를 위해 DB 정답 초기화
+            db.ref('room/' + currentRoomPin + '/answers').remove();
+        });
     }
     // ==========================================
 
@@ -787,7 +735,7 @@
         
         let catText = category === 'eq' ? 'EQ' : (category === 'sine' ? 'SINE WAVE' : 'FX');
         let titleMap = { 
-            'listen': `${catText} : Practice`, 
+            'listen': `${catText} : Explore`, 
             'practice': `${catText} : Endless Quiz`, 
             'test': `${catText} : Exam (${testQs} Qs)` 
         };
@@ -1043,6 +991,18 @@
 
     async function runTest() {
         if (audioCtx && audioCtx.state === 'suspended') await audioCtx.resume();
+        
+        // ★ 시험 시작 시 학생들의 기본 점수를 0으로 셋팅 ★
+        studentScores = {};
+        db.ref('room/' + currentRoomPin + '/students').once('value').then(snapshot => {
+            let students = snapshot.val();
+            if(students) {
+                for(let s in students) {
+                    studentScores[s] = 0; 
+                }
+            }
+        });
+
         testAnswers = []; testGains = []; let pool = currentQuizCategory === 'eq' ? bands : (currentQuizCategory === 'sine' ? bands31 : fxPool); 
         for (let i = 0; i < totalTestQuestions; i++) {
             let newAns; do { newAns = pool[Math.floor(Math.random() * pool.length)]; } while (i > 0 && newAns === testAnswers[i - 1]); testAnswers.push(newAns);
@@ -1069,14 +1029,53 @@
         } 
     }
 
+    // ★ 시험 종료 후 정답과 학생 랭킹(정답률)을 함께 보여주도록 업데이트 ★
     function showAnswers() {
         const display = document.getElementById('answer-display');
         if (currentMode === 'test' && testAnswers.length > 0) {
+            
+            // 1. 문제 정답 리스트 HTML
             let answersHtml = testAnswers.map((ans, i) => { 
                 let text = currentQuizCategory === 'eq' ? `${ans} Hz (${testGains[i] > 0 ? '+' : ''}${testGains[i]}dB)` : (currentQuizCategory === 'sine' ? `${ans} Hz` : ans.toUpperCase()); 
-                return `<div>Q${i+1}: <span style="color:#ffeb3b; font-weight:900;">${text}</span></div>`; 
+                return `<div style="padding:4px 0;">Q${i+1}: <span style="color:#ffeb3b; font-weight:900;">${text}</span></div>`; 
             }).join('');
-            display.innerHTML = `<div style="font-size: 1.1em; color: #94a3b8; margin-bottom: 20px; letter-spacing: 1px;">[ EXAM ANSWERS ]</div> <div style="font-size: 1.2em; line-height: 1.6; display: grid; grid-template-columns: 1fr 1fr; gap: 10px 40px; text-align: left;"> ${answersHtml} </div>`; 
+
+            // 2. 학생 점수판(랭킹) HTML
+            let scoreHtml = `
+                <table class="score-table">
+                    <tr><th>Name</th><th>Score</th><th>Accuracy</th></tr>
+            `;
+            for(let s in studentScores) {
+                let correct = studentScores[s];
+                let total = totalTestQuestions;
+                let pct = Math.round((correct / total) * 100);
+                scoreHtml += `
+                    <tr>
+                        <td>${s}</td>
+                        <td>${correct} / ${total}</td>
+                        <td style="color:var(--primary-color);">${pct}%</td>
+                    </tr>
+                `;
+            }
+            scoreHtml += `</table>`;
+
+            if (Object.keys(studentScores).length === 0) {
+                scoreHtml = "<div style='padding:20px; color:#94a3b8; font-weight:bold;'>접속한 학생 데이터가 없습니다.</div>";
+            }
+
+            // 3. 두 화면을 양쪽으로 합쳐서 렌더링
+            display.innerHTML = `
+                <div style="display:flex; gap: 40px; text-align: left; width: 100%; max-width: 900px; justify-content: center; max-height: 90%; overflow-y: auto;">
+                    <div style="flex: 1;">
+                        <div style="color: #94a3b8; margin-bottom: 15px; font-weight: 800; letter-spacing: 1px;">[ EXAM ANSWERS ]</div>
+                        <div style="font-size: 1.2em; line-height: 1.6;">${answersHtml}</div>
+                    </div>
+                    <div style="flex: 1; background: white; padding: 20px 30px; border-radius: 16px; color: #1e293b; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
+                        <div style="color: var(--primary-color); margin-bottom: 15px; font-weight: 900; letter-spacing: 1px; font-size: 1.1em;">[ STUDENT SCORES ]</div>
+                        ${scoreHtml}
+                    </div>
+                </div>
+            `;
             display.style.display = 'flex'; 
         }
     }
@@ -1103,7 +1102,14 @@
         sequenceTimer = setTimeout(() => { 
             stopAudio(); 
             document.getElementById('status').innerText = `[Q ${currentTestQuestion + 1}/${totalTestQuestions}] Waiting... (5s)`; 
-            sequenceTimer = setTimeout(() => { currentTestQuestion++; nextSineTestStep(); }, 5000); 
+            
+            sequenceTimer = setTimeout(() => { 
+                // ★ 다음 문제로 넘어가기 직전에 학생들의 제출 답안을 채점
+                gradeCurrentQuestion(targetSineFreq);
+                currentTestQuestion++; 
+                nextSineTestStep(); 
+            }, 5000); 
+            
         }, 5000); 
     }
 
@@ -1128,7 +1134,14 @@
                 sequenceTimer = setTimeout(() => {
                     setEffectActive(true); 
                     document.getElementById('status').innerText = `[Q ${currentTestQuestion + 1}/${totalTestQuestions}] Applied (5s)`;
-                    sequenceTimer = setTimeout(() => { currentTestQuestion++; nextTestStep(); }, 5000); 
+                    
+                    sequenceTimer = setTimeout(() => { 
+                        // ★ 다음 문제로 넘어가기 직전에 채점 진행
+                        gradeCurrentQuestion(testAnswers[currentTestQuestion]);
+                        currentTestQuestion++; 
+                        nextTestStep(); 
+                    }, 5000); 
+                    
                 }, 5000); 
             }, 5000); 
         }, 5000); 
@@ -1156,8 +1169,10 @@
             activeSource.connect(dryGainNode); activeSource.connect(fxInputNode); 
             if (currentEffectNode) { fxInputNode.connect(currentEffectNode.input); currentEffectNode.output.connect(wetGainNode); }
             
-            if ((currentMode === 'test' || currentMode === 'practice') && isExamRunning) {
+            if (currentMode === 'test' && isExamRunning) {
                 setEffectActive(false); 
+            } else if (currentMode === 'practice' && isPracticeActive) {
+                setEffectActive(false);
             } else {
                 if (isFxBypassed) setEffectActive(false); else applyFixedMix();
             }
@@ -1204,7 +1219,7 @@
     } 
 
     document.getElementById('display-area').addEventListener('click', function(e) {
-        if (!customBuffer || currentQuizCategory === 'sine' || currentMode === 'test' || currentMode === 'practice') return;
+        if (!customBuffer || currentQuizCategory === 'sine' || currentMode === 'test') return;
         const rect = this.getBoundingClientRect(); const x = e.clientX - rect.left; fileStartTime = customBuffer.duration * (x / rect.width);
         if (isPlaying) { if (activeSource) { try { activeSource.stop(); activeSource.disconnect(); } catch(err) {} activeSource = null; } isPlaying = false; startAudioSource(); }
     });
