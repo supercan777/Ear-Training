@@ -149,7 +149,7 @@
         .dashboard-container { display: flex; width: 100%; height: 100%; gap: 20px; }
         .dashboard-left { flex: 1; display: flex; flex-direction: column; background: #f8fafc; border-radius: 16px; border: 2px dashed #cbd5e1; align-items: center; justify-content: center; padding: 20px; text-align: center;}
         .dashboard-right { flex: 2; display: flex; flex-direction: column; gap: 15px; }
-        .qr-placeholder { display: flex; align-items: center; justify-content: center; font-weight: 800; color: #94a3b8; margin-bottom: 15px;}
+        .qr-placeholder { display: flex; align-items: center; justify-content: center; font-weight: 800; color: #94a3b8; margin-bottom: 20px;}
         .pin-code { font-size: 3em; font-weight: 900; color: var(--primary-color); letter-spacing: 5px; margin: 0;}
         
         .student-counter { background: #1e293b; color: white; padding: 20px; border-radius: 16px; text-align: center; display: flex; flex-direction: column; justify-content: center;}
@@ -157,12 +157,7 @@
         .student-counter .count { font-size: 4em; font-weight: 900; margin: 5px 0 0 0; line-height: 1;}
 
         .results-panel { background: white; border: 1px solid var(--border-color); border-radius: 16px; flex: 1; padding: 25px; display: flex; flex-direction: column; overflow-y: auto;}
-        
         .student-badge { background: #e0f2fe; color: #0284c7; padding: 10px 18px; border-radius: 20px; font-weight: 800; font-size: 1.1em; border: 2px solid #bae6fd;}
-        
-        .score-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 1.1em; }
-        .score-table th { padding: 15px 10px; border-bottom: 2px solid #e2e8f0; color: #64748b; font-weight: 800; text-transform: uppercase; }
-        .score-table td { padding: 15px 10px; border-bottom: 1px solid #f1f5f9; font-weight: bold; color: #0f172a; }
     </style>
 </head>
 <body>
@@ -209,14 +204,13 @@
             <button class="return-btn" style="margin-top:25px; max-width:400px;" onclick="showSubMenu()">BACK TO SUBJECTS</button>
         </div>
 
-        <!-- 그룹 테스트 대시보드 (접속자 명단) -->
+        <!-- 그룹 테스트 대시보드 -->
         <div id="group-test-view">
             <div id="view-title" style="color: #8b5cf6;">Live Group Test : Lobby</div>
             
             <div class="dashboard-container">
                 <div class="dashboard-left">
-                    <h3 style="margin-top:0; color:#475569;">학생용 리모컨 접속</h3>
-                    <h2 style="margin:5px 0 20px 0; color:#0f172a; font-size:1.1em; word-break: break-all;">supercan777.github.io/Ear-Training/student.html</h2>
+                    <h3 style="margin-top:0; color:#475569; margin-bottom: 20px;">학생용 리모컨 접속</h3>
                     
                     <div class="qr-placeholder">
                         <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://supercan777.github.io/Ear-Training/student.html" alt="Student QR Code" style="width: 200px; height: 200px; border-radius: 12px; border: 4px solid white; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
@@ -389,13 +383,11 @@
         </div>
         
         <button class="btn" onclick="toggleSettings()" style="margin-top: 15px; width:100%; background: #f1f5f9; color: #475569; border-color: transparent; max-width:none; flex: none;">Close Settings</button>
-        <!-- ★ 추가: 언제든 방을 초기화하고 로그인 화면으로 돌아가는 리셋 버튼 ★ -->
         <button class="btn" onclick="resetClassroom()" style="margin-top: 10px; width:100%; background: #ef4444; color: white; border-color: transparent; max-width:none; flex: none;">Logout & Reset Classroom</button>
     </div>
 </div>
 
 <script>
-    // 엔터키 입력 지원
     document.getElementById('pw-input').addEventListener('keypress', function (e) {
         if (e.key === 'Enter') checkPassword();
     });
@@ -409,7 +401,7 @@
 
     try {
         const firebaseConfig = {
-          apiKey: "AIzaSyD7ldX4co1tDyZlulM3bG0RM2gYP9rX6yM",
+           apiKey: "AIzaSyD7ldX4co1tDyZlulM3bG0RM2gYP9rX6yM",
     authDomain: "ear-training-ad2a1.firebaseapp.com",
     databaseURL: "https://ear-training-ad2a1-default-rtdb.firebaseio.com",
     projectId: "ear-training-ad2a1",
@@ -424,7 +416,6 @@
         }
         db = firebase.database();
 
-        // 실시간 접속자 명단 리스너
         db.ref('room/' + currentRoomPin + '/students').on('value', (snapshot) => {
             const students = snapshot.val();
             const listEl = document.getElementById('live-student-list');
@@ -448,7 +439,6 @@
     }
     // ==========================================
 
-    // --- 글로벌 변수 선언 ---
     let audioCtx;
     let masterGain;
     let activeSource = null;
@@ -511,7 +501,6 @@
     let studentScores = {}; 
     let isGroupMode = false; 
 
-    // ★ 학생들에게 점수를 브로드캐스트하는 함수 ★
     function broadcastScores() {
         if (isGroupMode && db) {
             let scorePayload = {};
@@ -541,13 +530,12 @@
         });
     }
 
-    // ★ 전체 강제 리셋 및 로그아웃 함수 ★
     function resetClassroom() {
         if(confirm("현재 교실의 접속자와 모든 기록이 지워지고 로그인 화면으로 돌아갑니다. 계속할까요?")) {
             if (db) {
-                db.ref('room/' + currentRoomPin).remove(); // DB 방 데이터 폭파
+                db.ref('room/' + currentRoomPin).remove(); 
             }
-            location.reload(); // 새로고침
+            location.reload(); 
         }
     }
 
@@ -722,7 +710,6 @@
             }
             if (audioCtx.state === 'suspended') await audioCtx.resume();
             
-            // ★ 로그인 시 방을 완벽하게 초기화 (기존 데이터 삭제) ★
             if (db) {
                 db.ref('room/' + currentRoomPin).remove(); 
             }
@@ -1077,6 +1064,7 @@
         } 
     }
 
+    // ★ 1등만 띄워주도록 수정한 showAnswers() ★
     function showAnswers() {
         const display = document.getElementById('answer-display');
         if (currentMode === 'test' && testAnswers.length > 0) {
@@ -1089,26 +1077,32 @@
             if (isGroupMode) {
                 broadcastScores(); 
 
-                let scoreHtml = `
-                    <table class="score-table">
-                        <tr><th>Name</th><th>Score</th><th>Accuracy</th></tr>
-                `;
-                for(let s in studentScores) {
-                    let correct = studentScores[s];
-                    let total = totalTestQuestions;
-                    let pct = Math.round((correct / total) * 100);
-                    scoreHtml += `
-                        <tr>
-                            <td>${s}</td>
-                            <td>${correct} / ${total}</td>
-                            <td style="color:var(--primary-color);">${pct}%</td>
-                        </tr>
-                    `;
-                }
-                scoreHtml += `</table>`;
+                let maxScore = -1;
+                let winners = [];
 
-                if (Object.keys(studentScores).length === 0) {
-                    scoreHtml = "<div style='padding:20px; color:#94a3b8; font-weight:bold;'>제출된 정답 데이터가 없습니다.</div>";
+                // 1등 찾기 알고리즘
+                for (let s in studentScores) {
+                    if (studentScores[s] > maxScore) {
+                        maxScore = studentScores[s];
+                        winners = [s];
+                    } else if (studentScores[s] === maxScore) {
+                        winners.push(s);
+                    }
+                }
+
+                let scoreHtml = "";
+
+                if (Object.keys(studentScores).length === 0 || maxScore === -1) {
+                    scoreHtml = "<div style='padding:20px; color:#94a3b8; font-weight:bold; text-align:center;'>제출된 정답 데이터가 없습니다.</div>";
+                } else {
+                    let pct = Math.round((maxScore / totalTestQuestions) * 100);
+                    scoreHtml = `
+                        <div style="text-align: center; padding: 30px 10px;">
+                            <div style="font-size: 1.5em; color: #64748b; font-weight: bold; margin-bottom: 10px;">🏆 1등 (Top Scorer) 🏆</div>
+                            <div style="font-size: 3em; font-weight: 900; color: #4A90E2; margin-bottom: 15px;">${winners.join(', ')}</div>
+                            <div style="font-size: 1.5em; font-weight: bold; color: #0f172a;">${maxScore} / ${totalTestQuestions} <span style="color:var(--success-color);">(${pct}%)</span></div>
+                        </div>
+                    `;
                 }
 
                 display.innerHTML = `
@@ -1117,8 +1111,7 @@
                             <div style="color: #94a3b8; margin-bottom: 15px; font-weight: 800; letter-spacing: 1px;">[ EXAM ANSWERS ]</div>
                             <div style="font-size: 1.2em; line-height: 1.6;">${answersHtml}</div>
                         </div>
-                        <div style="flex: 1; background: white; padding: 20px 30px; border-radius: 16px; color: #1e293b; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
-                            <div style="color: var(--primary-color); margin-bottom: 15px; font-weight: 900; letter-spacing: 1px; font-size: 1.1em;">[ STUDENT SCORES ]</div>
+                        <div style="flex: 1; background: white; padding: 20px 30px; border-radius: 16px; color: #1e293b; box-shadow: 0 10px 25px rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center;">
                             ${scoreHtml}
                         </div>
                     </div>
