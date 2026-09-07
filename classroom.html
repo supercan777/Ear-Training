@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ear Training - Classroom Pro</title>
+    <!-- ★ Firebase SDK 추가 ★ -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    
     <style>
         :root {
             --bg-color: #cbd5e1; 
@@ -182,7 +186,7 @@
 
     <div class="content-area">
         
-        <!-- STEP 1: 메인 모드 선택 (그룹 테스트 추가) -->
+        <!-- STEP 1: 메인 모드 선택 -->
         <div id="main-menu" style="display:flex; flex-direction:column; align-items:center; justify-content:center; flex:1; gap:20px;">
             <button class="mega-btn" onclick="selectMainMenu('practice')">PRACTICE (Single)</button>
             <button class="mega-btn" onclick="selectMainMenu('test')">TEST (Exam)</button>
@@ -204,13 +208,13 @@
             <button class="return-btn" style="margin-top:25px; max-width:400px;" onclick="showSubMenu()">BACK TO SUBJECTS</button>
         </div>
 
-        <!-- 그룹 테스트 대시보드 (가상 시뮬레이션 화면) -->
+        <!-- 그룹 테스트 대시보드 (진짜 실시간 연동 화면) -->
         <div id="group-test-view">
-            <div id="view-title" style="color: #8b5cf6;">Live Group Test : Simulation</div>
+            <div id="view-title" style="color: #8b5cf6;">Live Group Test : Live Dashboard</div>
             
             <div class="dashboard-container">
                 <div class="dashboard-left">
-                    <h3 style="margin-top:0; color:#475569;">Join the class at:</h3>
+                    <h3 style="margin-top:0; color:#475569;">학생용 접속 주소 (예시)</h3>
                     <h2 style="margin:5px 0 20px 0; color:#0f172a; font-size:1.5em;">ear.training/join</h2>
                     <div class="qr-placeholder">QR CODE HERE</div>
                     <p style="margin:0; color:#94a3b8; font-weight:800; text-transform:uppercase; letter-spacing:1px;">Room PIN</p>
@@ -224,10 +228,10 @@
                     </div>
                     <div class="results-panel">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
-                            <h3 style="margin:0; color:#0f172a; font-size:1.2em;">Live Answers (EQ)</h3>
+                            <h3 style="margin:0; color:#0f172a; font-size:1.2em;">Live Answers</h3>
                             <div style="display:flex; gap:10px;">
-                                <button class="btn" style="padding: 8px 15px;" onclick="simulateStudentJoin()">+ 학생 접속</button>
-                                <button class="btn primary" style="padding: 8px 15px;" onclick="simulateAnswers()">+ 정답 제출</button>
+                                <!-- 새로운 문제 출제를 위해 이전 정답 내역을 삭제하는 버튼 -->
+                                <button class="btn" style="padding: 8px 15px; color:var(--danger-color); border-color:var(--danger-color);" onclick="clearRealtimeAnswers()">초기화 (새 문제 출제)</button>
                             </div>
                         </div>
 
@@ -250,13 +254,23 @@
                             </div>
                             <div class="result-bar-container">
                                 <div class="result-label">1K</div>
-                                <div class="result-bar-bg"><div class="result-bar-fill" id="bar-1000" style="background:#20c997;"></div></div>
+                                <div class="result-bar-bg"><div class="result-bar-fill" id="bar-1000"></div></div>
                                 <div class="result-count" id="cnt-1000">0</div>
                             </div>
                             <div class="result-bar-container">
                                 <div class="result-label">2K</div>
                                 <div class="result-bar-bg"><div class="result-bar-fill" id="bar-2000"></div></div>
                                 <div class="result-count" id="cnt-2000">0</div>
+                            </div>
+                            <div class="result-bar-container">
+                                <div class="result-label">4K</div>
+                                <div class="result-bar-bg"><div class="result-bar-fill" id="bar-4000"></div></div>
+                                <div class="result-count" id="cnt-4000">0</div>
+                            </div>
+                            <div class="result-bar-container">
+                                <div class="result-label">8K</div>
+                                <div class="result-bar-bg"><div class="result-bar-fill" id="bar-8000"></div></div>
+                                <div class="result-count" id="cnt-8000">0</div>
                             </div>
                         </div>
                     </div>
@@ -266,7 +280,7 @@
             <button class="return-btn" onclick="returnToMenu()">← BACK TO MENU</button>
         </div>
 
-        <!-- 기존 개인 훈련 화면 (앱 뷰) -->
+        <!-- 개인 훈련 화면 (앱 뷰) -->
         <div id="app-view">
             <div id="view-title">Mode Title</div>
             
@@ -330,6 +344,19 @@
                         <div class="slider-value" id="val-fxmix">30 %</div>
                     </div>
                 </div>
+            </div>
+
+            <!-- 하단 퀴즈 정답 버튼 영역 -->
+            <div id="fx-quiz-controls" class="fx-quiz-grid" style="display:none;">
+                <button class="btn" onclick="handleFxClick('room')">ROOM</button>
+                <button class="btn" onclick="handleFxClick('chamber')">CHAMBER</button>
+                <button class="btn" onclick="handleFxClick('plate')">PLATE</button>
+                <button class="btn" onclick="handleFxClick('hall')">HALL</button>
+                <button class="btn" onclick="handleFxClick('tremolo')">TREMOLO</button>
+                <button class="btn" onclick="handleFxClick('distortion')">DISTORTION</button>
+                <button class="btn" onclick="handleFxClick('hpf')">HPF</button>
+                <button class="btn" onclick="handleFxClick('lpf')">LPF</button>
+                <button class="btn" onclick="handleFxClick('bpf')">BPF</button>
             </div>
 
             <button class="return-btn" onclick="returnToMenu()">← BACK TO MENU</button>
@@ -413,6 +440,70 @@
 </div>
 
 <script>
+    // ==========================================
+    // ★ 여기에 방금 복사한 Firebase 코드를 넣으세요! ★
+    // ==========================================
+    const firebaseConfig = {
+  apiKey: "AIzaSyD7ldX4co1tDyZlulM3bG0RM2gYP9rX6yM",
+    authDomain: "ear-training-ad2a1.firebaseapp.com",
+    databaseURL: "https://ear-training-ad2a1-default-rtdb.firebaseio.com",
+    projectId: "ear-training-ad2a1",
+    storageBucket: "ear-training-ad2a1.firebasestorage.app",
+    messagingSenderId: "735813738589",
+    appId: "1:735813738589:web:797e1eb0c3af9ebaeaedb4",
+    measurementId: "G-B6B462KBCB"
+    };
+    
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
+    const db = firebase.database();
+    const currentRoomPin = "7734"; // 그룹 테스트 기본 PIN (필요시 변경 가능)
+
+    // 실시간 접속자 수 업데이트 리스너
+    db.ref('room/' + currentRoomPin + '/students').on('value', (snapshot) => {
+        const students = snapshot.val();
+        const count = students ? Object.keys(students).length : 0;
+        const countEl = document.getElementById('sim-student-count');
+        if (countEl) countEl.innerText = count;
+    });
+
+    // 실시간 정답 수집 및 그래프 업데이트 리스너
+    db.ref('room/' + currentRoomPin + '/answers').on('value', (snapshot) => {
+        const answers = snapshot.val();
+        
+        // 표시할 주파수 대역 (필요에 따라 추가/삭제 가능)
+        let counts = { '125': 0, '250': 0, '500': 0, '1000': 0, '2000': 0, '4000': 0, '8000': 0 }; 
+        let total = 0;
+
+        if (answers) {
+            for (let student in answers) {
+                let ans = answers[student];
+                if (counts[ans] !== undefined) counts[ans]++;
+                total++;
+            }
+        }
+
+        // 막대 그래프 너비 변경 적용
+        for (let freq in counts) {
+            let elCount = document.getElementById('cnt-' + freq);
+            let elBar = document.getElementById('bar-' + freq);
+            if(elCount && elBar) {
+                elCount.innerText = counts[freq];
+                let pct = total > 0 ? (counts[freq] / total) * 100 : 0;
+                elBar.style.width = pct + '%';
+            }
+        }
+    });
+
+    // 선생님이 [초기화] 버튼을 누를 때 호출되어 DB의 정답 기록을 비움
+    function clearRealtimeAnswers() {
+        db.ref('room/' + currentRoomPin + '/answers').remove();
+    }
+    // ==========================================
+
+
+    // --- 기존 오디오 훈련 로직 ---
     let audioCtx;
     let masterGain;
     let activeSource = null;
@@ -472,10 +563,6 @@
     
     let rtaBars = new Array(50).fill(5);
 
-    // --- 가상 그룹 테스트 시뮬레이션용 변수 ---
-    let simStudentCount = 0;
-    let simAnswers = { '125': 0, '250': 0, '500': 0, '1000': 0, '2000': 0 };
-
     function selectMainMenu(mode) {
         userSelectedMain = mode;
         document.getElementById('main-menu').style.display = 'none';
@@ -529,33 +616,6 @@
         } else {
             document.getElementById('main-menu').style.display = 'flex';
         }
-    }
-
-    // --- 가상 시뮬레이션 함수 ---
-    function simulateStudentJoin() {
-        simStudentCount += Math.floor(Math.random() * 3) + 1;
-        document.getElementById('sim-student-count').innerText = simStudentCount;
-    }
-
-    function simulateAnswers() {
-        if (simStudentCount === 0) return alert("학생이 먼저 접속해야 합니다!");
-        
-        let keys = Object.keys(simAnswers);
-        
-        // 정답(1000Hz)에 가중치를 두어 랜덤하게 답변 증가
-        for(let i=0; i<3; i++) {
-            let randKey = Math.random() > 0.4 ? '1000' : keys[Math.floor(Math.random() * keys.length)];
-            simAnswers[randKey]++;
-        }
-        
-        let total = Object.values(simAnswers).reduce((a, b) => a + b, 0);
-        
-        keys.forEach(key => {
-            document.getElementById(`cnt-${key}`).innerText = simAnswers[key];
-            let pct = total > 0 ? (simAnswers[key] / simStudentCount) * 100 : 0;
-            if (pct > 100) pct = 100; // 시뮬레이션용 보정
-            document.getElementById(`bar-${key}`).style.width = `${pct}%`;
-        });
     }
 
     function applyTestQs() {
@@ -722,7 +782,7 @@
         
         let catText = category === 'eq' ? 'EQ' : (category === 'sine' ? 'SINE WAVE' : 'FX');
         let titleMap = { 
-            'listen': `${catText} : Practice`, 
+            'listen': `${catText} : Explore`, 
             'practice': `${catText} : Endless Quiz`, 
             'test': `${catText} : Exam (${testQs} Qs)` 
         };
@@ -746,7 +806,6 @@
             bands.forEach(f => { freqControls.innerHTML += `<button id="btn-freq-${f}" class="btn freq-item" onclick="handleFreqClick(${f})">${f}</button>`; });
         }
 
-        // 시험 모드
         if (mode === 'test') {
             actions.innerHTML = `
                 <button class="btn primary" onclick="runTest()">▶ START EXAM</button> 
@@ -754,14 +813,12 @@
                 <button class="btn" onclick="showAnswers()">👁️ ALL ANSWERS</button> 
                 <button class="btn" onclick="stopAudio()" style="background:var(--danger-color); color:white; border-color:var(--danger-color);">⏹ STOP</button>`;
         } 
-        // 무한 퀴즈 (Explore Quiz) 모드
         else if (mode === 'practice') {
             actions.innerHTML = `
                 <button class="btn primary" onclick="runPractice()">▶ START QUIZ</button>
                 <button class="btn" onclick="stopAudio()" style="background:var(--danger-color); color:white; border-color:var(--danger-color);">⏹ STOP</button>
             `;
         } 
-        // 자유 탐색 (Practice/Explore) 모드
         else {
             if(category === 'eq' || category === 'sine') {
                 freqControls.style.display = 'grid'; 
@@ -915,7 +972,6 @@
         }
     }
 
-    // --- 무한 퀴즈(Explore Quiz) 관련 로직 ---
     function cancelPractice() {
         stopAudio(); isPracticeActive = false; document.getElementById('answer-display').style.display = 'none';
         document.getElementById('status').innerText = "Canceled. Ready to start.";
@@ -980,7 +1036,6 @@
         `;
     }
 
-    // --- 시험(Test) 관련 로직 ---
     async function runTest() {
         if (audioCtx && audioCtx.state === 'suspended') await audioCtx.resume();
         testAnswers = []; testGains = []; let pool = currentQuizCategory === 'eq' ? bands : (currentQuizCategory === 'sine' ? bands31 : fxPool); 
@@ -1096,11 +1151,8 @@
             activeSource.connect(dryGainNode); activeSource.connect(fxInputNode); 
             if (currentEffectNode) { fxInputNode.connect(currentEffectNode.input); currentEffectNode.output.connect(wetGainNode); }
             
-            if (currentMode === 'test' && isExamRunning) {
+            if ((currentMode === 'test' || currentMode === 'practice') && isExamRunning) {
                 setEffectActive(false); 
-            } else if (currentMode === 'practice' && isPracticeActive) {
-                // Practice 퀴즈 시퀀스가 돌고 있을 때는 초기엔 꺼둠 (시퀀스 로직이 제어)
-                setEffectActive(false);
             } else {
                 if (isFxBypassed) setEffectActive(false); else applyFixedMix();
             }
@@ -1147,7 +1199,7 @@
     } 
 
     document.getElementById('display-area').addEventListener('click', function(e) {
-        if (!customBuffer || currentQuizCategory === 'sine' || currentMode === 'test') return;
+        if (!customBuffer || currentQuizCategory === 'sine' || currentMode === 'test' || currentMode === 'practice') return;
         const rect = this.getBoundingClientRect(); const x = e.clientX - rect.left; fileStartTime = customBuffer.duration * (x / rect.width);
         if (isPlaying) { if (activeSource) { try { activeSource.stop(); activeSource.disconnect(); } catch(err) {} activeSource = null; } isPlaying = false; startAudioSource(); }
     });
