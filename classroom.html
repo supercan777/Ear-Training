@@ -194,11 +194,14 @@
             <button class="mega-btn accent" onclick="selectMainMenu('group')">👥 GROUP TEST (Live Sync)</button>
         </div>
 
-        <!-- STEP 2: 과목 선택 -->
+        <!-- STEP 2: 과목 선택 (10/31 밴드 분리) -->
         <div id="sub-menu" style="display:none; flex-direction:column; align-items:center; justify-content:center; flex:1; gap:20px;">
-            <button class="mega-btn" onclick="selectSubject('sine')">SINE WAVE</button>
+            <div style="display:flex; gap:10px; width: 100%; max-width:400px;">
+                <button class="mega-btn" style="flex:1; padding: 15px; font-size: 1.1em;" onclick="selectSubject('sine10')">SINE (10-Band)</button>
+                <button class="mega-btn" style="flex:1; padding: 15px; font-size: 1.1em;" onclick="selectSubject('sine31')">SINE (31-Band)</button>
+            </div>
             <button class="mega-btn" onclick="selectSubject('eq')">EQ (10-Band)</button>
-            <button class="mega-btn" onclick="selectSubject('fx')">FX</button>
+            <button class="mega-btn" onclick="selectSubject('fx')">FX & FILTER</button>
             <button class="return-btn" style="margin-top:25px; max-width:400px;" onclick="showMainMenu()">BACK</button>
         </div>
 
@@ -216,11 +219,9 @@
             <div class="dashboard-container">
                 <div class="dashboard-left">
                     <h3 style="margin-top:0; color:#475569; margin-bottom: 20px;">학생용 리모컨 접속</h3>
-                    
                     <div class="qr-placeholder">
                         <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://supercan777.github.io/Ear-Training/student.html" alt="Student QR Code" style="width: 200px; height: 200px; border-radius: 12px; border: 4px solid white; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
                     </div>
-                    
                     <p style="margin:0; color:#94a3b8; font-weight:800; text-transform:uppercase; letter-spacing:1px;">Room PIN</p>
                     <p class="pin-code">7734</p>
                 </div>
@@ -235,7 +236,6 @@
                         <div id="live-student-list" style="display:flex; flex-wrap:wrap; gap:10px; margin-bottom: 20px;">
                             <span style="color:#94a3b8; font-weight:bold;">아직 접속한 학생이 없습니다...</span>
                         </div>
-                        
                         <button class="btn primary" style="width: 100%; font-size: 1.2em; padding: 20px; margin-top: auto;" onclick="startGroupExam()">▶ 출제 화면으로 이동 (시험 시작)</button>
                     </div>
                 </div>
@@ -450,7 +450,7 @@
     let customBuffer = null;
     
     let userSelectedMain = 'practice';
-    let userSelectedSubject = 'eq';
+    let userSelectedSubject = 'eq'; // eq, sine10, sine31, fx
     let testQuestionCount = 5;
 
     let currentMode = 'listen'; 
@@ -595,6 +595,10 @@
         document.getElementById('app-view').style.display = 'none';
         document.getElementById('group-test-view').style.display = 'none';
         
+        if (isGroupMode && db) {
+            db.ref('room/' + currentRoomPin + '/status').set('lobby');
+        }
+
         if (userSelectedMain === 'practice') {
             document.getElementById('sub-menu').style.display = 'flex';
         } else {
@@ -705,55 +709,6 @@
         return { input: inputNode, output: outputNode };
     }
 
-    async function checkPassword() {
-        if (document.getElementById('pw-input').value === "ainstudio") { 
-            document.getElementById('auth-overlay').style.display = 'none';
-            if (!audioCtx) {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                masterGain = audioCtx.createGain(); updateGainSettings(); masterGain.connect(audioCtx.destination);
-            }
-            if (audioCtx.state === 'suspended') await audioCtx.resume();
-            
-            if (db) {
-                db.ref('room/' + currentRoomPin).remove(); 
-            }
-        } else alert("Incorrect password.");
-    }
-    
-    function toggleSettings() { document.getElementById('settings-menu').classList.toggle('open'); }
-    
-    function updateGainSettings() {
-        if (currentEqMode === 'mix') { targetGain = currentGainAmount; } else { targetGain = currentEqMode === 'boost' ? currentGainAmount : -currentGainAmount; }
-        if (masterGain) masterGain.gain.value = (currentEqMode === 'boost' || currentEqMode === 'mix') && currentGainAmount === 12 ? 0.15 : 0.3;
-        if (currentMode === 'listen' && currentListenFreq && biquadFilter && currentQuizCategory === 'eq') { biquadFilter.gain.setTargetAtTime(targetGain, audioCtx.currentTime, 0.02); }
-    }
-    
-    function setEqMode(mode, btn) { currentEqMode = mode; document.querySelectorAll('.eq-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); updateGainSettings(); }
-    function setGainAmount(amount, btn) { currentGainAmount = amount; document.querySelectorAll('.gain-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); updateGainSettings(); }
-    
-    function setSource(type) {
-        document.querySelectorAll('#btn-src-pn, #btn-src-file, #btn-src-track').forEach(b => b.classList.remove('active')); document.getElementById('track-input-group').style.display = 'none';
-        if(type === 'pn') { document.getElementById('btn-src-pn').classList.add('active'); customBuffer = null; document.getElementById('file-name').innerText = "Pink Noise"; } 
-        else if(type === 'file') { document.getElementById('btn-src-file').classList.add('active'); document.getElementById('file-input').click(); } 
-        else if (type === 'track') { document.getElementById('btn-src-track').classList.add('active'); document.getElementById('track-input-group').style.display = 'block'; }
-    }
-    
-    function handleFileUpload(event) {
-        const file = event.target.files[0]; if (!file) { setSource('pn'); return; }
-        document.getElementById('file-name').innerText = file.name; const reader = new FileReader();
-        reader.onload = function(e) { audioCtx.decodeAudioData(e.target.result, function(buffer) { customBuffer = buffer; fileStartTime = 0; document.getElementById('file-name').innerText = "Loaded: " + file.name.substring(0, 20); renderWaveform(); }); }; reader.readAsArrayBuffer(file);
-    }
-    
-    async function loadTrack(trackNum) {
-        if (!audioCtx) return; if (audioCtx.state === 'suspended') await audioCtx.resume();
-        const url = `https://supercan777.github.io/Ear-Training/${trackNum}.mp3`; document.getElementById('file-name').innerText = `Loading Track ${trackNum}...`;
-        try {
-            const response = await fetch(url); if(!response.ok) throw new Error("File not found");
-            const arrayBuffer = await response.arrayBuffer(); customBuffer = await audioCtx.decodeAudioData(arrayBuffer);
-            fileStartTime = 0; document.getElementById('file-name').innerText = `Loaded: Track ${trackNum}`; renderWaveform();
-        } catch (error) { alert(`'${trackNum}.mp3' 파일을 찾을 수 없습니다.`); document.getElementById('file-name').innerText = "Load Failed"; setSource('pn'); }
-    }
-
     function init(mode, category = 'eq', testQs = testQuestionCount) { 
         stopAudio();
         document.getElementById('main-menu').style.display = 'none';
@@ -763,12 +718,15 @@
         document.getElementById('app-view').style.display = 'flex';
 
         currentMode = mode;
-        currentQuizCategory = category;
+        currentQuizCategory = category; // eq, sine10, sine31, fx
         totalTestQuestions = testQs;
         isPracticeActive = false;
         isExamRunning = false;
         
-        let catText = category === 'eq' ? 'EQ' : (category === 'sine' ? 'SINE WAVE' : 'FX');
+        let catText = category === 'eq' ? 'EQ (10-Band)' : 
+                      (category === 'sine10' ? 'SINE WAVE (10-Band)' : 
+                      (category === 'sine31' ? 'SINE WAVE (31-Band)' : 'FX'));
+
         let titleMap = { 
             'listen': `${catText} : Explore`, 
             'practice': `${catText} : Endless Quiz`, 
@@ -786,15 +744,19 @@
         freqControls.innerHTML = ''; actions.innerHTML = '';
         freqControls.style.display = 'none'; fxControls.style.display = 'none'; 
         
-        if (category === 'sine') {
-            freqControls.className = 'freq-grid freq31-grid'; 
-            bands31.forEach(f => { freqControls.innerHTML += `<button id="btn-freq-${f}" class="btn freq-item" onclick="handleFreqClick(${f})">${f}</button>`; });
-        } else {
-            freqControls.className = 'freq-grid'; 
-            bands.forEach(f => { freqControls.innerHTML += `<button id="btn-freq-${f}" class="btn freq-item" onclick="handleFreqClick(${f})">${f}</button>`; });
+        if (category.startsWith('sine') || category === 'eq') {
+            freqControls.style.display = 'grid'; 
+            if (category === 'sine31') {
+                freqControls.className = 'freq-grid freq31-grid'; 
+                bands31.forEach(f => { freqControls.innerHTML += `<button id="btn-freq-${f}" class="btn freq-item" onclick="handleFreqClick(${f})">${f}</button>`; });
+            } else {
+                freqControls.className = 'freq-grid'; 
+                bands.forEach(f => { freqControls.innerHTML += `<button id="btn-freq-${f}" class="btn freq-item" onclick="handleFreqClick(${f})">${f}</button>`; });
+            }
         }
 
         if (mode === 'test') {
+            freqControls.style.display = 'none'; // 테스트 모드에선 숨김
             actions.innerHTML = `
                 <button class="btn primary" onclick="runTest()">▶ START EXAM</button> 
                 <button class="btn" onclick="listenAgain()">🎧 AGAIN</button> 
@@ -802,16 +764,16 @@
                 <button class="btn" onclick="stopAudio()" style="background:var(--danger-color); color:white; border-color:var(--danger-color);">⏹ STOP</button>`;
         } 
         else if (mode === 'practice') {
+            freqControls.style.display = 'none'; // 무한 퀴즈 모드에선 숨김
             actions.innerHTML = `
                 <button class="btn primary" onclick="runPractice()">▶ START QUIZ</button>
                 <button class="btn" onclick="stopAudio()" style="background:var(--danger-color); color:white; border-color:var(--danger-color);">⏹ STOP</button>
             `;
         } 
         else {
-            if(category === 'eq' || category === 'sine') {
-                freqControls.style.display = 'grid'; 
+            if(category.startsWith('sine') || category === 'eq') {
                 actions.innerHTML = `
-                    <button class="btn primary" onclick="playListenAudio()">▶ ${category === 'sine' ? 'PLAY SINE' : 'PLAY (FLAT)'}</button> 
+                    <button class="btn primary" onclick="playListenAudio()">▶ ${category.startsWith('sine') ? 'PLAY SINE' : 'PLAY (FLAT)'}</button> 
                     <button class="btn" onclick="stopAudio()" style="background:var(--danger-color); color:white; border-color:var(--danger-color);">⏹ STOP</button>
                 `;
                 currentListenFreq = null; 
@@ -824,6 +786,12 @@
                 `;
                 applyFxSetup(); 
             }
+        }
+
+        // 선생님 화면이 열리자마자 학생 리모컨 셋팅을 위해 모드 전송
+        if (isGroupMode && db) {
+            db.ref('room/' + currentRoomPin + '/mode').set(category);
+            db.ref('room/' + currentRoomPin + '/status').set('running'); // 리모컨 보이기
         }
     }
 
@@ -930,11 +898,11 @@
             document.querySelectorAll('.freq-item').forEach(btn => btn.classList.remove('active'));
             if (currentListenFreq === freq) { 
                 currentListenFreq = null; 
-                if (currentQuizCategory === 'sine') { stopAudio(); document.getElementById('status').innerText = "READY"; } 
+                if (currentQuizCategory.startsWith('sine')) { stopAudio(); document.getElementById('status').innerText = "READY"; } 
                 else { if (biquadFilter) biquadFilter.gain.value = 0; document.getElementById('status').innerText = isPlaying ? "PLAYING: FLAT" : "READY"; }
             } else { 
                 currentListenFreq = freq; document.getElementById(`btn-freq-${freq}`).classList.add('active'); 
-                if (currentQuizCategory === 'sine') {
+                if (currentQuizCategory.startsWith('sine')) {
                     targetSineFreq = freq; if (!isPlaying) startAudioSource(); else if (activeSource && activeSource.frequency) activeSource.frequency.setValueAtTime(freq, audioCtx.currentTime);
                     document.getElementById('status').innerText = `PLAYING SINE: ${freq}Hz`; 
                 } else {
@@ -954,7 +922,7 @@
     async function playListenAudio() {
         if (isPlaying) return; if (audioCtx && audioCtx.state === 'suspended') await audioCtx.resume();
         if (currentMode === 'listen') {
-            if (currentQuizCategory === 'sine') { targetSineFreq = currentListenFreq || 1000; startAudioSource(); document.getElementById('status').innerText = currentListenFreq ? `PLAYING SINE: ${currentListenFreq}Hz` : "PLAYING SINE: 1000Hz"; } 
+            if (currentQuizCategory.startsWith('sine')) { targetSineFreq = currentListenFreq || 1000; startAudioSource(); document.getElementById('status').innerText = currentListenFreq ? `PLAYING SINE: ${currentListenFreq}Hz` : "PLAYING SINE: 1000Hz"; } 
             else if (currentQuizCategory === 'eq') { if (!biquadFilter) createOrUpdateFilter(1000, 0); startAudioSource(); document.getElementById('status').innerText = currentListenFreq ? `PLAYING: ${currentListenFreq}Hz (${targetGain > 0 ? '+' : ''}${targetGain}dB)` : "PLAYING: FLAT (Original)"; }
             else { startAudioSource(); updateFxStatusText(); }
         }
@@ -968,10 +936,10 @@
 
     async function runPractice() {
         if (audioCtx && audioCtx.state === 'suspended') await audioCtx.resume();
-        let pool = currentQuizCategory === 'eq' ? bands : (currentQuizCategory === 'sine' ? bands31 : fxPool); 
+        let pool = (currentQuizCategory === 'eq' || currentQuizCategory === 'sine10') ? bands : (currentQuizCategory === 'sine31' ? bands31 : fxPool); 
         let newAnswer; do { newAnswer = pool[Math.floor(Math.random() * pool.length)]; } while (newAnswer === currentPracticeAnswer); currentPracticeAnswer = newAnswer;
         if (currentQuizCategory === 'eq') { if (currentEqMode === 'mix') { currentQuestionGain = Math.random() > 0.5 ? currentGainAmount : -currentGainAmount; } else { currentQuestionGain = currentEqMode === 'boost' ? currentGainAmount : -currentGainAmount; } }
-        if (customBuffer && currentQuizCategory !== 'sine') { const maxStart = Math.max(0, customBuffer.duration - 32); fileStartTime = Math.random() * maxStart; }
+        if (customBuffer && !currentQuizCategory.startsWith('sine')) { const maxStart = Math.max(0, customBuffer.duration - 32); fileStartTime = Math.random() * maxStart; }
         
         isPracticeActive = true; 
         document.getElementById('answer-display').style.display = 'none';
@@ -996,7 +964,7 @@
 
     function playPracticeSequence(answer) {
         stopAudio(); document.getElementById('answer-display').style.display = 'none'; 
-        if (currentQuizCategory === 'sine') { targetSineFreq = answer; startAudioSource(); document.getElementById('status').innerText = "Listen carefully (Sine Wave)..."; return; }
+        if (currentQuizCategory.startsWith('sine')) { targetSineFreq = answer; startAudioSource(); document.getElementById('status').innerText = "Listen carefully (Sine Wave)..."; return; }
         
         if (currentQuizCategory === 'eq') { biquadFilter = audioCtx.createBiquadFilter(); biquadFilter.type = "peaking"; biquadFilter.frequency.value = answer; biquadFilter.Q.value = 1.4; biquadFilter.gain.value = 0; targetGain = currentQuestionGain; } 
         else { activeFxCategory = answer; setupFxNode(answer); }
@@ -1012,7 +980,7 @@
         if (!isPracticeActive) return;
         stopAudio();
         const display = document.getElementById('answer-display');
-        let targetText = currentQuizCategory === 'eq' ? `${currentPracticeAnswer} Hz (${currentQuestionGain > 0 ? '+' : ''}${currentQuestionGain}dB)` : (currentQuizCategory === 'sine' ? `${currentPracticeAnswer} Hz` : currentPracticeAnswer.toUpperCase());
+        let targetText = currentQuizCategory === 'eq' ? `${currentPracticeAnswer} Hz (${currentQuestionGain > 0 ? '+' : ''}${currentQuestionGain}dB)` : (currentQuizCategory.startsWith('sine') ? `${currentPracticeAnswer} Hz` : currentPracticeAnswer.toUpperCase());
         
         display.innerHTML = `<div style="font-size: 1.2em; color: #94a3b8; margin-bottom: 15px; letter-spacing: 1px;">[ ANSWER ]</div><span style="color:#ffeb3b; font-size:2.5em; font-weight:900;">${targetText}</span>`; 
         display.style.display = 'flex'; 
@@ -1038,16 +1006,17 @@
                 }
             });
             db.ref('room/' + currentRoomPin + '/status').set('running');
+            db.ref('room/' + currentRoomPin + '/mode').set(currentQuizCategory);
             db.ref('room/' + currentRoomPin + '/scores').remove();
             db.ref('room/' + currentRoomPin + '/answers').remove();
         }
 
-        testAnswers = []; testGains = []; let pool = currentQuizCategory === 'eq' ? bands : (currentQuizCategory === 'sine' ? bands31 : fxPool); 
+        testAnswers = []; testGains = []; let pool = (currentQuizCategory === 'eq' || currentQuizCategory === 'sine10') ? bands : (currentQuizCategory === 'sine31' ? bands31 : fxPool); 
         for (let i = 0; i < totalTestQuestions; i++) {
             let newAns; do { newAns = pool[Math.floor(Math.random() * pool.length)]; } while (i > 0 && newAns === testAnswers[i - 1]); testAnswers.push(newAns);
             if (currentQuizCategory === 'eq') { let g = currentEqMode === 'mix' ? (Math.random() > 0.5 ? currentGainAmount : -currentGainAmount) : (currentEqMode === 'boost' ? currentGainAmount : -currentGainAmount); testGains.push(g); }
         }
-        if (customBuffer && currentQuizCategory !== 'sine') { const maxStart = Math.max(0, customBuffer.duration - (totalTestQuestions * 15)); fileStartTime = Math.random() * maxStart; }
+        if (customBuffer && !currentQuizCategory.startsWith('sine')) { const maxStart = Math.max(0, customBuffer.duration - (totalTestQuestions * 15)); fileStartTime = Math.random() * maxStart; }
         isTestCompleted = false; isExamRunning = true; currentTestQuestion = 0; startTestSequence(0);
         
         document.getElementById('action-btns').innerHTML = `
@@ -1073,14 +1042,13 @@
         if (currentMode === 'test' && testAnswers.length > 0) {
             
             let answersHtml = testAnswers.map((ans, i) => { 
-                let text = currentQuizCategory === 'eq' ? `${ans} Hz (${testGains[i] > 0 ? '+' : ''}${testGains[i]}dB)` : (currentQuizCategory === 'sine' ? `${ans} Hz` : ans.toUpperCase()); 
+                let text = currentQuizCategory === 'eq' ? `${ans} Hz (${testGains[i] > 0 ? '+' : ''}${testGains[i]}dB)` : (currentQuizCategory.startsWith('sine') ? `${ans} Hz` : ans.toUpperCase()); 
                 return `<div style="padding:4px 0;">Q${i+1}: <span style="color:#ffeb3b; font-weight:900;">${text}</span></div>`; 
             }).join('');
 
             if (isGroupMode) {
                 broadcastScores(); 
 
-                // ★ 1등만 띄워주기 로직 ★
                 let maxScore = -1;
                 let winners = [];
 
@@ -1094,6 +1062,7 @@
                 }
 
                 let scoreHtml = "";
+
                 if (Object.keys(studentScores).length === 0 || maxScore === -1) {
                     scoreHtml = "<div style='padding:20px; color:#94a3b8; font-weight:bold; text-align:center;'>제출된 정답 데이터가 없습니다.</div>";
                 } else {
@@ -1101,7 +1070,7 @@
                     scoreHtml = `
                         <div style="text-align: center; padding: 30px 10px;">
                             <div style="font-size: 1.5em; color: #64748b; font-weight: bold; margin-bottom: 10px;">🏆 1등 (Top Scorer) 🏆</div>
-                            <div style="font-size: 3em; font-weight: 900; color: #4A90E2; margin-bottom: 15px; word-break: break-all;">${winners.join(', ')}</div>
+                            <div style="font-size: 3em; font-weight: 900; color: #4A90E2; margin-bottom: 15px;">${winners.join(', ')}</div>
                             <div style="font-size: 1.5em; font-weight: bold; color: #0f172a;">${maxScore} / ${totalTestQuestions} <span style="color:var(--success-color);">(${pct}%)</span></div>
                         </div>
                     `;
@@ -1132,10 +1101,9 @@
         currentTestQuestion = questionIndex;
 
         if (currentQuizCategory === 'eq') { biquadFilter = audioCtx.createBiquadFilter(); biquadFilter.type = "peaking"; biquadFilter.Q.value = 1.4; biquadFilter.gain.value = 0; }
-        if (currentQuizCategory === 'sine') { nextSineTestStep(); } else { startAudioSource(); nextTestStep(); }
+        if (currentQuizCategory.startsWith('sine')) { nextSineTestStep(); } else { startAudioSource(); nextTestStep(); }
     }
 
-    // ★ 사인파 두 번 들려주는 로직 ★
     function nextSineTestStep() {
         if (currentTestQuestion >= totalTestQuestions) { 
             document.getElementById('status').innerText = "EXAM COMPLETED! Check ANSWERS."; 
@@ -1145,22 +1113,18 @@
         }
         targetSineFreq = testAnswers[currentTestQuestion]; 
         
-        // 첫 번째 재생 (5초)
         startAudioSource(); 
         document.getElementById('status').innerText = `[Q ${currentTestQuestion + 1}/${totalTestQuestions}] Playing Sine Wave 1/2 (5s)`;
         
         sequenceTimer = setTimeout(() => { 
-            // 무음 (3초)
             stopAudio(); 
             document.getElementById('status').innerText = `[Q ${currentTestQuestion + 1}/${totalTestQuestions}] Waiting... (3s)`; 
             
             sequenceTimer = setTimeout(() => { 
-                // 두 번째 재생 (5초)
                 startAudioSource(); 
                 document.getElementById('status').innerText = `[Q ${currentTestQuestion + 1}/${totalTestQuestions}] Playing Sine Wave 2/2 (5s)`;
                 
                 sequenceTimer = setTimeout(() => {
-                    // 답변 대기 (5초)
                     stopAudio();
                     document.getElementById('status').innerText = `[Q ${currentTestQuestion + 1}/${totalTestQuestions}] Time to answer... (5s)`;
                     
@@ -1212,7 +1176,7 @@
     
     function startAudioSource() {
         if (!audioCtx) return; 
-        if (currentQuizCategory === 'sine') {
+        if (currentQuizCategory.startsWith('sine')) {
             activeSource = audioCtx.createOscillator(); activeSource.type = 'sine'; activeSource.frequency.value = targetSineFreq;
             let sineGain = audioCtx.createGain(); sineGain.gain.value = 0; activeSource.connect(sineGain); sineGain.connect(masterGain); masterGain.gain.value = 0.15; 
             activeSource.start(); sineGain.gain.linearRampToValueAtTime(1.0, audioCtx.currentTime + 0.05); activeSource.gainNode = sineGain; isPlaying = true; return;
@@ -1262,7 +1226,7 @@
     function drawRTA() {
         const canvas = document.getElementById('rta-canvas'); const ctx = canvas.getContext('2d'); ctx.clearRect(0,0,1000,300);
         
-        if (currentQuizCategory === 'sine' && isPlaying) {
+        if (currentQuizCategory.startsWith('sine') && isPlaying) {
             ctx.beginPath(); ctx.strokeStyle = '#20c997'; ctx.lineWidth = 4;
             let freqRatio = Math.max(0.01, targetSineFreq / 20000); let waves = 2 + (freqRatio * 60); 
             for(let i=0; i<1000; i++) { let y = 150 + Math.sin(i * waves * 0.03 + (audioCtx ? audioCtx.currentTime * 3 : 0)) * 100; if(i===0) ctx.moveTo(i, y); else ctx.lineTo(i, y); }
@@ -1282,7 +1246,7 @@
     } 
 
     document.getElementById('display-area').addEventListener('click', function(e) {
-        if (!customBuffer || currentQuizCategory === 'sine' || currentMode === 'test' || currentMode === 'practice') return;
+        if (!customBuffer || currentQuizCategory.startsWith('sine') || currentMode === 'test' || currentMode === 'practice') return;
         const rect = this.getBoundingClientRect(); const x = e.clientX - rect.left; fileStartTime = customBuffer.duration * (x / rect.width);
         if (isPlaying) { if (activeSource) { try { activeSource.stop(); activeSource.disconnect(); } catch(err) {} activeSource = null; } isPlaying = false; startAudioSource(); }
     });
