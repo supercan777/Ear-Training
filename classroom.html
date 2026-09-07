@@ -158,10 +158,9 @@
 
         .results-panel { background: white; border: 1px solid var(--border-color); border-radius: 16px; flex: 1; padding: 25px; display: flex; flex-direction: column; overflow-y: auto;}
         
-        /* 접속한 학생 뱃지 스타일 */
+        /* 접속한 학생 뱃지 및 점수판 스타일 */
         .student-badge { background: #e0f2fe; color: #0284c7; padding: 10px 18px; border-radius: 20px; font-weight: 800; font-size: 1.1em; border: 2px solid #bae6fd;}
         
-        /* 스코어보드 테이블 스타일 */
         .score-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 1.1em; }
         .score-table th { padding: 15px 10px; border-bottom: 2px solid #e2e8f0; color: #64748b; font-weight: 800; text-transform: uppercase; }
         .score-table td { padding: 15px 10px; border-bottom: 1px solid #f1f5f9; font-weight: bold; color: #0f172a; }
@@ -211,7 +210,7 @@
             <button class="return-btn" style="margin-top:25px; max-width:400px;" onclick="showSubMenu()">BACK TO SUBJECTS</button>
         </div>
 
-        <!-- 그룹 테스트 대시보드 (접속자 명단만 띄움) -->
+        <!-- 그룹 테스트 대시보드 (접속자 명단) -->
         <div id="group-test-view">
             <div id="view-title" style="color: #8b5cf6;">Live Group Test : Lobby</div>
             
@@ -235,10 +234,13 @@
                     </div>
                     <div class="results-panel">
                         <h3 style="margin-top:0; margin-bottom:20px; color:#0f172a; font-size:1.4em;">접속자 명단</h3>
-                        <!-- 접속한 학생들의 닉네임이 여기에 배지 형태로 뜹니다 -->
-                        <div id="live-student-list" style="display:flex; flex-wrap:wrap; gap:10px;">
+                        <!-- 접속한 학생 닉네임 리스트 -->
+                        <div id="live-student-list" style="display:flex; flex-wrap:wrap; gap:10px; margin-bottom: 20px;">
                             <span style="color:#94a3b8; font-weight:bold;">아직 접속한 학생이 없습니다...</span>
                         </div>
+                        
+                        <!-- ★ 이 버튼을 눌러야 실제 오디오 훈련 화면으로 넘어갑니다! ★ -->
+                        <button class="btn primary" style="width: 100%; font-size: 1.2em; padding: 20px; margin-top: auto;" onclick="startGroupExam()">▶ 출제 화면으로 이동 (시험 시작)</button>
                     </div>
                 </div>
             </div>
@@ -413,9 +415,10 @@
     const db = firebase.database();
     const currentRoomPin = "7734"; 
 
-    let studentScores = {}; // 학생들의 점수를 누적할 객체
+    let studentScores = {}; 
+    let isGroupMode = false; // ★ 그룹 모드 여부 확인 변수
 
-    // 실시간 접속자 명단(닉네임) 렌더링
+    // 실시간 접속자 명단 렌더링
     db.ref('room/' + currentRoomPin + '/students').on('value', (snapshot) => {
         const students = snapshot.val();
         const listEl = document.getElementById('live-student-list');
@@ -437,11 +440,12 @@
 
     // 매 문항(5초)이 끝날 때마다 호출되어 학생들의 정답을 채점하는 함수
     function gradeCurrentQuestion(correctAnswer) {
+        if (!isGroupMode) return; // 싱글 모드일 때는 채점 안 함
+
         db.ref('room/' + currentRoomPin + '/answers').once('value').then(snapshot => {
             const ans = snapshot.val();
             if(ans) {
                 for(let s in ans) {
-                    // 학생이 제출한 답과 현재 문제의 정답이 일치하면 점수 +1
                     if(ans[s] == correctAnswer) {
                         studentScores[s] = (studentScores[s] || 0) + 1;
                     } else {
@@ -449,14 +453,12 @@
                     }
                 }
             }
-            // 채점 후 다음 문제를 위해 DB 정답 초기화
             db.ref('room/' + currentRoomPin + '/answers').remove();
         });
     }
     // ==========================================
 
 
-    // --- 기존 오디오 훈련 로직 ---
     let audioCtx;
     let masterGain;
     let activeSource = null;
@@ -518,13 +520,9 @@
 
     function selectMainMenu(mode) {
         userSelectedMain = mode;
+        isGroupMode = (mode === 'group'); // 그룹 모드 여부 저장
         document.getElementById('main-menu').style.display = 'none';
-        
-        if (mode === 'group') {
-            document.getElementById('group-test-view').style.display = 'flex';
-        } else {
-            document.getElementById('sub-menu').style.display = 'flex';
-        }
+        document.getElementById('sub-menu').style.display = 'flex'; // 항상 서브메뉴(과목선택)로 감
     }
 
     function showMainMenu() {
@@ -553,8 +551,20 @@
         if (type === 'explore') {
             init('practice', userSelectedSubject);
         } else if (type === 'test-custom') {
-            init('test', userSelectedSubject, testQuestionCount);
+            if (isGroupMode) {
+                // 그룹 모드면 시험화면 전에 로비 띄우기
+                document.getElementById('test-type-menu').style.display = 'none';
+                document.getElementById('group-test-view').style.display = 'flex';
+            } else {
+                init('test', userSelectedSubject, testQuestionCount);
+            }
         }
+    }
+
+    // ★ 로비에서 출제 화면으로 이동하는 함수 ★
+    function startGroupExam() {
+        document.getElementById('group-test-view').style.display = 'none';
+        init('test', userSelectedSubject, testQuestionCount);
     }
 
     function returnToMenu() {
@@ -564,10 +574,8 @@
         
         if (userSelectedMain === 'practice') {
             document.getElementById('sub-menu').style.display = 'flex';
-        } else if (userSelectedMain === 'test') {
-            document.getElementById('test-type-menu').style.display = 'flex';
         } else {
-            document.getElementById('main-menu').style.display = 'flex';
+            document.getElementById('test-type-menu').style.display = 'flex';
         }
     }
 
@@ -674,19 +682,6 @@
         return { input: inputNode, output: outputNode };
     }
 
-    async function checkPassword() {
-        if (document.getElementById('pw-input').value === "ainstudio") { 
-            document.getElementById('auth-overlay').style.display = 'none';
-            if (!audioCtx) {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                masterGain = audioCtx.createGain(); updateGainSettings(); masterGain.connect(audioCtx.destination);
-            }
-            if (audioCtx.state === 'suspended') await audioCtx.resume();
-        } else alert("Incorrect password.");
-    }
-    
-    function toggleSettings() { document.getElementById('settings-menu').classList.toggle('open'); }
-    
     function updateGainSettings() {
         if (currentEqMode === 'mix') { targetGain = currentGainAmount; } else { targetGain = currentEqMode === 'boost' ? currentGainAmount : -currentGainAmount; }
         if (masterGain) masterGain.gain.value = (currentEqMode === 'boost' || currentEqMode === 'mix') && currentGainAmount === 12 ? 0.15 : 0.3;
@@ -765,6 +760,12 @@
                 <button class="btn" onclick="listenAgain()">🎧 AGAIN</button> 
                 <button class="btn" onclick="showAnswers()">👁️ ALL ANSWERS</button> 
                 <button class="btn" onclick="stopAudio()" style="background:var(--danger-color); color:white; border-color:var(--danger-color);">⏹ STOP</button>`;
+            
+            // FX 시험일 때만 설정 패널 보여주기
+            if(category === 'fx') {
+                fxControls.style.display = 'flex';
+                applyFxSetup();
+            }
         } 
         else if (mode === 'practice') {
             actions.innerHTML = `
@@ -994,14 +995,16 @@
         
         // ★ 시험 시작 시 학생들의 기본 점수를 0으로 셋팅 ★
         studentScores = {};
-        db.ref('room/' + currentRoomPin + '/students').once('value').then(snapshot => {
-            let students = snapshot.val();
-            if(students) {
-                for(let s in students) {
-                    studentScores[s] = 0; 
+        if (isGroupMode) {
+            db.ref('room/' + currentRoomPin + '/students').once('value').then(snapshot => {
+                let students = snapshot.val();
+                if(students) {
+                    for(let s in students) {
+                        studentScores[s] = 0; 
+                    }
                 }
-            }
-        });
+            });
+        }
 
         testAnswers = []; testGains = []; let pool = currentQuizCategory === 'eq' ? bands : (currentQuizCategory === 'sine' ? bands31 : fxPool); 
         for (let i = 0; i < totalTestQuestions; i++) {
@@ -1011,6 +1014,9 @@
         if (customBuffer && currentQuizCategory !== 'sine') { const maxStart = Math.max(0, customBuffer.duration - (totalTestQuestions * 15)); fileStartTime = Math.random() * maxStart; }
         isTestCompleted = false; isExamRunning = true; currentTestQuestion = 0; startTestSequence(0);
         
+        // 시험 시작 시 FX 설정 패널 숨기기
+        if(currentQuizCategory === 'fx') document.getElementById('fx-controls').style.display = 'none';
+
         document.getElementById('action-btns').innerHTML = `
             <button class="btn primary" onclick="runTest()">▶ RESTART EXAM</button> 
             <button class="btn" onclick="listenAgain()">🎧 AGAIN</button> 
@@ -1029,53 +1035,55 @@
         } 
     }
 
-    // ★ 시험 종료 후 정답과 학생 랭킹(정답률)을 함께 보여주도록 업데이트 ★
+    // ★ 시험 종료 후 정답과 학생 랭킹(정답률)을 함께 보여줌 ★
     function showAnswers() {
         const display = document.getElementById('answer-display');
         if (currentMode === 'test' && testAnswers.length > 0) {
             
-            // 1. 문제 정답 리스트 HTML
             let answersHtml = testAnswers.map((ans, i) => { 
                 let text = currentQuizCategory === 'eq' ? `${ans} Hz (${testGains[i] > 0 ? '+' : ''}${testGains[i]}dB)` : (currentQuizCategory === 'sine' ? `${ans} Hz` : ans.toUpperCase()); 
                 return `<div style="padding:4px 0;">Q${i+1}: <span style="color:#ffeb3b; font-weight:900;">${text}</span></div>`; 
             }).join('');
 
-            // 2. 학생 점수판(랭킹) HTML
-            let scoreHtml = `
-                <table class="score-table">
-                    <tr><th>Name</th><th>Score</th><th>Accuracy</th></tr>
-            `;
-            for(let s in studentScores) {
-                let correct = studentScores[s];
-                let total = totalTestQuestions;
-                let pct = Math.round((correct / total) * 100);
-                scoreHtml += `
-                    <tr>
-                        <td>${s}</td>
-                        <td>${correct} / ${total}</td>
-                        <td style="color:var(--primary-color);">${pct}%</td>
-                    </tr>
+            // 그룹 모드일 경우에만 점수판을 생성하여 좌우 분할로 표시
+            if (isGroupMode) {
+                let scoreHtml = `
+                    <table class="score-table">
+                        <tr><th>Name</th><th>Score</th><th>Accuracy</th></tr>
                 `;
-            }
-            scoreHtml += `</table>`;
+                for(let s in studentScores) {
+                    let correct = studentScores[s];
+                    let total = totalTestQuestions;
+                    let pct = Math.round((correct / total) * 100);
+                    scoreHtml += `
+                        <tr>
+                            <td>${s}</td>
+                            <td>${correct} / ${total}</td>
+                            <td style="color:var(--primary-color);">${pct}%</td>
+                        </tr>
+                    `;
+                }
+                scoreHtml += `</table>`;
 
-            if (Object.keys(studentScores).length === 0) {
-                scoreHtml = "<div style='padding:20px; color:#94a3b8; font-weight:bold;'>접속한 학생 데이터가 없습니다.</div>";
-            }
+                if (Object.keys(studentScores).length === 0) {
+                    scoreHtml = "<div style='padding:20px; color:#94a3b8; font-weight:bold;'>제출된 정답 데이터가 없습니다.</div>";
+                }
 
-            // 3. 두 화면을 양쪽으로 합쳐서 렌더링
-            display.innerHTML = `
-                <div style="display:flex; gap: 40px; text-align: left; width: 100%; max-width: 900px; justify-content: center; max-height: 90%; overflow-y: auto;">
-                    <div style="flex: 1;">
-                        <div style="color: #94a3b8; margin-bottom: 15px; font-weight: 800; letter-spacing: 1px;">[ EXAM ANSWERS ]</div>
-                        <div style="font-size: 1.2em; line-height: 1.6;">${answersHtml}</div>
+                display.innerHTML = `
+                    <div style="display:flex; gap: 40px; text-align: left; width: 100%; max-width: 900px; justify-content: center; max-height: 90%; overflow-y: auto;">
+                        <div style="flex: 1;">
+                            <div style="color: #94a3b8; margin-bottom: 15px; font-weight: 800; letter-spacing: 1px;">[ EXAM ANSWERS ]</div>
+                            <div style="font-size: 1.2em; line-height: 1.6;">${answersHtml}</div>
+                        </div>
+                        <div style="flex: 1; background: white; padding: 20px 30px; border-radius: 16px; color: #1e293b; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
+                            <div style="color: var(--primary-color); margin-bottom: 15px; font-weight: 900; letter-spacing: 1px; font-size: 1.1em;">[ STUDENT SCORES ]</div>
+                            ${scoreHtml}
+                        </div>
                     </div>
-                    <div style="flex: 1; background: white; padding: 20px 30px; border-radius: 16px; color: #1e293b; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
-                        <div style="color: var(--primary-color); margin-bottom: 15px; font-weight: 900; letter-spacing: 1px; font-size: 1.1em;">[ STUDENT SCORES ]</div>
-                        ${scoreHtml}
-                    </div>
-                </div>
-            `;
+                `;
+            } else {
+                display.innerHTML = `<div style="font-size: 1.1em; color: #94a3b8; margin-bottom: 20px; letter-spacing: 1px;">[ EXAM ANSWERS ]</div> <div style="font-size: 1.2em; line-height: 1.6; display: grid; grid-template-columns: 1fr 1fr; gap: 10px 40px; text-align: left;"> ${answersHtml} </div>`; 
+            }
             display.style.display = 'flex'; 
         }
     }
@@ -1104,7 +1112,7 @@
             document.getElementById('status').innerText = `[Q ${currentTestQuestion + 1}/${totalTestQuestions}] Waiting... (5s)`; 
             
             sequenceTimer = setTimeout(() => { 
-                // ★ 다음 문제로 넘어가기 직전에 학생들의 제출 답안을 채점
+                // ★ 다음 문제로 넘어가기 직전에 채점
                 gradeCurrentQuestion(targetSineFreq);
                 currentTestQuestion++; 
                 nextSineTestStep(); 
@@ -1136,7 +1144,7 @@
                     document.getElementById('status').innerText = `[Q ${currentTestQuestion + 1}/${totalTestQuestions}] Applied (5s)`;
                     
                     sequenceTimer = setTimeout(() => { 
-                        // ★ 다음 문제로 넘어가기 직전에 채점 진행
+                        // ★ 다음 문제로 넘어가기 직전에 채점
                         gradeCurrentQuestion(testAnswers[currentTestQuestion]);
                         currentTestQuestion++; 
                         nextTestStep(); 
@@ -1169,10 +1177,8 @@
             activeSource.connect(dryGainNode); activeSource.connect(fxInputNode); 
             if (currentEffectNode) { fxInputNode.connect(currentEffectNode.input); currentEffectNode.output.connect(wetGainNode); }
             
-            if (currentMode === 'test' && isExamRunning) {
+            if ((currentMode === 'test' || currentMode === 'practice') && isExamRunning) {
                 setEffectActive(false); 
-            } else if (currentMode === 'practice' && isPracticeActive) {
-                setEffectActive(false);
             } else {
                 if (isFxBypassed) setEffectActive(false); else applyFixedMix();
             }
@@ -1219,7 +1225,7 @@
     } 
 
     document.getElementById('display-area').addEventListener('click', function(e) {
-        if (!customBuffer || currentQuizCategory === 'sine' || currentMode === 'test') return;
+        if (!customBuffer || currentQuizCategory === 'sine' || currentMode === 'test' || currentMode === 'practice') return;
         const rect = this.getBoundingClientRect(); const x = e.clientX - rect.left; fileStartTime = customBuffer.duration * (x / rect.width);
         if (isPlaying) { if (activeSource) { try { activeSource.stop(); activeSource.disconnect(); } catch(err) {} activeSource = null; } isPlaying = false; startAudioSource(); }
     });
