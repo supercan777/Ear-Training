@@ -209,7 +209,7 @@
             <button class="return-btn" style="margin-top:25px; max-width:400px;" onclick="showSubMenu()">BACK TO SUBJECTS</button>
         </div>
 
-        <!-- 그룹 테스트 대시보드 -->
+        <!-- 그룹 테스트 대시보드 (접속자 명단) -->
         <div id="group-test-view">
             <div id="view-title" style="color: #8b5cf6;">Live Group Test : Lobby</div>
             
@@ -389,6 +389,8 @@
         </div>
         
         <button class="btn" onclick="toggleSettings()" style="margin-top: 15px; width:100%; background: #f1f5f9; color: #475569; border-color: transparent; max-width:none; flex: none;">Close Settings</button>
+        <!-- ★ 추가: 언제든 방을 초기화하고 로그인 화면으로 돌아가는 리셋 버튼 ★ -->
+        <button class="btn" onclick="resetClassroom()" style="margin-top: 10px; width:100%; background: #ef4444; color: white; border-color: transparent; max-width:none; flex: none;">Logout & Reset Classroom</button>
     </div>
 </div>
 
@@ -407,7 +409,7 @@
 
     try {
         const firebaseConfig = {
-           apiKey: "AIzaSyD7ldX4co1tDyZlulM3bG0RM2gYP9rX6yM",
+          apiKey: "AIzaSyD7ldX4co1tDyZlulM3bG0RM2gYP9rX6yM",
     authDomain: "ear-training-ad2a1.firebaseapp.com",
     databaseURL: "https://ear-training-ad2a1-default-rtdb.firebaseio.com",
     projectId: "ear-training-ad2a1",
@@ -537,6 +539,16 @@
             }
             db.ref('room/' + currentRoomPin + '/answers').remove();
         });
+    }
+
+    // ★ 전체 강제 리셋 및 로그아웃 함수 ★
+    function resetClassroom() {
+        if(confirm("현재 교실의 접속자와 모든 기록이 지워지고 로그인 화면으로 돌아갑니다. 계속할까요?")) {
+            if (db) {
+                db.ref('room/' + currentRoomPin).remove(); // DB 방 데이터 폭파
+            }
+            location.reload(); // 새로고침
+        }
     }
 
     function selectMainMenu(mode) {
@@ -709,6 +721,11 @@
                 masterGain = audioCtx.createGain(); updateGainSettings(); masterGain.connect(audioCtx.destination);
             }
             if (audioCtx.state === 'suspended') await audioCtx.resume();
+            
+            // ★ 로그인 시 방을 완벽하게 초기화 (기존 데이터 삭제) ★
+            if (db) {
+                db.ref('room/' + currentRoomPin).remove(); 
+            }
         } else alert("Incorrect password.");
     }
     
@@ -1021,7 +1038,6 @@
         
         studentScores = {};
         if (isGroupMode && db) {
-            // 새 시험이 시작되면 접속자들의 점수판을 0으로 초기화하고, 상태를 running으로 전송
             db.ref('room/' + currentRoomPin + '/students').once('value').then(snapshot => {
                 let students = snapshot.val();
                 if(students) {
@@ -1071,7 +1087,6 @@
             }).join('');
 
             if (isGroupMode) {
-                // 수동으로 버튼을 누르거나 시험이 끝났을 때 점수 방송
                 broadcastScores(); 
 
                 let scoreHtml = `
@@ -1129,7 +1144,7 @@
         if (currentTestQuestion >= totalTestQuestions) { 
             document.getElementById('status').innerText = "EXAM COMPLETED! Check ANSWERS."; 
             isTestCompleted = true; 
-            broadcastScores(); // 모든 문제가 끝나면 학생들에게 점수 방송
+            broadcastScores(); 
             return; 
         }
         targetSineFreq = testAnswers[currentTestQuestion]; 
@@ -1152,12 +1167,7 @@
         if (currentTestQuestion >= totalTestQuestions) { 
             setEffectActive(false); 
             document.getElementById('status').innerText = "All completed! Original source (3s)"; 
-            sequenceTimer = setTimeout(() => { 
-                stopAudio(); 
-                isTestCompleted = true; 
-                document.getElementById('status').innerText = "EXAM COMPLETED! Check ANSWERS."; 
-                broadcastScores(); // 모든 문제가 끝나면 학생들에게 점수 방송
-            }, 3000); 
+            sequenceTimer = setTimeout(() => { stopAudio(); isTestCompleted = true; document.getElementById('status').innerText = "EXAM COMPLETED! Check ANSWERS."; broadcastScores(); }, 3000); 
             return; 
         }
 
