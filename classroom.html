@@ -149,7 +149,7 @@
         .dashboard-container { display: flex; width: 100%; height: 100%; gap: 20px; }
         .dashboard-left { flex: 1; display: flex; flex-direction: column; background: #f8fafc; border-radius: 16px; border: 2px dashed #cbd5e1; align-items: center; justify-content: center; padding: 20px; text-align: center;}
         .dashboard-right { flex: 2; display: flex; flex-direction: column; gap: 15px; }
-        .qr-placeholder { display: flex; align-items: center; justify-content: center; font-weight: 800; color: #94a3b8; margin-bottom: 20px;}
+        .qr-placeholder { display: flex; align-items: center; justify-content: center; font-weight: 800; color: #94a3b8; margin-bottom: 15px;}
         .pin-code { font-size: 3em; font-weight: 900; color: var(--primary-color); letter-spacing: 5px; margin: 0;}
         
         .student-counter { background: #1e293b; color: white; padding: 20px; border-radius: 16px; text-align: center; display: flex; flex-direction: column; justify-content: center;}
@@ -157,7 +157,12 @@
         .student-counter .count { font-size: 4em; font-weight: 900; margin: 5px 0 0 0; line-height: 1;}
 
         .results-panel { background: white; border: 1px solid var(--border-color); border-radius: 16px; flex: 1; padding: 25px; display: flex; flex-direction: column; overflow-y: auto;}
+        
         .student-badge { background: #e0f2fe; color: #0284c7; padding: 10px 18px; border-radius: 20px; font-weight: 800; font-size: 1.1em; border: 2px solid #bae6fd;}
+        
+        .score-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 1.1em; }
+        .score-table th { padding: 15px 10px; border-bottom: 2px solid #e2e8f0; color: #64748b; font-weight: 800; text-transform: uppercase; }
+        .score-table td { padding: 15px 10px; border-bottom: 1px solid #f1f5f9; font-weight: bold; color: #0f172a; }
     </style>
 </head>
 <body>
@@ -227,7 +232,6 @@
                     </div>
                     <div class="results-panel">
                         <h3 style="margin-top:0; margin-bottom:20px; color:#0f172a; font-size:1.4em;">접속자 명단</h3>
-                        <!-- 접속한 학생 닉네임 리스트 -->
                         <div id="live-student-list" style="display:flex; flex-wrap:wrap; gap:10px; margin-bottom: 20px;">
                             <span style="color:#94a3b8; font-weight:bold;">아직 접속한 학생이 없습니다...</span>
                         </div>
@@ -401,7 +405,7 @@
 
     try {
         const firebaseConfig = {
-          apiKey: "AIzaSyD7ldX4co1tDyZlulM3bG0RM2gYP9rX6yM",
+            apiKey: "AIzaSyD7ldX4co1tDyZlulM3bG0RM2gYP9rX6yM",
     authDomain: "ear-training-ad2a1.firebaseapp.com",
     databaseURL: "https://ear-training-ad2a1-default-rtdb.firebaseio.com",
     projectId: "ear-training-ad2a1",
@@ -1064,7 +1068,6 @@
         } 
     }
 
-    // ★ 1등만 띄워주도록 수정한 showAnswers() ★
     function showAnswers() {
         const display = document.getElementById('answer-display');
         if (currentMode === 'test' && testAnswers.length > 0) {
@@ -1077,10 +1080,10 @@
             if (isGroupMode) {
                 broadcastScores(); 
 
+                // ★ 1등만 띄워주기 로직 ★
                 let maxScore = -1;
                 let winners = [];
 
-                // 1등 찾기 알고리즘
                 for (let s in studentScores) {
                     if (studentScores[s] > maxScore) {
                         maxScore = studentScores[s];
@@ -1091,7 +1094,6 @@
                 }
 
                 let scoreHtml = "";
-
                 if (Object.keys(studentScores).length === 0 || maxScore === -1) {
                     scoreHtml = "<div style='padding:20px; color:#94a3b8; font-weight:bold; text-align:center;'>제출된 정답 데이터가 없습니다.</div>";
                 } else {
@@ -1099,7 +1101,7 @@
                     scoreHtml = `
                         <div style="text-align: center; padding: 30px 10px;">
                             <div style="font-size: 1.5em; color: #64748b; font-weight: bold; margin-bottom: 10px;">🏆 1등 (Top Scorer) 🏆</div>
-                            <div style="font-size: 3em; font-weight: 900; color: #4A90E2; margin-bottom: 15px;">${winners.join(', ')}</div>
+                            <div style="font-size: 3em; font-weight: 900; color: #4A90E2; margin-bottom: 15px; word-break: break-all;">${winners.join(', ')}</div>
                             <div style="font-size: 1.5em; font-weight: bold; color: #0f172a;">${maxScore} / ${totalTestQuestions} <span style="color:var(--success-color);">(${pct}%)</span></div>
                         </div>
                     `;
@@ -1133,6 +1135,7 @@
         if (currentQuizCategory === 'sine') { nextSineTestStep(); } else { startAudioSource(); nextTestStep(); }
     }
 
+    // ★ 사인파 두 번 들려주는 로직 ★
     function nextSineTestStep() {
         if (currentTestQuestion >= totalTestQuestions) { 
             document.getElementById('status').innerText = "EXAM COMPLETED! Check ANSWERS."; 
@@ -1141,17 +1144,35 @@
             return; 
         }
         targetSineFreq = testAnswers[currentTestQuestion]; 
+        
+        // 첫 번째 재생 (5초)
         startAudioSource(); 
-        document.getElementById('status').innerText = `[Q ${currentTestQuestion + 1}/${totalTestQuestions}] Playing Sine Wave (5s)`;
+        document.getElementById('status').innerText = `[Q ${currentTestQuestion + 1}/${totalTestQuestions}] Playing Sine Wave 1/2 (5s)`;
+        
         sequenceTimer = setTimeout(() => { 
+            // 무음 (3초)
             stopAudio(); 
-            document.getElementById('status').innerText = `[Q ${currentTestQuestion + 1}/${totalTestQuestions}] Waiting... (5s)`; 
+            document.getElementById('status').innerText = `[Q ${currentTestQuestion + 1}/${totalTestQuestions}] Waiting... (3s)`; 
             
             sequenceTimer = setTimeout(() => { 
-                gradeCurrentQuestion(targetSineFreq);
-                currentTestQuestion++; 
-                nextSineTestStep(); 
-            }, 5000); 
+                // 두 번째 재생 (5초)
+                startAudioSource(); 
+                document.getElementById('status').innerText = `[Q ${currentTestQuestion + 1}/${totalTestQuestions}] Playing Sine Wave 2/2 (5s)`;
+                
+                sequenceTimer = setTimeout(() => {
+                    // 답변 대기 (5초)
+                    stopAudio();
+                    document.getElementById('status').innerText = `[Q ${currentTestQuestion + 1}/${totalTestQuestions}] Time to answer... (5s)`;
+                    
+                    sequenceTimer = setTimeout(() => {
+                        gradeCurrentQuestion(targetSineFreq);
+                        currentTestQuestion++; 
+                        nextSineTestStep(); 
+                    }, 5000);
+                    
+                }, 5000);
+                
+            }, 3000); 
             
         }, 5000); 
     }
