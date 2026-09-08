@@ -205,20 +205,20 @@
             <button class="return-btn" style="margin-top:25px; max-width:400px;" onclick="showMainMenu()">BACK</button>
         </div>
 
-        <!-- STEP 3: 테스트 상세 선택 (개인 시험 모드일 때만 보임) -->
+        <!-- STEP 3: 테스트 상세 선택 (개인 시험용) -->
         <div id="test-type-menu" style="display:none; flex-direction:column; align-items:center; justify-content:center; flex:1; gap:20px;">
             <button class="mega-btn" onclick="selectTestType('explore')">EXPLORE QUIZ</button>
             <button class="mega-btn" onclick="selectTestType('test-custom')">START TEST (<span id="menu-test-btn-text">5</span> Qs)</button>
             <button class="return-btn" style="margin-top:25px; max-width:400px;" onclick="showSubMenu()">BACK TO SUBJECTS</button>
         </div>
 
-        <!-- 그룹 테스트 대시보드 -->
+        <!-- 그룹 테스트 대시보드 (영어화 완료) -->
         <div id="group-test-view">
             <div id="view-title" style="color: #8b5cf6;">Live Group Test : Lobby</div>
             
             <div class="dashboard-container">
                 <div class="dashboard-left">
-                    <h3 style="margin-top:0; color:#475569; margin-bottom: 20px;">학생용 폰으로 스캔하세요</h3>
+                    <h3 style="margin-top:0; color:#475569; margin-bottom: 20px;">SCAN TO JOIN</h3>
                     <div class="qr-placeholder">
                         <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://supercan777.github.io/Ear-Training/student.html" alt="Student QR Code" style="width: 200px; height: 200px; border-radius: 12px; border: 4px solid white; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
                     </div>
@@ -232,11 +232,11 @@
                         <p class="count" id="live-student-count">0</p>
                     </div>
                     <div class="results-panel">
-                        <h3 style="margin-top:0; margin-bottom:20px; color:#0f172a; font-size:1.4em;">접속자 명단</h3>
+                        <h3 style="margin-top:0; margin-bottom:20px; color:#0f172a; font-size:1.4em;">STUDENT ROSTER</h3>
                         <div id="live-student-list" style="display:flex; flex-wrap:wrap; gap:10px; margin-bottom: 20px;">
-                            <span style="color:#94a3b8; font-weight:bold;">아직 접속한 학생이 없습니다...</span>
+                            <span style="color:#94a3b8; font-weight:bold;">Waiting for students to join...</span>
                         </div>
-                        <button class="btn primary" style="width: 100%; font-size: 1.2em; padding: 20px; margin-top: auto;" onclick="startGroupExam()">▶ 출제 화면으로 이동 (시험 시작)</button>
+                        <button class="btn primary" style="width: 100%; font-size: 1.2em; padding: 20px; margin-top: auto;" onclick="startGroupExam()">▶ OPEN EXAM CONSOLE</button>
                     </div>
                 </div>
             </div>
@@ -437,13 +437,13 @@
                         }
                     } else {
                         countEl.innerText = 0;
-                        listEl.innerHTML = '<span style="color:#94a3b8; font-weight:bold;">아직 접속한 학생이 없습니다...</span>';
+                        listEl.innerHTML = '<span style="color:#94a3b8; font-weight:bold;">Waiting for students to join...</span>';
                     }
                 }
             });
         }
     } catch (error) {
-        console.warn("Firebase 연동 오류: ", error);
+        console.warn("Firebase Init Error:", error);
     }
 
     let audioCtx;
@@ -538,7 +538,7 @@
     }
 
     function resetClassroom() {
-        if(confirm("현재 교실의 접속자와 모든 기록이 지워지고 로그인 화면으로 돌아갑니다. 계속할까요?")) {
+        if(confirm("This will erase all current data and reset the classroom. Continue?")) {
             if (db) {
                 db.ref('room/' + currentRoomPin).remove(); 
             }
@@ -546,13 +546,10 @@
         }
     }
 
-    // ★ 메뉴 이동 플로우 수정 구역 ★
     function selectMainMenu(mode) {
         userSelectedMain = mode;
         isGroupMode = (mode === 'group'); 
         document.getElementById('main-menu').style.display = 'none';
-        
-        // 어떤 모드를 선택하든 무조건 서브 메뉴(과목 선택)로 이동하여 올바른 순서를 보장합니다!
         document.getElementById('sub-menu').style.display = 'flex'; 
     }
 
@@ -568,11 +565,9 @@
         if (userSelectedMain === 'practice') {
             init('listen', subject);
         } else if (isGroupMode) {
-            // ★ 그룹 모드일 경우 과목 선택 후 바로 대기실(로비)로 이동! ★
             document.getElementById('sub-menu').style.display = 'none';
             document.getElementById('group-test-view').style.display = 'flex';
         } else {
-            // 개인 테스트 모드일 경우에만 상세 선택(Explore / Test) 메뉴 표시
             document.getElementById('sub-menu').style.display = 'none';
             document.getElementById('test-type-menu').style.display = 'flex';
         }
@@ -586,7 +581,7 @@
     function selectTestType(type) {
         if (type === 'explore') {
             if (isGroupMode) {
-                alert("그룹 테스트는 'START TEST' 모드에서만 진행할 수 있습니다!");
+                alert("Group Test is only available in START TEST mode!");
                 return;
             }
             init('practice', userSelectedSubject);
@@ -610,13 +605,11 @@
         }
 
         if (userSelectedMain === 'practice' || isGroupMode) {
-            // 그룹 모드에서 뒤로가기 누르면 과목 선택(sub-menu)으로 돌아갑니다.
             document.getElementById('sub-menu').style.display = 'flex';
         } else {
             document.getElementById('test-type-menu').style.display = 'flex';
         }
     }
-    // ★ 메뉴 이동 플로우 수정 구역 종료 ★
 
     function applyTestQs() {
         let val = parseInt(document.getElementById('test-q-input').value);
@@ -624,8 +617,8 @@
             testQuestionCount = val;
             document.getElementById('menu-test-btn-text').innerText = val;
             if (currentMode === 'test') { init('test', currentQuizCategory, testQuestionCount); }
-            alert("시험 문항 수가 " + val + "개로 변경되었습니다.");
-        } else { alert("유효한 숫자를 입력해주세요."); }
+            alert("Question count updated to " + val);
+        } else { alert("Please enter a valid number."); }
     }
 
     function syncParam(type, value) {
@@ -731,7 +724,7 @@
                     masterGain = audioCtx.createGain(); updateGainSettings(); masterGain.connect(audioCtx.destination);
                 }
                 if (audioCtx.state === 'suspended') await audioCtx.resume();
-            } catch(e) { console.error("오디오 컨텍스트 초기화 에러:", e); }
+            } catch(e) { console.error("Audio init error:", e); }
             
             if (db) {
                 try {
@@ -1137,12 +1130,12 @@
                 let scoreHtml = "";
 
                 if (Object.keys(studentScores).length === 0 || maxScore === -1) {
-                    scoreHtml = "<div style='padding:20px; color:#94a3b8; font-weight:bold; text-align:center;'>제출된 정답 데이터가 없습니다.</div>";
+                    scoreHtml = "<div style='padding:20px; color:#94a3b8; font-weight:bold; text-align:center;'>No answer data submitted.</div>";
                 } else {
                     let pct = Math.round((maxScore / totalTestQuestions) * 100);
                     scoreHtml = `
                         <div style="text-align: center; padding: 30px 10px;">
-                            <div style="font-size: 1.5em; color: #64748b; font-weight: bold; margin-bottom: 10px;">🏆 1등 (Top Scorer) 🏆</div>
+                            <div style="font-size: 1.5em; color: #64748b; font-weight: bold; margin-bottom: 10px;">🏆 TOP SCORER 🏆</div>
                             <div style="font-size: 3em; font-weight: 900; color: #4A90E2; margin-bottom: 15px; word-break: break-all;">${winners.join(', ')}</div>
                             <div style="font-size: 1.5em; font-weight: bold; color: #0f172a;">${maxScore} / ${totalTestQuestions} <span style="color:var(--success-color);">(${pct}%)</span></div>
                         </div>
