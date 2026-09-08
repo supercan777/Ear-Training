@@ -25,7 +25,6 @@
     </style>
 </head>
 <body>
-    <!-- 로그인 화면 -->
     <div id="login-box" class="box">
         <h2>Join Classroom</h2>
         <input type="text" id="pin" placeholder="Room PIN (ex. 7734)" value="7734" readonly>
@@ -33,23 +32,17 @@
         <button class="btn" onclick="joinRoom()">입장하기</button>
     </div>
 
-    <!-- 대기실 화면 -->
     <div id="lobby-box" class="box" style="display:none; margin-top: 20vh;">
         <h2>대기실</h2>
         <p style="color: #64748b; font-weight: bold; font-size: 1.1em; line-height: 1.5;">선생님이 시험을 시작할 때까지<br>잠시만 기다려주세요!</p>
         <div style="margin-top: 20px; color: #94a3b8;">시험이 시작되면 화면이 자동으로 바뀝니다.</div>
     </div>
 
-    <!-- 리모컨 화면 -->
     <div id="remote-box" class="box" style="display:none; padding: 20px 15px;">
         <h2 id="mode-title" style="margin-bottom: 5px;">Select Answer</h2>
-        
-        <!-- ★ 문제 번호 표시 영역 ★ -->
         <div id="q-info" style="font-size: 1.5em; font-weight: 900; color: #ff6b6b; margin-bottom: 10px; letter-spacing: 1px; display: none;"></div>
-
         <p style="color: #64748b; font-size: 0.95em; font-weight: bold; margin-bottom: 25px;">소리를 듣고 정답을 고르세요!</p>
         
-        <!-- 10-Band EQ & SINE 10 전용 -->
         <div id="tab-10band" style="display:none;">
             <div class="grid grid-5">
                 <button class="ans-btn" onclick="sendAnswer('31.5')">31.5</button>
@@ -65,7 +58,6 @@
             </div>
         </div>
 
-        <!-- SINE 31-Band 전용 -->
         <div id="tab-31band" style="display:none;">
             <div class="grid grid-4">
                 <button class="ans-btn" style="padding:12px 0;" onclick="sendAnswer('20')">20</button>
@@ -102,7 +94,6 @@
             </div>
         </div>
 
-        <!-- FX 탭 전용 -->
         <div id="tab-fx" style="display:none;">
             <div class="grid grid-3">
                 <button class="ans-btn" onclick="sendAnswer('room')">ROOM</button>
@@ -116,11 +107,9 @@
                 <button class="ans-btn" onclick="sendAnswer('bpf')">BPF</button>
             </div>
         </div>
-
         <div id="msg" style="margin-top:25px; font-weight:900; color:#20c997; font-size: 1.3em; height: 30px;"></div>
     </div>
 
-    <!-- 시험 결과 화면 -->
     <div id="score-box" class="box" style="display:none; margin-top: 15vh;">
         <h2>시험 종료!</h2>
         <p style="color: #64748b; font-weight: bold;">나의 최종 점수는?</p>
@@ -131,12 +120,10 @@
         </div>
     </div>
 
+    <!-- ★ 파이어베이스 설정 전용 스크립트 (에러 방지용 분리) ★ -->
     <script>
-        // =======================================================================
-        // ★ 반드시 아래 빈칸의 따옴표("") 안쪽에 값만 하나씩 복사해서 넣어주세요! ★
-        // =======================================================================
         const firebaseConfig = {
-            apiKey: "AIzaSyD7ldX4co1tDyZlulM3bG0RM2gYP9rX6yM",
+             apiKey: "AIzaSyD7ldX4co1tDyZlulM3bG0RM2gYP9rX6yM",
     authDomain: "ear-training-ad2a1.firebaseapp.com",
     databaseURL: "https://ear-training-ad2a1-default-rtdb.firebaseio.com",
     projectId: "ear-training-ad2a1",
@@ -145,22 +132,24 @@
     appId: "1:735813738589:web:797e1eb0c3af9ebaeaedb4",
     measurementId: "G-B6B462KBCB"
         };
-        // =======================================================================
+    </script>
 
+    <!-- 앱 로직 -->
+    <script>
         let db = null;
+        let roomPin = "";
+        let studentName = "";
+        let currentStatus = 'lobby';
+        let currentMode = 'eq';
+
         try {
-            if (firebaseConfig.apiKey !== "여기에_API_KEY_붙여넣기") {
-                firebase.initializeApp(firebaseConfig);
+            if (typeof firebaseConfig !== 'undefined' && firebaseConfig.apiKey && firebaseConfig.apiKey !== "여기에_API_KEY_붙여넣기") {
+                if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
                 db = firebase.database();
             }
         } catch (e) {
             console.error("Firebase 초기화 에러:", e);
         }
-        
-        let roomPin = "";
-        let studentName = "";
-        let currentStatus = 'lobby';
-        let currentMode = 'eq';
 
         function joinRoom() {
             roomPin = document.getElementById('pin').value;
@@ -187,7 +176,6 @@
                 updateStudentUI();
             });
 
-            // ★ 문제 번호 수신 리스너 추가 ★
             db.ref('room/' + roomPin + '/questionInfo').on('value', (snap) => {
                 const qInfo = snap.val();
                 if (qInfo) {
