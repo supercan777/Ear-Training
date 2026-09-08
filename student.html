@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <!-- ★ 강력한 캐시 방지 (무조건 최신 버전 로딩) ★ -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
@@ -22,15 +21,15 @@
         .grid-5 { grid-template-columns: repeat(5, 1fr); }
         .grid-4 { grid-template-columns: repeat(4, 1fr); }
         .grid-3 { grid-template-columns: repeat(3, 1fr); }
-        
-        /* 글씨가 긴 숫자들을 위해 폰트 사이즈와 자간 약간 조절 */
-        .ans-btn { background: #f8fafc; color: #334155; border: 2px solid #e2e8f0; padding: 15px 0px; font-size: 0.9em; font-weight: 800; border-radius: 10px; cursor: pointer; word-break: keep-all; letter-spacing: -0.5px; transition: all 0.15s ease-in-out;}
+        .ans-btn { background: #f8fafc; color: #334155; border: 2px solid #e2e8f0; padding: 18px 2px; font-size: 0.9em; font-weight: 800; border-radius: 10px; cursor: pointer; word-break: keep-all; letter-spacing: -0.5px; transition: all 0.15s ease-in-out;}
         .ans-btn.selected { background: #4A90E2; color: white; border-color: #4A90E2; box-shadow: 0 4px 12px rgba(74, 144, 226, 0.4); transform: scale(1.05); z-index: 2; position: relative;}
         .score-value { font-size: 4em; font-weight: 900; color: #4A90E2; margin: 15px 0; }
         .score-pct { font-size: 1.5em; font-weight: bold; color: #64748b; }
+        .ans-btn-large { padding: 25px 0px; font-size: 1.05em; }
     </style>
 </head>
 <body>
+    <!-- LOGIN SCREEN -->
     <div id="login-box" class="box">
         <h2>Join Classroom</h2>
         <input type="text" id="pin" placeholder="Room PIN (ex. 7734)" value="7734" readonly>
@@ -38,18 +37,52 @@
         <button class="btn" onclick="joinRoom()">JOIN</button>
     </div>
 
+    <!-- LOBBY SCREEN -->
     <div id="lobby-box" class="box" style="display:none; margin-top: 20vh; padding: 40px 20px;">
         <h2 style="font-size: 2.2em; letter-spacing: -1px; margin-bottom: 15px;">EAR TRAINING</h2>
         <p style="color: #64748b; font-weight: bold; font-size: 1.1em; letter-spacing: 0.5px;">Waiting for the test to start...</p>
     </div>
 
+    <!-- REMOTE SCREEN -->
     <div id="remote-box" class="box" style="display:none; padding: 20px 15px;">
         <div id="mode-title" style="color: #94a3b8; font-size: 0.9em; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;"></div>
         
-        <div id="q-info" style="display: none; margin-top: 10px; margin-bottom: 30px; position: relative;">
+        <div id="q-info" style="display: none; margin-top: 10px; margin-bottom: 30px; position: relative;"></div>
+
+        <!-- 5-Band LOW (EQ & SINE) -->
+        <div id="tab-5band-low" style="display:none;">
+            <div class="grid grid-5">
+                <button class="ans-btn ans-btn-large" onclick="sendAnswer('31.5', this)">31.5</button>
+                <button class="ans-btn ans-btn-large" onclick="sendAnswer('63', this)">63</button>
+                <button class="ans-btn ans-btn-large" onclick="sendAnswer('125', this)">125</button>
+                <button class="ans-btn ans-btn-large" onclick="sendAnswer('250', this)">250</button>
+                <button class="ans-btn ans-btn-large" onclick="sendAnswer('500', this)">500</button>
+            </div>
         </div>
 
-        <!-- ★ K 표기를 없애고 전부 정확한 숫자로 변경했습니다 ★ -->
+        <!-- 5-Band MID (EQ & SINE) -->
+        <div id="tab-5band-mid" style="display:none;">
+            <div class="grid grid-5">
+                <button class="ans-btn ans-btn-large" onclick="sendAnswer('250', this)">250</button>
+                <button class="ans-btn ans-btn-large" onclick="sendAnswer('500', this)">500</button>
+                <button class="ans-btn ans-btn-large" onclick="sendAnswer('1000', this)">1000</button>
+                <button class="ans-btn ans-btn-large" onclick="sendAnswer('2000', this)">2000</button>
+                <button class="ans-btn ans-btn-large" onclick="sendAnswer('4000', this)">4000</button>
+            </div>
+        </div>
+
+        <!-- 5-Band HIGH (EQ & SINE) -->
+        <div id="tab-5band-high" style="display:none;">
+            <div class="grid grid-5">
+                <button class="ans-btn ans-btn-large" onclick="sendAnswer('1000', this)">1000</button>
+                <button class="ans-btn ans-btn-large" onclick="sendAnswer('2000', this)">2000</button>
+                <button class="ans-btn ans-btn-large" onclick="sendAnswer('4000', this)">4000</button>
+                <button class="ans-btn ans-btn-large" onclick="sendAnswer('8000', this)">8000</button>
+                <button class="ans-btn ans-btn-large" onclick="sendAnswer('16000', this)">16000</button>
+            </div>
+        </div>
+
+        <!-- 10-Band (EQ & SINE) -->
         <div id="tab-10band" style="display:none;">
             <div class="grid grid-5">
                 <button class="ans-btn" onclick="sendAnswer('31.5', this)">31.5</button>
@@ -65,39 +98,40 @@
             </div>
         </div>
 
+        <!-- 31-Band SINE -->
         <div id="tab-31band" style="display:none;">
             <div class="grid grid-4">
-                <button class="ans-btn" onclick="sendAnswer('20', this)">20</button>
-                <button class="ans-btn" onclick="sendAnswer('25', this)">25</button>
-                <button class="ans-btn" onclick="sendAnswer('31.5', this)">31.5</button>
-                <button class="ans-btn" onclick="sendAnswer('40', this)">40</button>
-                <button class="ans-btn" onclick="sendAnswer('50', this)">50</button>
-                <button class="ans-btn" onclick="sendAnswer('63', this)">63</button>
-                <button class="ans-btn" onclick="sendAnswer('80', this)">80</button>
-                <button class="ans-btn" onclick="sendAnswer('100', this)">100</button>
-                <button class="ans-btn" onclick="sendAnswer('125', this)">125</button>
-                <button class="ans-btn" onclick="sendAnswer('160', this)">160</button>
-                <button class="ans-btn" onclick="sendAnswer('200', this)">200</button>
-                <button class="ans-btn" onclick="sendAnswer('250', this)">250</button>
-                <button class="ans-btn" onclick="sendAnswer('315', this)">315</button>
-                <button class="ans-btn" onclick="sendAnswer('400', this)">400</button>
-                <button class="ans-btn" onclick="sendAnswer('500', this)">500</button>
-                <button class="ans-btn" onclick="sendAnswer('630', this)">630</button>
-                <button class="ans-btn" onclick="sendAnswer('800', this)">800</button>
-                <button class="ans-btn" onclick="sendAnswer('1000', this)">1000</button>
-                <button class="ans-btn" onclick="sendAnswer('1250', this)">1250</button>
-                <button class="ans-btn" onclick="sendAnswer('1600', this)">1600</button>
-                <button class="ans-btn" onclick="sendAnswer('2000', this)">2000</button>
-                <button class="ans-btn" onclick="sendAnswer('2500', this)">2500</button>
-                <button class="ans-btn" onclick="sendAnswer('3150', this)">3150</button>
-                <button class="ans-btn" onclick="sendAnswer('4000', this)">4000</button>
-                <button class="ans-btn" onclick="sendAnswer('5000', this)">5000</button>
-                <button class="ans-btn" onclick="sendAnswer('6300', this)">6300</button>
-                <button class="ans-btn" onclick="sendAnswer('8000', this)">8000</button>
-                <button class="ans-btn" onclick="sendAnswer('10000', this)">10000</button>
-                <button class="ans-btn" onclick="sendAnswer('12500', this)">12500</button>
-                <button class="ans-btn" onclick="sendAnswer('16000', this)">16000</button>
-                <button class="ans-btn" style="background:#e0f2fe; color:#0284c7; border-color:#bae6fd;" onclick="sendAnswer('20000', this)">20000</button>
+                <button class="ans-btn" style="padding:12px 0;" onclick="sendAnswer('20', this)">20</button>
+                <button class="ans-btn" style="padding:12px 0;" onclick="sendAnswer('25', this)">25</button>
+                <button class="ans-btn" style="padding:12px 0;" onclick="sendAnswer('31.5', this)">31.5</button>
+                <button class="ans-btn" style="padding:12px 0;" onclick="sendAnswer('40', this)">40</button>
+                <button class="ans-btn" style="padding:12px 0;" onclick="sendAnswer('50', this)">50</button>
+                <button class="ans-btn" style="padding:12px 0;" onclick="sendAnswer('63', this)">63</button>
+                <button class="ans-btn" style="padding:12px 0;" onclick="sendAnswer('80', this)">80</button>
+                <button class="ans-btn" style="padding:12px 0;" onclick="sendAnswer('100', this)">100</button>
+                <button class="ans-btn" style="padding:12px 0;" onclick="sendAnswer('125', this)">125</button>
+                <button class="ans-btn" style="padding:12px 0;" onclick="sendAnswer('160', this)">160</button>
+                <button class="ans-btn" style="padding:12px 0;" onclick="sendAnswer('200', this)">200</button>
+                <button class="ans-btn" style="padding:12px 0;" onclick="sendAnswer('250', this)">250</button>
+                <button class="ans-btn" style="padding:12px 0;" onclick="sendAnswer('315', this)">315</button>
+                <button class="ans-btn" style="padding:12px 0;" onclick="sendAnswer('400', this)">400</button>
+                <button class="ans-btn" style="padding:12px 0;" onclick="sendAnswer('500', this)">500</button>
+                <button class="ans-btn" style="padding:12px 0;" onclick="sendAnswer('630', this)">630</button>
+                <button class="ans-btn" style="padding:12px 0;" onclick="sendAnswer('800', this)">800</button>
+                <button class="ans-btn" style="padding:12px 0;" onclick="sendAnswer('1000', this)">1000</button>
+                <button class="ans-btn" style="padding:12px 0;" onclick="sendAnswer('1250', this)">1250</button>
+                <button class="ans-btn" style="padding:12px 0;" onclick="sendAnswer('1600', this)">1600</button>
+                <button class="ans-btn" style="padding:12px 0;" onclick="sendAnswer('2000', this)">2000</button>
+                <button class="ans-btn" style="padding:12px 0;" onclick="sendAnswer('2500', this)">2500</button>
+                <button class="ans-btn" style="padding:12px 0;" onclick="sendAnswer('3150', this)">3150</button>
+                <button class="ans-btn" style="padding:12px 0;" onclick="sendAnswer('4000', this)">4000</button>
+                <button class="ans-btn" style="padding:12px 0;" onclick="sendAnswer('5000', this)">5000</button>
+                <button class="ans-btn" style="padding:12px 0;" onclick="sendAnswer('6300', this)">6300</button>
+                <button class="ans-btn" style="padding:12px 0;" onclick="sendAnswer('8000', this)">8000</button>
+                <button class="ans-btn" style="padding:12px 0;" onclick="sendAnswer('10000', this)">10000</button>
+                <button class="ans-btn" style="padding:12px 0;" onclick="sendAnswer('12500', this)">12500</button>
+                <button class="ans-btn" style="padding:12px 0;" onclick="sendAnswer('16000', this)">16000</button>
+                <button class="ans-btn" style="padding:12px 0; background:#e0f2fe; color:#0284c7; border-color:#bae6fd;" onclick="sendAnswer('20000', this)">20000</button>
             </div>
         </div>
 
@@ -116,6 +150,7 @@
         </div>
     </div>
 
+    <!-- EXAM RESULT SCREEN -->
     <div id="score-box" class="box" style="display:none; margin-top: 15vh;">
         <h2 style="font-size: 2.2em; letter-spacing: -1px;">EXAM COMPLETED!</h2>
         <p style="color: #64748b; font-weight: bold;">Your Final Score</p>
@@ -128,10 +163,10 @@
 
     <script>
         // =======================================================================
-        // ★ [매우 중요] 반드시 아래 빈칸의 따옴표("") 안쪽에 값만 하나씩 복사해서 넣어주세요! ★
+        // ★ 선생님의 Firebase Config로 덮어쓰세요! ★
         // =======================================================================
         const firebaseConfig = {
-        apiKey: "AIzaSyD7ldX4co1tDyZlulM3bG0RM2gYP9rX6yM",
+            apiKey: "AIzaSyD7ldX4co1tDyZlulM3bG0RM2gYP9rX6yM",
     authDomain: "ear-training-ad2a1.firebaseapp.com",
     databaseURL: "https://ear-training-ad2a1-default-rtdb.firebaseio.com",
     projectId: "ear-training-ad2a1",
@@ -155,7 +190,7 @@
         let roomPin = "";
         let studentName = "";
         let currentStatus = 'lobby';
-        let currentMode = 'eq';
+        let currentMode = 'eq-all';
 
         function joinRoom() {
             roomPin = document.getElementById('pin').value;
@@ -173,7 +208,7 @@
             document.getElementById('lobby-box').style.display = 'block';
 
             db.ref('room/' + roomPin + '/mode').on('value', (snap) => {
-                currentMode = snap.val() || 'eq';
+                currentMode = snap.val() || 'eq-all';
                 updateStudentUI();
             });
 
@@ -216,10 +251,22 @@
                 document.getElementById('tab-10band').style.display = 'none';
                 document.getElementById('tab-31band').style.display = 'none';
                 document.getElementById('tab-fx').style.display = 'none';
+                document.getElementById('tab-5band-low').style.display = 'none';
+                document.getElementById('tab-5band-mid').style.display = 'none';
+                document.getElementById('tab-5band-high').style.display = 'none';
 
-                if (currentMode === 'eq' || currentMode === 'sine10') {
+                if (currentMode === 'eq-all' || currentMode === 'sine10-all' || currentMode === 'eq' || currentMode === 'sine10') {
                     document.getElementById('tab-10band').style.display = 'block';
-                    document.getElementById('mode-title').innerText = currentMode === 'eq' ? 'EQ (10-Band)' : 'SINE WAVE (10-Band)';
+                    document.getElementById('mode-title').innerText = currentMode.includes('eq') ? 'EQ (10-Band)' : 'SINE WAVE (10-Band)';
+                } else if (currentMode === 'eq-low' || currentMode === 'sine10-low') {
+                    document.getElementById('tab-5band-low').style.display = 'block';
+                    document.getElementById('mode-title').innerText = currentMode.includes('eq') ? 'EQ (LOW)' : 'SINE WAVE (LOW)';
+                } else if (currentMode === 'eq-mid' || currentMode === 'sine10-mid') {
+                    document.getElementById('tab-5band-mid').style.display = 'block';
+                    document.getElementById('mode-title').innerText = currentMode.includes('eq') ? 'EQ (MID)' : 'SINE WAVE (MID)';
+                } else if (currentMode === 'eq-high' || currentMode === 'sine10-high') {
+                    document.getElementById('tab-5band-high').style.display = 'block';
+                    document.getElementById('mode-title').innerText = currentMode.includes('eq') ? 'EQ (HIGH)' : 'SINE WAVE (HIGH)';
                 } else if (currentMode === 'sine31') {
                     document.getElementById('tab-31band').style.display = 'block';
                     document.getElementById('mode-title').innerText = 'SINE WAVE (31-Band)';
