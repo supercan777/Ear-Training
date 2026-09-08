@@ -391,16 +391,12 @@
     </div>
 </div>
 
+<!-- ======================================================================= -->
+<!-- ★ 파이어베이스 설정: 이 스크립트 블록 안의 값만 수정하세요! ★ -->
+<!-- ======================================================================= -->
 <script>
-    document.getElementById('pw-input').addEventListener('keypress', function (e) {
-        if (e.key === 'Enter') checkPassword();
-    });
-
-    // =======================================================================
-    // ★ 반드시 아래 빈칸의 따옴표("") 안쪽에 값만 하나씩 복사해서 넣어주세요! ★
-    // =======================================================================
-    const firebaseConfig = {
-         apiKey: "AIzaSyD7ldX4co1tDyZlulM3bG0RM2gYP9rX6yM",
+    var firebaseConfig = {
+        apiKey: "AIzaSyD7ldX4co1tDyZlulM3bG0RM2gYP9rX6yM",
     authDomain: "ear-training-ad2a1.firebaseapp.com",
     databaseURL: "https://ear-training-ad2a1-default-rtdb.firebaseio.com",
     projectId: "ear-training-ad2a1",
@@ -409,14 +405,22 @@
     appId: "1:735813738589:web:797e1eb0c3af9ebaeaedb4",
     measurementId: "G-B6B462KBCB"
     };
-    // =======================================================================
+</script>
+
+<!-- ======================================================================= -->
+<!-- 메인 앱 로직 (이 아래로는 수정하지 마세요) -->
+<!-- ======================================================================= -->
+<script>
+    document.getElementById('pw-input').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') checkPassword();
+    });
 
     let db = null;
     const currentRoomPin = "7734"; 
 
     try {
-        if (firebaseConfig.apiKey !== "여기에_API_KEY_붙여넣기") {
-            firebase.initializeApp(firebaseConfig);
+        if (typeof firebaseConfig !== 'undefined' && firebaseConfig.apiKey && firebaseConfig.apiKey !== "여기에_API_KEY_붙여넣기") {
+            if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
             db = firebase.database();
 
             db.ref('room/' + currentRoomPin + '/students').on('value', (snapshot) => {
@@ -439,7 +443,7 @@
             });
         }
     } catch (error) {
-        console.error("Firebase 초기화 에러:", error);
+        console.warn("Firebase 연동 오류: ", error);
     }
 
     let audioCtx;
@@ -542,13 +546,12 @@
         }
     }
 
-    // ★ 메뉴 이동 플로우 수정 구역 ★
     function selectMainMenu(mode) {
         userSelectedMain = mode;
         isGroupMode = (mode === 'group'); 
         document.getElementById('main-menu').style.display = 'none';
         
-        // 어떤 모드를 선택하든 무조건 과목 선택 메뉴(sub-menu)로 넘어갑니다!
+        // 어떤 모드를 선택하든 무조건 서브 메뉴(과목 선택)로 이동하여 올바른 순서를 보장합니다!
         document.getElementById('sub-menu').style.display = 'flex'; 
     }
 
@@ -564,6 +567,7 @@
         if (userSelectedMain === 'practice') {
             init('listen', subject);
         } else {
+            // 그룹/테스트 모두 세부 테스트 메뉴(문제 수 설정)로 이동
             document.getElementById('sub-menu').style.display = 'none';
             document.getElementById('test-type-menu').style.display = 'flex';
         }
@@ -576,6 +580,10 @@
 
     function selectTestType(type) {
         if (type === 'explore') {
+            if (isGroupMode) {
+                alert("그룹 테스트는 'START TEST' 모드에서만 진행할 수 있습니다!");
+                return;
+            }
             init('practice', userSelectedSubject);
         } else if (type === 'test-custom') {
             if (isGroupMode) {
@@ -607,7 +615,6 @@
             document.getElementById('test-type-menu').style.display = 'flex';
         }
     }
-    // ★ 메뉴 이동 플로우 수정 구역 종료 ★
 
     function applyTestQs() {
         let val = parseInt(document.getElementById('test-q-input').value);
@@ -710,6 +717,62 @@
         filter.frequency.value = freq; filter.Q.value = type === 'bpf' ? 2.0 : 0.71; 
         inputNode.connect(filter); filter.connect(outputNode);
         return { input: inputNode, output: outputNode };
+    }
+
+    async function checkPassword() {
+        const pw = document.getElementById('pw-input').value;
+        if (pw === "ainstudio") { 
+            document.getElementById('auth-overlay').style.display = 'none';
+            try {
+                if (!audioCtx) {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    masterGain = audioCtx.createGain(); updateGainSettings(); masterGain.connect(audioCtx.destination);
+                }
+                if (audioCtx.state === 'suspended') await audioCtx.resume();
+            } catch(e) { console.error("오디오 컨텍스트 초기화 에러:", e); }
+            
+            if (db) {
+                try {
+                    db.ref('room/' + currentRoomPin).remove(); 
+                } catch(e) {}
+            }
+        } else {
+            alert("Incorrect password.");
+        }
+    }
+    
+    function toggleSettings() { document.getElementById('settings-menu').classList.toggle('open'); }
+    
+    function updateGainSettings() {
+        if (currentEqMode === 'mix') { targetGain = currentGainAmount; } else { targetGain = currentEqMode === 'boost' ? currentGainAmount : -currentGainAmount; }
+        if (masterGain) masterGain.gain.value = (currentEqMode === 'boost' || currentEqMode === 'mix') && currentGainAmount === 12 ? 0.15 : 0.3;
+        if (currentMode === 'listen' && currentListenFreq && biquadFilter && currentQuizCategory === 'eq') { biquadFilter.gain.setTargetAtTime(targetGain, audioCtx.currentTime, 0.02); }
+    }
+    
+    function setEqMode(mode, btn) { currentEqMode = mode; document.querySelectorAll('.eq-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); updateGainSettings(); }
+    function setGainAmount(amount, btn) { currentGainAmount = amount; document.querySelectorAll('.gain-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); updateGainSettings(); }
+    
+    function setSource(type) {
+        document.querySelectorAll('#btn-src-pn, #btn-src-file, #btn-src-track').forEach(b => b.classList.remove('active')); document.getElementById('track-input-group').style.display = 'none';
+        if(type === 'pn') { document.getElementById('btn-src-pn').classList.add('active'); customBuffer = null; document.getElementById('file-name').innerText = "Pink Noise"; } 
+        else if(type === 'file') { document.getElementById('btn-src-file').classList.add('active'); document.getElementById('file-input').click(); } 
+        else if (type === 'track') { document.getElementById('btn-src-track').classList.add('active'); document.getElementById('track-input-group').style.display = 'block'; }
+    }
+    
+    function handleFileUpload(event) {
+        const file = event.target.files[0]; if (!file) { setSource('pn'); return; }
+        document.getElementById('file-name').innerText = file.name; const reader = new FileReader();
+        reader.onload = function(e) { audioCtx.decodeAudioData(e.target.result, function(buffer) { customBuffer = buffer; fileStartTime = 0; document.getElementById('file-name').innerText = "Loaded: " + file.name.substring(0, 20); renderWaveform(); }); }; reader.readAsArrayBuffer(file);
+    }
+    
+    async function loadTrack(trackNum) {
+        if (!audioCtx) return; if (audioCtx.state === 'suspended') await audioCtx.resume();
+        const url = `https://supercan777.github.io/Ear-Training/${trackNum}.mp3`; document.getElementById('file-name').innerText = `Loading Track ${trackNum}...`;
+        try {
+            const response = await fetch(url); if(!response.ok) throw new Error("File not found");
+            const arrayBuffer = await response.arrayBuffer(); customBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+            fileStartTime = 0; document.getElementById('file-name').innerText = `Loaded: Track ${trackNum}`; renderWaveform();
+        } catch (error) { alert(`'${trackNum}.mp3' 파일을 찾을 수 없습니다.`); document.getElementById('file-name').innerText = "Load Failed"; setSource('pn'); }
     }
 
     function init(mode, category = 'eq', testQs = testQuestionCount) { 
