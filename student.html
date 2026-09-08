@@ -8,7 +8,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #f4f7f6; padding: 20px; text-align: center; color: #1e293b; margin: 0;}
-        .box { background: white; padding: 30px 20px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); margin-top: 10vh; max-width: 400px; margin-left: auto; margin-right: auto;}
+        .box { background: white; padding: 30px 20px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); margin-top: 5vh; max-width: 400px; margin-left: auto; margin-right: auto;}
         h2 { margin-top: 0; color: #4A90E2; font-weight: 800; font-size: 1.8em;}
         input { width: 100%; box-sizing: border-box; padding: 15px; margin: 10px 0 20px 0; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 1.2em; text-align: center; font-weight: bold;}
         input:focus { border-color: #4A90E2; outline: none; }
@@ -43,6 +43,10 @@
     <!-- 리모컨 화면 -->
     <div id="remote-box" class="box" style="display:none; padding: 20px 15px;">
         <h2 id="mode-title" style="margin-bottom: 5px;">Select Answer</h2>
+        
+        <!-- ★ 문제 번호 표시 영역 ★ -->
+        <div id="q-info" style="font-size: 1.5em; font-weight: 900; color: #ff6b6b; margin-bottom: 10px; letter-spacing: 1px; display: none;"></div>
+
         <p style="color: #64748b; font-size: 0.95em; font-weight: bold; margin-bottom: 25px;">소리를 듣고 정답을 고르세요!</p>
         
         <!-- 10-Band EQ & SINE 10 전용 -->
@@ -113,7 +117,7 @@
             </div>
         </div>
 
-        <div id="msg" style="margin-top:25px; font-weight:800; color:#20c997; font-size: 1.2em; height: 30px;"></div>
+        <div id="msg" style="margin-top:25px; font-weight:900; color:#20c997; font-size: 1.3em; height: 30px;"></div>
     </div>
 
     <!-- 시험 결과 화면 -->
@@ -129,8 +133,7 @@
 
     <script>
         // =======================================================================
-        // ★ [매우 중요] 구글 파이어베이스의 import 코드를 통째로 덮어쓰면 에러가 납니다!
-        // 반드시 아래 빈칸의 따옴표("") 안쪽에 값만 하나씩 복사해서 넣어주세요! ★
+        // ★ 반드시 아래 빈칸의 따옴표("") 안쪽에 값만 하나씩 복사해서 넣어주세요! ★
         // =======================================================================
         const firebaseConfig = {
             apiKey: "AIzaSyD7ldX4co1tDyZlulM3bG0RM2gYP9rX6yM",
@@ -171,11 +174,9 @@
 
             db.ref('room/' + roomPin + '/students/' + studentName).set("connected");
             
-            // UI 초기전환
             document.getElementById('login-box').style.display = 'none';
             document.getElementById('lobby-box').style.display = 'block';
 
-            // 상태(status)와 출제모드(mode)를 수신하여 UI 자동 변경
             db.ref('room/' + roomPin + '/mode').on('value', (snap) => {
                 currentMode = snap.val() || 'eq';
                 updateStudentUI();
@@ -185,9 +186,19 @@
                 currentStatus = snap.val() || 'lobby';
                 updateStudentUI();
             });
+
+            // ★ 문제 번호 수신 리스너 추가 ★
+            db.ref('room/' + roomPin + '/questionInfo').on('value', (snap) => {
+                const qInfo = snap.val();
+                if (qInfo) {
+                    document.getElementById('q-info').innerText = `[ Q ${qInfo.current} / ${qInfo.total} ]`;
+                    document.getElementById('q-info').style.display = 'block';
+                } else {
+                    document.getElementById('q-info').style.display = 'none';
+                }
+            });
         }
 
-        // 선생님의 조작에 따라 리모컨 화면이 자동으로 변하는 마법의 함수!
         function updateStudentUI() {
             if (!studentName) return; 
 
@@ -203,12 +214,10 @@
                 document.getElementById('remote-box').style.display = 'block';
                 document.getElementById('msg').innerText = "";
                 
-                // 모든 리모컨 패널 숨기기
                 document.getElementById('tab-10band').style.display = 'none';
                 document.getElementById('tab-31band').style.display = 'none';
                 document.getElementById('tab-fx').style.display = 'none';
 
-                // 현재 모드에 맞는 리모컨만 켜기
                 if (currentMode === 'eq' || currentMode === 'sine10') {
                     document.getElementById('tab-10band').style.display = 'block';
                     document.getElementById('mode-title').innerText = currentMode === 'eq' ? 'EQ (10-Band)' : 'SINE WAVE (10-Band)';
@@ -221,7 +230,6 @@
                 }
             } 
             else if (currentStatus === 'finished') {
-                // 점수판 띄우기
                 db.ref('room/' + roomPin + '/scores/' + studentName).once('value').then(scoreSnap => {
                     const scoreData = scoreSnap.val();
                     document.getElementById('score-box').style.display = 'block';
