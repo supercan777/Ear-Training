@@ -18,41 +18,35 @@
         .grid-5 { grid-template-columns: repeat(5, 1fr); }
         .grid-4 { grid-template-columns: repeat(4, 1fr); }
         .grid-3 { grid-template-columns: repeat(3, 1fr); }
-        
-        /* 버튼 기본 스타일 */
         .ans-btn { background: #f8fafc; color: #334155; border: 2px solid #e2e8f0; padding: 18px 2px; font-size: 0.9em; font-weight: 800; border-radius: 10px; cursor: pointer; word-break: keep-all; transition: all 0.15s ease-in-out;}
-        
-        /* ★ 선택된 버튼에 불이 들어오는 스타일 ★ */
         .ans-btn.selected { background: #4A90E2; color: white; border-color: #4A90E2; box-shadow: 0 4px 12px rgba(74, 144, 226, 0.4); transform: scale(1.05); z-index: 2; position: relative;}
-        
         .score-value { font-size: 4em; font-weight: 900; color: #4A90E2; margin: 15px 0; }
         .score-pct { font-size: 1.5em; font-weight: bold; color: #64748b; }
     </style>
 </head>
 <body>
-    <!-- 로그인 화면 -->
+    <!-- LOGIN SCREEN -->
     <div id="login-box" class="box">
         <h2>Join Classroom</h2>
         <input type="text" id="pin" placeholder="Room PIN (ex. 7734)" value="7734" readonly>
-        <input type="text" id="name" placeholder="너의 닉네임을 입력해!">
-        <button class="btn" onclick="joinRoom()">입장하기</button>
+        <input type="text" id="name" placeholder="Enter your nickname">
+        <button class="btn" onclick="joinRoom()">JOIN</button>
     </div>
 
-    <!-- 대기실 화면 -->
-    <div id="lobby-box" class="box" style="display:none; margin-top: 20vh;">
-        <h2>대기실</h2>
-        <p style="color: #64748b; font-weight: bold; font-size: 1.1em; line-height: 1.5;">선생님이 시험을 시작할 때까지<br>잠시만 기다려주세요!</p>
-        <div style="margin-top: 20px; color: #94a3b8;">시험이 시작되면 화면이 자동으로 바뀝니다.</div>
+    <!-- LOBBY SCREEN (심플하게 변경 완료) -->
+    <div id="lobby-box" class="box" style="display:none; margin-top: 20vh; padding: 40px 20px;">
+        <h2 style="font-size: 2.2em; letter-spacing: -1px; margin-bottom: 15px;">EAR TRAINING</h2>
+        <p style="color: #64748b; font-weight: bold; font-size: 1.1em; letter-spacing: 0.5px;">Waiting for the test to start...</p>
     </div>
 
-    <!-- 리모컨 화면 -->
+    <!-- REMOTE SCREEN -->
     <div id="remote-box" class="box" style="display:none; padding: 20px 15px;">
+        <div id="mode-title" style="color: #94a3b8; font-size: 0.9em; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;"></div>
         
-        <!-- UI 간소화 및 문제 번호 강조 -->
-        <div id="mode-title" style="color: #94a3b8; font-size: 0.9em; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px;"></div>
-        <div id="q-info" style="font-size: 2.8em; font-weight: 900; color: #0f172a; margin-bottom: 25px; display: none;"></div>
-        
-        <!-- 10-Band EQ & SINE 10 전용 -->
+        <div id="q-info" style="display: none; margin-top: 10px; margin-bottom: 30px; position: relative;">
+            <!-- JS 동적 렌더링 -->
+        </div>
+
         <div id="tab-10band" style="display:none;">
             <div class="grid grid-5">
                 <button class="ans-btn" onclick="sendAnswer('31.5', this)">31.5</button>
@@ -68,7 +62,6 @@
             </div>
         </div>
 
-        <!-- SINE 31-Band 전용 -->
         <div id="tab-31band" style="display:none;">
             <div class="grid grid-4">
                 <button class="ans-btn" style="padding:12px 0;" onclick="sendAnswer('20', this)">20</button>
@@ -105,7 +98,6 @@
             </div>
         </div>
 
-        <!-- FX 탭 전용 -->
         <div id="tab-fx" style="display:none;">
             <div class="grid grid-3">
                 <button class="ans-btn" onclick="sendAnswer('room', this)">ROOM</button>
@@ -119,23 +111,23 @@
                 <button class="ans-btn" onclick="sendAnswer('bpf', this)">BPF</button>
             </div>
         </div>
+        <div id="msg" style="margin-top:25px; font-weight:900; color:#20c997; font-size: 1.3em; height: 30px;"></div>
     </div>
 
-    <!-- 시험 결과 화면 -->
+    <!-- EXAM RESULT SCREEN -->
     <div id="score-box" class="box" style="display:none; margin-top: 15vh;">
-        <h2>시험 종료!</h2>
-        <p style="color: #64748b; font-weight: bold;">나의 최종 점수는?</p>
+        <h2 style="font-size: 2.2em; letter-spacing: -1px;">EXAM COMPLETED!</h2>
+        <p style="color: #64748b; font-weight: bold;">Your Final Score</p>
         <div class="score-value" id="my-score">0 / 5</div>
         <div class="score-pct" id="my-pct">0%</div>
         <div style="margin-top: 30px; font-size: 0.9em; color: #94a3b8; font-weight: bold; background: #f8fafc; padding: 15px; border-radius: 12px;">
-            선생님이 새로운 시험을 시작하면<br>자동으로 대기실로 돌아갑니다.
+            Waiting for the next session...
         </div>
     </div>
 
     <script>
         // =======================================================================
-        // ★ [매우 중요] 구글 파이어베이스의 import 코드를 통째로 덮어쓰면 에러가 납니다!
-        // 반드시 아래 빈칸의 따옴표("") 안쪽에 값만 하나씩 복사해서 넣어주세요! ★
+        // ★ [매우 중요] 반드시 아래 빈칸의 따옴표("") 안쪽에 값만 하나씩 복사해서 넣어주세요! ★
         // =======================================================================
         const firebaseConfig = {
            apiKey: "AIzaSyD7ldX4co1tDyZlulM3bG0RM2gYP9rX6yM",
@@ -156,7 +148,7 @@
                 db = firebase.database();
             }
         } catch (e) {
-            console.error("Firebase 초기화 에러:", e);
+            console.error("Firebase Init Error:", e);
         }
         
         let roomPin = "";
@@ -167,10 +159,10 @@
         function joinRoom() {
             roomPin = document.getElementById('pin').value;
             studentName = document.getElementById('name').value.trim();
-            if(!roomPin || !studentName) return alert("닉네임을 입력해주세요!");
+            if(!roomPin || !studentName) return alert("Please enter your nickname!");
             
             if (!db) {
-                alert("선생님! 아직 코드 아래쪽에 파이어베이스 주소를 제대로 넣지 않으셨습니다.");
+                alert("Error: Firebase configuration is missing or invalid.");
                 return;
             }
 
@@ -189,14 +181,16 @@
                 updateStudentUI();
             });
 
-            // ★ 문제 번호 수신 및 버튼 초기화 ★
             db.ref('room/' + roomPin + '/questionInfo').on('value', (snap) => {
                 const qInfo = snap.val();
                 if (qInfo) {
-                    document.getElementById('q-info').innerText = `[ Q ${qInfo.current} / ${qInfo.total} ]`;
+                    document.getElementById('q-info').innerHTML = `
+                        <div style="display: flex; justify-content: center; align-items: baseline; position: relative;">
+                            <span style="font-size: 3.5em; font-weight: 900; color: #0f172a; letter-spacing: -1px; line-height: 1;">Q${qInfo.current}</span>
+                            <span style="position: absolute; right: 5px; bottom: 5px; font-size: 1.4em; font-weight: 700; color: #94a3b8;">/ ${qInfo.total}</span>
+                        </div>
+                    `;
                     document.getElementById('q-info').style.display = 'block';
-                    
-                    // 새 문제가 출제될 때마다 기존에 선택했던 버튼 불빛을 모두 끕니다.
                     document.querySelectorAll('.ans-btn').forEach(b => b.classList.remove('selected'));
                 } else {
                     document.getElementById('q-info').style.display = 'none';
@@ -217,6 +211,7 @@
             } 
             else if (currentStatus === 'running') {
                 document.getElementById('remote-box').style.display = 'block';
+                document.getElementById('msg').innerText = "";
                 
                 document.getElementById('tab-10band').style.display = 'none';
                 document.getElementById('tab-31band').style.display = 'none';
@@ -240,25 +235,21 @@
                     if (scoreData) {
                         document.getElementById('my-score').innerText = `${scoreData.correct} / ${scoreData.total}`;
                         let pct = Math.round((scoreData.correct / scoreData.total) * 100);
-                        document.getElementById('my-pct').innerText = `정답률: ${pct}%`;
+                        document.getElementById('my-pct').innerText = `Accuracy: ${pct}%`;
                     } else {
                         document.getElementById('my-score').innerText = `0 / 0`;
-                        document.getElementById('my-pct').innerText = `제출 내역 없음`;
+                        document.getElementById('my-pct').innerText = `No Submission`;
                     }
                 });
             }
         }
 
-        // ★ 정답 선택 시 버튼 하이라이트 로직 ★
         function sendAnswer(ans, btnElement) {
-            // 1. 모든 버튼의 선택(불빛)을 초기화
             document.querySelectorAll('.ans-btn').forEach(b => b.classList.remove('selected'));
-            
-            // 2. 방금 누른 버튼만 불빛을 켬
             btnElement.classList.add('selected');
-
-            // 3. 서버로 답 전송
             db.ref('room/' + roomPin + '/answers/' + studentName).set(ans);
+            document.getElementById('msg').innerText = "✅ Answer Submitted!";
+            setTimeout(() => document.getElementById('msg').innerText = "", 2000);
         }
     </script>
 </body>
