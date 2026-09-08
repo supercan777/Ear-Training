@@ -400,7 +400,7 @@
     // ★ 반드시 아래 빈칸의 따옴표("") 안쪽에 값만 하나씩 복사해서 넣어주세요! ★
     // =======================================================================
     const firebaseConfig = {
-        apiKey: "AIzaSyD7ldX4co1tDyZlulM3bG0RM2gYP9rX6yM",
+         apiKey: "AIzaSyD7ldX4co1tDyZlulM3bG0RM2gYP9rX6yM",
     authDomain: "ear-training-ad2a1.firebaseapp.com",
     databaseURL: "https://ear-training-ad2a1-default-rtdb.firebaseio.com",
     projectId: "ear-training-ad2a1",
@@ -542,16 +542,14 @@
         }
     }
 
+    // ★ 메뉴 이동 플로우 수정 구역 ★
     function selectMainMenu(mode) {
         userSelectedMain = mode;
         isGroupMode = (mode === 'group'); 
         document.getElementById('main-menu').style.display = 'none';
         
-        if (mode === 'group') {
-            document.getElementById('group-test-view').style.display = 'flex';
-        } else {
-            document.getElementById('sub-menu').style.display = 'flex';
-        }
+        // 어떤 모드를 선택하든 무조건 과목 선택 메뉴(sub-menu)로 넘어갑니다!
+        document.getElementById('sub-menu').style.display = 'flex'; 
     }
 
     function showMainMenu() {
@@ -609,6 +607,7 @@
             document.getElementById('test-type-menu').style.display = 'flex';
         }
     }
+    // ★ 메뉴 이동 플로우 수정 구역 종료 ★
 
     function applyTestQs() {
         let val = parseInt(document.getElementById('test-q-input').value);
@@ -711,59 +710,6 @@
         filter.frequency.value = freq; filter.Q.value = type === 'bpf' ? 2.0 : 0.71; 
         inputNode.connect(filter); filter.connect(outputNode);
         return { input: inputNode, output: outputNode };
-    }
-
-    async function checkPassword() {
-        if (document.getElementById('pw-input').value === "ainstudio") { 
-            document.getElementById('auth-overlay').style.display = 'none';
-            if (!audioCtx) {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                masterGain = audioCtx.createGain(); updateGainSettings(); masterGain.connect(audioCtx.destination);
-            }
-            if (audioCtx.state === 'suspended') await audioCtx.resume();
-            
-            if (db) {
-                try {
-                    db.ref('room/' + currentRoomPin).remove(); 
-                } catch(e) {}
-            }
-        } else {
-            alert("Incorrect password.");
-        }
-    }
-    
-    function toggleSettings() { document.getElementById('settings-menu').classList.toggle('open'); }
-    
-    function updateGainSettings() {
-        if (currentEqMode === 'mix') { targetGain = currentGainAmount; } else { targetGain = currentEqMode === 'boost' ? currentGainAmount : -currentGainAmount; }
-        if (masterGain) masterGain.gain.value = (currentEqMode === 'boost' || currentEqMode === 'mix') && currentGainAmount === 12 ? 0.15 : 0.3;
-        if (currentMode === 'listen' && currentListenFreq && biquadFilter && currentQuizCategory === 'eq') { biquadFilter.gain.setTargetAtTime(targetGain, audioCtx.currentTime, 0.02); }
-    }
-    
-    function setEqMode(mode, btn) { currentEqMode = mode; document.querySelectorAll('.eq-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); updateGainSettings(); }
-    function setGainAmount(amount, btn) { currentGainAmount = amount; document.querySelectorAll('.gain-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); updateGainSettings(); }
-    
-    function setSource(type) {
-        document.querySelectorAll('#btn-src-pn, #btn-src-file, #btn-src-track').forEach(b => b.classList.remove('active')); document.getElementById('track-input-group').style.display = 'none';
-        if(type === 'pn') { document.getElementById('btn-src-pn').classList.add('active'); customBuffer = null; document.getElementById('file-name').innerText = "Pink Noise"; } 
-        else if(type === 'file') { document.getElementById('btn-src-file').classList.add('active'); document.getElementById('file-input').click(); } 
-        else if (type === 'track') { document.getElementById('btn-src-track').classList.add('active'); document.getElementById('track-input-group').style.display = 'block'; }
-    }
-    
-    function handleFileUpload(event) {
-        const file = event.target.files[0]; if (!file) { setSource('pn'); return; }
-        document.getElementById('file-name').innerText = file.name; const reader = new FileReader();
-        reader.onload = function(e) { audioCtx.decodeAudioData(e.target.result, function(buffer) { customBuffer = buffer; fileStartTime = 0; document.getElementById('file-name').innerText = "Loaded: " + file.name.substring(0, 20); renderWaveform(); }); }; reader.readAsArrayBuffer(file);
-    }
-    
-    async function loadTrack(trackNum) {
-        if (!audioCtx) return; if (audioCtx.state === 'suspended') await audioCtx.resume();
-        const url = `https://supercan777.github.io/Ear-Training/${trackNum}.mp3`; document.getElementById('file-name').innerText = `Loading Track ${trackNum}...`;
-        try {
-            const response = await fetch(url); if(!response.ok) throw new Error("File not found");
-            const arrayBuffer = await response.arrayBuffer(); customBuffer = await audioCtx.decodeAudioData(arrayBuffer);
-            fileStartTime = 0; document.getElementById('file-name').innerText = `Loaded: Track ${trackNum}`; renderWaveform();
-        } catch (error) { alert(`'${trackNum}.mp3' 파일을 찾을 수 없습니다.`); document.getElementById('file-name').innerText = "Load Failed"; setSource('pn'); }
     }
 
     function init(mode, category = 'eq', testQs = testQuestionCount) { 
@@ -1070,7 +1016,7 @@
             db.ref('room/' + currentRoomPin + '/mode').set(currentQuizCategory);
             db.ref('room/' + currentRoomPin + '/scores').remove();
             db.ref('room/' + currentRoomPin + '/answers').remove();
-            db.ref('room/' + currentRoomPin + '/questionInfo').remove(); // ★ 리셋
+            db.ref('room/' + currentRoomPin + '/questionInfo').remove();
         }
 
         testAnswers = []; testGains = []; let pool = (currentQuizCategory === 'eq' || currentQuizCategory === 'sine10') ? bands : (currentQuizCategory === 'sine31' ? bands31 : fxPool); 
@@ -1175,7 +1121,6 @@
         }
         targetSineFreq = testAnswers[currentTestQuestion]; 
         
-        // ★ 학생 폰으로 현재 문제 번호 쏘기 ★
         if (isGroupMode && db) {
             db.ref('room/' + currentRoomPin + '/questionInfo').set({
                 current: currentTestQuestion + 1,
@@ -1219,7 +1164,6 @@
             return; 
         }
 
-        // ★ 학생 폰으로 현재 문제 번호 쏘기 ★
         if (isGroupMode && db) {
             db.ref('room/' + currentRoomPin + '/questionInfo').set({
                 current: currentTestQuestion + 1,
