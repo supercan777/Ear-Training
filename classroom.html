@@ -212,7 +212,7 @@
             <button class="return-btn" style="margin-top:25px; max-width:400px;" onclick="showSubMenu()">BACK TO SUBJECTS</button>
         </div>
 
-        <!-- 그룹 테스트 대시보드 (영어화 완료) -->
+        <!-- 그룹 테스트 대시보드 -->
         <div id="group-test-view">
             <div id="view-title" style="color: #8b5cf6;">Live Group Test : Lobby</div>
             
@@ -220,7 +220,8 @@
                 <div class="dashboard-left">
                     <h3 style="margin-top:0; color:#475569; margin-bottom: 20px;">SCAN TO JOIN</h3>
                     <div class="qr-placeholder">
-                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://supercan777.github.io/Ear-Training/student.html" alt="Student QR Code" style="width: 200px; height: 200px; border-radius: 12px; border: 4px solid white; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+                        <!-- ★ 캐시 방지용 ?v=5 파라미터 추가! 무조건 최신 코드를 로드하게 됩니다 ★ -->
+                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://supercan777.github.io/Ear-Training/student.html?v=5" alt="Student QR Code" style="width: 200px; height: 200px; border-radius: 12px; border: 4px solid white; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
                     </div>
                     <p style="margin:0; color:#94a3b8; font-weight:800; text-transform:uppercase; letter-spacing:1px;">Room PIN</p>
                     <p class="pin-code">7734</p>
@@ -396,7 +397,7 @@
 <!-- ======================================================================= -->
 <script>
     var firebaseConfig = {
-        apiKey: "AIzaSyD7ldX4co1tDyZlulM3bG0RM2gYP9rX6yM",
+       apiKey: "AIzaSyD7ldX4co1tDyZlulM3bG0RM2gYP9rX6yM",
     authDomain: "ear-training-ad2a1.firebaseapp.com",
     databaseURL: "https://ear-training-ad2a1-default-rtdb.firebaseio.com",
     projectId: "ear-training-ad2a1",
@@ -443,7 +444,7 @@
             });
         }
     } catch (error) {
-        console.warn("Firebase Init Error:", error);
+        console.warn("Firebase 연동 오류: ", error);
     }
 
     let audioCtx;
@@ -604,7 +605,7 @@
             db.ref('room/' + currentRoomPin + '/status').set('lobby');
         }
 
-        if (userSelectedMain === 'practice' || isGroupMode) {
+        if (userSelectedMain === 'practice') {
             document.getElementById('sub-menu').style.display = 'flex';
         } else {
             document.getElementById('test-type-menu').style.display = 'flex';
