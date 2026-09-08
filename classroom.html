@@ -149,7 +149,7 @@
         .dashboard-container { display: flex; width: 100%; height: 100%; gap: 20px; }
         .dashboard-left { flex: 1; display: flex; flex-direction: column; background: #f8fafc; border-radius: 16px; border: 2px dashed #cbd5e1; align-items: center; justify-content: center; padding: 20px; text-align: center;}
         .dashboard-right { flex: 2; display: flex; flex-direction: column; gap: 15px; }
-        .qr-placeholder { display: flex; align-items: center; justify-content: center; font-weight: 800; color: #94a3b8; margin-bottom: 15px;}
+        .qr-placeholder { display: flex; align-items: center; justify-content: center; font-weight: 800; color: #94a3b8; margin-bottom: 20px;}
         .pin-code { font-size: 3em; font-weight: 900; color: var(--primary-color); letter-spacing: 5px; margin: 0;}
         
         .student-counter { background: #1e293b; color: white; padding: 20px; border-radius: 16px; text-align: center; display: flex; flex-direction: column; justify-content: center;}
@@ -157,12 +157,7 @@
         .student-counter .count { font-size: 4em; font-weight: 900; margin: 5px 0 0 0; line-height: 1;}
 
         .results-panel { background: white; border: 1px solid var(--border-color); border-radius: 16px; flex: 1; padding: 25px; display: flex; flex-direction: column; overflow-y: auto;}
-        
         .student-badge { background: #e0f2fe; color: #0284c7; padding: 10px 18px; border-radius: 20px; font-weight: 800; font-size: 1.1em; border: 2px solid #bae6fd;}
-        
-        .score-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 1.1em; }
-        .score-table th { padding: 15px 10px; border-bottom: 2px solid #e2e8f0; color: #64748b; font-weight: 800; text-transform: uppercase; }
-        .score-table td { padding: 15px 10px; border-bottom: 1px solid #f1f5f9; font-weight: bold; color: #0f172a; }
     </style>
 </head>
 <body>
@@ -218,7 +213,7 @@
             
             <div class="dashboard-container">
                 <div class="dashboard-left">
-                    <h3 style="margin-top:0; color:#475569; margin-bottom: 20px;">학생용 리모컨 접속</h3>
+                    <h3 style="margin-top:0; color:#475569; margin-bottom: 20px;">학생용 폰으로 스캔하세요</h3>
                     <div class="qr-placeholder">
                         <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://supercan777.github.io/Ear-Training/student.html" alt="Student QR Code" style="width: 200px; height: 200px; border-radius: 12px; border: 4px solid white; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
                     </div>
@@ -396,16 +391,12 @@
         if (e.key === 'Enter') checkPassword();
     });
 
-    // ==========================================
-    // ★ 안전한 Firebase 연동 ★
-    // 아래 firebaseConfig 부분을 선생님 코드로 덮어쓰세요!
-    // ==========================================
-    let db = null;
-    const currentRoomPin = "7734"; 
-
-    try {
-        const firebaseConfig = {
-         apiKey: "AIzaSyD7ldX4co1tDyZlulM3bG0RM2gYP9rX6yM",
+    // =======================================================================
+    // ★ [매우 중요] 구글 파이어베이스의 import 코드를 통째로 덮어쓰면 에러가 납니다!
+    // 반드시 아래 빈칸의 따옴표("") 안쪽에 값만 하나씩 복사해서 넣어주세요! ★
+    // =======================================================================
+    const firebaseConfig = {
+        apiKey: "AIzaSyD7ldX4co1tDyZlulM3bG0RM2gYP9rX6yM",
     authDomain: "ear-training-ad2a1.firebaseapp.com",
     databaseURL: "https://ear-training-ad2a1-default-rtdb.firebaseio.com",
     projectId: "ear-training-ad2a1",
@@ -413,35 +404,39 @@
     messagingSenderId: "735813738589",
     appId: "1:735813738589:web:797e1eb0c3af9ebaeaedb4",
     measurementId: "G-B6B462KBCB"
-        };
-        
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-        }
-        db = firebase.database();
+    };
+    // =======================================================================
 
-        db.ref('room/' + currentRoomPin + '/students').on('value', (snapshot) => {
-            const students = snapshot.val();
-            const listEl = document.getElementById('live-student-list');
-            const countEl = document.getElementById('live-student-count');
-            
-            if(listEl && countEl) {
-                listEl.innerHTML = '';
-                if(students) {
-                    countEl.innerText = Object.keys(students).length;
-                    for(let s in students) {
-                        listEl.innerHTML += `<span class="student-badge">${s}</span>`;
+    let db = null;
+    const currentRoomPin = "7734"; 
+
+    try {
+        if (firebaseConfig.apiKey !== "여기에_API_KEY_붙여넣기") {
+            firebase.initializeApp(firebaseConfig);
+            db = firebase.database();
+
+            db.ref('room/' + currentRoomPin + '/students').on('value', (snapshot) => {
+                const students = snapshot.val();
+                const listEl = document.getElementById('live-student-list');
+                const countEl = document.getElementById('live-student-count');
+                
+                if(listEl && countEl) {
+                    listEl.innerHTML = '';
+                    if(students) {
+                        countEl.innerText = Object.keys(students).length;
+                        for(let s in students) {
+                            listEl.innerHTML += `<span class="student-badge">${s}</span>`;
+                        }
+                    } else {
+                        countEl.innerText = 0;
+                        listEl.innerHTML = '<span style="color:#94a3b8; font-weight:bold;">아직 접속한 학생이 없습니다...</span>';
                     }
-                } else {
-                    countEl.innerText = 0;
-                    listEl.innerHTML = '<span style="color:#94a3b8; font-weight:bold;">아직 접속한 학생이 없습니다...</span>';
                 }
-            }
-        });
+            });
+        }
     } catch (error) {
-        console.warn("Firebase 설정이 올바르지 않아 라이브 연동이 중지되었습니다.");
+        console.error("Firebase 초기화 에러:", error);
     }
-    // ==========================================
 
     let audioCtx;
     let masterGain;
@@ -450,7 +445,7 @@
     let customBuffer = null;
     
     let userSelectedMain = 'practice';
-    let userSelectedSubject = 'eq'; // eq, sine10, sine31, fx
+    let userSelectedSubject = 'eq';
     let testQuestionCount = 5;
 
     let currentMode = 'listen'; 
@@ -547,7 +542,12 @@
         userSelectedMain = mode;
         isGroupMode = (mode === 'group'); 
         document.getElementById('main-menu').style.display = 'none';
-        document.getElementById('sub-menu').style.display = 'flex'; 
+        
+        if (mode === 'group') {
+            document.getElementById('group-test-view').style.display = 'flex';
+        } else {
+            document.getElementById('sub-menu').style.display = 'flex';
+        }
     }
 
     function showMainMenu() {
@@ -601,8 +601,10 @@
 
         if (userSelectedMain === 'practice') {
             document.getElementById('sub-menu').style.display = 'flex';
-        } else {
+        } else if (userSelectedMain === 'test') {
             document.getElementById('test-type-menu').style.display = 'flex';
+        } else {
+            document.getElementById('main-menu').style.display = 'flex';
         }
     }
 
@@ -709,6 +711,59 @@
         return { input: inputNode, output: outputNode };
     }
 
+    async function checkPassword() {
+        if (document.getElementById('pw-input').value === "ainstudio") { 
+            document.getElementById('auth-overlay').style.display = 'none';
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                masterGain = audioCtx.createGain(); updateGainSettings(); masterGain.connect(audioCtx.destination);
+            }
+            if (audioCtx.state === 'suspended') await audioCtx.resume();
+            
+            if (db) {
+                try {
+                    db.ref('room/' + currentRoomPin).remove(); 
+                } catch(e) {}
+            }
+        } else {
+            alert("Incorrect password.");
+        }
+    }
+    
+    function toggleSettings() { document.getElementById('settings-menu').classList.toggle('open'); }
+    
+    function updateGainSettings() {
+        if (currentEqMode === 'mix') { targetGain = currentGainAmount; } else { targetGain = currentEqMode === 'boost' ? currentGainAmount : -currentGainAmount; }
+        if (masterGain) masterGain.gain.value = (currentEqMode === 'boost' || currentEqMode === 'mix') && currentGainAmount === 12 ? 0.15 : 0.3;
+        if (currentMode === 'listen' && currentListenFreq && biquadFilter && currentQuizCategory === 'eq') { biquadFilter.gain.setTargetAtTime(targetGain, audioCtx.currentTime, 0.02); }
+    }
+    
+    function setEqMode(mode, btn) { currentEqMode = mode; document.querySelectorAll('.eq-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); updateGainSettings(); }
+    function setGainAmount(amount, btn) { currentGainAmount = amount; document.querySelectorAll('.gain-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); updateGainSettings(); }
+    
+    function setSource(type) {
+        document.querySelectorAll('#btn-src-pn, #btn-src-file, #btn-src-track').forEach(b => b.classList.remove('active')); document.getElementById('track-input-group').style.display = 'none';
+        if(type === 'pn') { document.getElementById('btn-src-pn').classList.add('active'); customBuffer = null; document.getElementById('file-name').innerText = "Pink Noise"; } 
+        else if(type === 'file') { document.getElementById('btn-src-file').classList.add('active'); document.getElementById('file-input').click(); } 
+        else if (type === 'track') { document.getElementById('btn-src-track').classList.add('active'); document.getElementById('track-input-group').style.display = 'block'; }
+    }
+    
+    function handleFileUpload(event) {
+        const file = event.target.files[0]; if (!file) { setSource('pn'); return; }
+        document.getElementById('file-name').innerText = file.name; const reader = new FileReader();
+        reader.onload = function(e) { audioCtx.decodeAudioData(e.target.result, function(buffer) { customBuffer = buffer; fileStartTime = 0; document.getElementById('file-name').innerText = "Loaded: " + file.name.substring(0, 20); renderWaveform(); }); }; reader.readAsArrayBuffer(file);
+    }
+    
+    async function loadTrack(trackNum) {
+        if (!audioCtx) return; if (audioCtx.state === 'suspended') await audioCtx.resume();
+        const url = `https://supercan777.github.io/Ear-Training/${trackNum}.mp3`; document.getElementById('file-name').innerText = `Loading Track ${trackNum}...`;
+        try {
+            const response = await fetch(url); if(!response.ok) throw new Error("File not found");
+            const arrayBuffer = await response.arrayBuffer(); customBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+            fileStartTime = 0; document.getElementById('file-name').innerText = `Loaded: Track ${trackNum}`; renderWaveform();
+        } catch (error) { alert(`'${trackNum}.mp3' 파일을 찾을 수 없습니다.`); document.getElementById('file-name').innerText = "Load Failed"; setSource('pn'); }
+    }
+
     function init(mode, category = 'eq', testQs = testQuestionCount) { 
         stopAudio();
         document.getElementById('main-menu').style.display = 'none';
@@ -718,7 +773,7 @@
         document.getElementById('app-view').style.display = 'flex';
 
         currentMode = mode;
-        currentQuizCategory = category; // eq, sine10, sine31, fx
+        currentQuizCategory = category;
         totalTestQuestions = testQs;
         isPracticeActive = false;
         isExamRunning = false;
@@ -756,15 +811,20 @@
         }
 
         if (mode === 'test') {
-            freqControls.style.display = 'none'; // 테스트 모드에선 숨김
+            freqControls.style.display = 'none'; 
             actions.innerHTML = `
                 <button class="btn primary" onclick="runTest()">▶ START EXAM</button> 
                 <button class="btn" onclick="listenAgain()">🎧 AGAIN</button> 
                 <button class="btn" onclick="showAnswers()">👁️ ALL ANSWERS</button> 
                 <button class="btn" onclick="stopAudio()" style="background:var(--danger-color); color:white; border-color:var(--danger-color);">⏹ STOP</button>`;
+            
+            if(category === 'fx') {
+                fxControls.style.display = 'flex';
+                applyFxSetup();
+            }
         } 
         else if (mode === 'practice') {
-            freqControls.style.display = 'none'; // 무한 퀴즈 모드에선 숨김
+            freqControls.style.display = 'none'; 
             actions.innerHTML = `
                 <button class="btn primary" onclick="runPractice()">▶ START QUIZ</button>
                 <button class="btn" onclick="stopAudio()" style="background:var(--danger-color); color:white; border-color:var(--danger-color);">⏹ STOP</button>
@@ -788,10 +848,9 @@
             }
         }
 
-        // 선생님 화면이 열리자마자 학생 리모컨 셋팅을 위해 모드 전송
         if (isGroupMode && db) {
             db.ref('room/' + currentRoomPin + '/mode').set(category);
-            db.ref('room/' + currentRoomPin + '/status').set('running'); // 리모컨 보이기
+            db.ref('room/' + currentRoomPin + '/status').set('running'); 
         }
     }
 
@@ -1070,7 +1129,7 @@
                     scoreHtml = `
                         <div style="text-align: center; padding: 30px 10px;">
                             <div style="font-size: 1.5em; color: #64748b; font-weight: bold; margin-bottom: 10px;">🏆 1등 (Top Scorer) 🏆</div>
-                            <div style="font-size: 3em; font-weight: 900; color: #4A90E2; margin-bottom: 15px;">${winners.join(', ')}</div>
+                            <div style="font-size: 3em; font-weight: 900; color: #4A90E2; margin-bottom: 15px; word-break: break-all;">${winners.join(', ')}</div>
                             <div style="font-size: 1.5em; font-weight: bold; color: #0f172a;">${maxScore} / ${totalTestQuestions} <span style="color:var(--success-color);">(${pct}%)</span></div>
                         </div>
                     `;
