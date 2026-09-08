@@ -397,11 +397,10 @@
     });
 
     // =======================================================================
-    // ★ [매우 중요] 구글 파이어베이스의 import 코드를 통째로 덮어쓰면 에러가 납니다!
-    // 반드시 아래 빈칸의 따옴표("") 안쪽에 값만 하나씩 복사해서 넣어주세요! ★
+    // ★ 반드시 아래 빈칸의 따옴표("") 안쪽에 값만 하나씩 복사해서 넣어주세요! ★
     // =======================================================================
     const firebaseConfig = {
-       apiKey: "AIzaSyD7ldX4co1tDyZlulM3bG0RM2gYP9rX6yM",
+        apiKey: "AIzaSyD7ldX4co1tDyZlulM3bG0RM2gYP9rX6yM",
     authDomain: "ear-training-ad2a1.firebaseapp.com",
     databaseURL: "https://ear-training-ad2a1-default-rtdb.firebaseio.com",
     projectId: "ear-training-ad2a1",
@@ -543,14 +542,16 @@
         }
     }
 
-    // ★ 메뉴 이동 플로우 수정 구역 (버그 수정됨) ★
     function selectMainMenu(mode) {
         userSelectedMain = mode;
         isGroupMode = (mode === 'group'); 
         document.getElementById('main-menu').style.display = 'none';
         
-        // 어떤 모드를 선택하든 무조건 서브 메뉴(과목 선택)로 먼저 이동합니다!
-        document.getElementById('sub-menu').style.display = 'flex'; 
+        if (mode === 'group') {
+            document.getElementById('group-test-view').style.display = 'flex';
+        } else {
+            document.getElementById('sub-menu').style.display = 'flex';
+        }
     }
 
     function showMainMenu() {
@@ -564,10 +565,6 @@
         userSelectedSubject = subject;
         if (userSelectedMain === 'practice') {
             init('listen', subject);
-        } else if (userSelectedMain === 'group') {
-            // 그룹 모드면 과목 선택 후 대기실(로비)로 바로 이동합니다!
-            document.getElementById('sub-menu').style.display = 'none';
-            document.getElementById('group-test-view').style.display = 'flex';
         } else {
             document.getElementById('sub-menu').style.display = 'none';
             document.getElementById('test-type-menu').style.display = 'flex';
@@ -583,7 +580,12 @@
         if (type === 'explore') {
             init('practice', userSelectedSubject);
         } else if (type === 'test-custom') {
-            init('test', userSelectedSubject, testQuestionCount);
+            if (isGroupMode) {
+                document.getElementById('test-type-menu').style.display = 'none';
+                document.getElementById('group-test-view').style.display = 'flex';
+            } else {
+                init('test', userSelectedSubject, testQuestionCount);
+            }
         }
     }
 
@@ -601,13 +603,12 @@
             db.ref('room/' + currentRoomPin + '/status').set('lobby');
         }
 
-        if (userSelectedMain === 'practice' || userSelectedMain === 'group') {
+        if (userSelectedMain === 'practice') {
             document.getElementById('sub-menu').style.display = 'flex';
         } else {
             document.getElementById('test-type-menu').style.display = 'flex';
         }
     }
-    // ★ 메뉴 이동 플로우 수정 구역 종료 ★
 
     function applyTestQs() {
         let val = parseInt(document.getElementById('test-q-input').value);
@@ -849,7 +850,6 @@
             }
         }
 
-        // 선생님 화면이 열리자마자 학생 리모컨 셋팅을 위해 모드 전송
         if (isGroupMode && db) {
             db.ref('room/' + currentRoomPin + '/mode').set(category);
             db.ref('room/' + currentRoomPin + '/status').set('running'); 
@@ -1070,6 +1070,7 @@
             db.ref('room/' + currentRoomPin + '/mode').set(currentQuizCategory);
             db.ref('room/' + currentRoomPin + '/scores').remove();
             db.ref('room/' + currentRoomPin + '/answers').remove();
+            db.ref('room/' + currentRoomPin + '/questionInfo').remove(); // ★ 리셋
         }
 
         testAnswers = []; testGains = []; let pool = (currentQuizCategory === 'eq' || currentQuizCategory === 'sine10') ? bands : (currentQuizCategory === 'sine31' ? bands31 : fxPool); 
@@ -1174,6 +1175,14 @@
         }
         targetSineFreq = testAnswers[currentTestQuestion]; 
         
+        // ★ 학생 폰으로 현재 문제 번호 쏘기 ★
+        if (isGroupMode && db) {
+            db.ref('room/' + currentRoomPin + '/questionInfo').set({
+                current: currentTestQuestion + 1,
+                total: totalTestQuestions
+            });
+        }
+
         startAudioSource(); 
         document.getElementById('status').innerText = `[Q ${currentTestQuestion + 1}/${totalTestQuestions}] Playing Sine Wave 1/2 (5s)`;
         
@@ -1208,6 +1217,14 @@
             document.getElementById('status').innerText = "All completed! Original source (3s)"; 
             sequenceTimer = setTimeout(() => { stopAudio(); isTestCompleted = true; document.getElementById('status').innerText = "EXAM COMPLETED! Check ANSWERS."; broadcastScores(); }, 3000); 
             return; 
+        }
+
+        // ★ 학생 폰으로 현재 문제 번호 쏘기 ★
+        if (isGroupMode && db) {
+            db.ref('room/' + currentRoomPin + '/questionInfo').set({
+                current: currentTestQuestion + 1,
+                total: totalTestQuestions
+            });
         }
 
         setEffectActive(false); 
