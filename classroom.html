@@ -106,7 +106,6 @@
         .btn.active, .btn.primary { background: var(--primary-color); color: white; border-color: var(--primary-color); box-shadow: 0 4px 12px rgba(74, 144, 226, 0.25);}
         .btn.primary:hover { background: var(--primary-hover); }
 
-        /* 5-Band Grid 추가 */
         .freq-grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 8px; width: 100%; flex: none;}
         .freq-grid.grid-5 { grid-template-columns: repeat(5, 1fr); gap: 10px; }
         .freq-grid .btn { padding: 14px 5px; font-size: 0.9em; border-width: 1px;}
@@ -158,7 +157,6 @@
         .student-counter .count { font-size: 4em; font-weight: 900; margin: 5px 0 0 0; line-height: 1;}
 
         .results-panel { background: white; border: 1px solid var(--border-color); border-radius: 16px; flex: 1; padding: 25px; display: flex; flex-direction: column; overflow-y: auto;}
-        
         .student-badge { background: #e0f2fe; color: #0284c7; padding: 10px 18px; border-radius: 20px; font-weight: 800; font-size: 1.1em; border: 2px solid #bae6fd;}
         
         .score-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 1.1em; }
@@ -195,7 +193,7 @@
             <button class="mega-btn accent" onclick="selectMainMenu('group')">👥 GROUP TEST (Live Sync)</button>
         </div>
 
-        <!-- STEP 2: 과목 선택 (UI를 깔끔하게 원복) -->
+        <!-- STEP 2: 과목 선택 -->
         <div id="sub-menu" style="display:none; flex-direction:column; align-items:center; justify-content:center; flex:1; gap:20px;">
             <div style="display:flex; gap:10px; width: 100%; max-width:400px;">
                 <button class="mega-btn" style="flex:1; padding: 15px; font-size: 1.1em;" onclick="selectSubject('sine10')">SINE (10-Band)</button>
@@ -221,7 +219,7 @@
                 <div class="dashboard-left">
                     <h3 style="margin-top:0; color:#475569; margin-bottom: 20px;">SCAN TO JOIN</h3>
                     <div class="qr-placeholder">
-                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://supercan777.github.io/Ear-Training/student.html?v=7" alt="Student QR Code" style="width: 200px; height: 200px; border-radius: 12px; border: 4px solid white; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://supercan777.github.io/Ear-Training/student.html?v=8" alt="Student QR Code" style="width: 200px; height: 200px; border-radius: 12px; border: 4px solid white; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
                     </div>
                     <p style="margin:0; color:#94a3b8; font-weight:800; text-transform:uppercase; letter-spacing:1px;">Room PIN</p>
                     <p class="pin-code">7734</p>
@@ -327,7 +325,7 @@
             </div>
         </div>
 
-        <!-- ★ 새롭게 추가된 10-Band 범위 선택 메뉴 ★ -->
+        <!-- 10-Band 범위 선택 메뉴 -->
         <div class="settings-group">
             <div class="settings-label">10-Band Range (EQ & SINE)</div>
             <div class="row">
@@ -409,18 +407,18 @@
 <script>
     var firebaseConfig = {
         apiKey: "AIzaSyD7ldX4co1tDyZlulM3bG0RM2gYP9rX6yM",
-    authDomain: "ear-training-ad2a1.firebaseapp.com",
-    databaseURL: "https://ear-training-ad2a1-default-rtdb.firebaseio.com",
-    projectId: "ear-training-ad2a1",
-    storageBucket: "ear-training-ad2a1.firebasestorage.app",
-    messagingSenderId: "735813738589",
-    appId: "1:735813738589:web:797e1eb0c3af9ebaeaedb4",
-    measurementId: "G-B6B462KBCB"
+  authDomain: "ear-training-ad2a1.firebaseapp.com",
+  databaseURL: "https://ear-training-ad2a1-default-rtdb.firebaseio.com",
+  projectId: "ear-training-ad2a1",
+  storageBucket: "ear-training-ad2a1.firebasestorage.app",
+  messagingSenderId: "735813738589",
+  appId: "1:735813738589:web:797e1eb0c3af9ebaeaedb4",
+  measurementId: "G-B6B462KBCB"
     };
 </script>
 
 <!-- ======================================================================= -->
-<!-- 메인 앱 로직 (이 아래로는 수정하지 마세요) -->
+<!-- 메인 앱 로직 -->
 <!-- ======================================================================= -->
 <script>
     document.getElementById('pw-input').addEventListener('keypress', function (e) {
@@ -429,6 +427,9 @@
 
     let db = null;
     const currentRoomPin = "7734"; 
+
+    // ★ 실시간 접속자 체크 및 로컬 저장소 캐시(currentAnswers) ★
+    let currentAnswers = {};
 
     try {
         if (typeof firebaseConfig !== 'undefined' && firebaseConfig.apiKey && firebaseConfig.apiKey !== "여기에_API_KEY_붙여넣기") {
@@ -452,6 +453,11 @@
                         listEl.innerHTML = '<span style="color:#94a3b8; font-weight:bold;">Waiting for students to join...</span>';
                     }
                 }
+            });
+
+            // ★ 채점 누락 방지를 위한 실시간 정답 수집 리스너 ★
+            db.ref('room/' + currentRoomPin + '/answers').on('value', (snapshot) => {
+                currentAnswers = snapshot.val() || {};
             });
         }
     } catch (error) {
@@ -479,7 +485,7 @@
     let currentQuestionGain = 12; 
     let testGains = []; 
 
-    // ★ 범위 설정 변수 및 배열 ★
+    // ★ 범위 설정 배열 ★
     let currentRangeMode = 'all'; // all, low, mid, high
 
     const bandsLow = [31.5, 63, 125, 250, 500];
@@ -522,11 +528,9 @@
     let isFxBypassed = false; 
     
     let rtaBars = new Array(50).fill(5);
-
     let studentScores = {}; 
     let isGroupMode = false; 
 
-    // 범위 설정 클릭 함수
     function setRangeMode(mode, btn) {
         currentRangeMode = mode;
         document.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
@@ -544,22 +548,21 @@
         }
     }
 
+    // ★ 로컬 캐시(currentAnswers)를 이용한 누락 없는 완벽한 채점 로직 ★
     function gradeCurrentQuestion(correctAnswer) {
         if (!isGroupMode || !db) return; 
 
-        db.ref('room/' + currentRoomPin + '/answers').once('value').then(snapshot => {
-            const ans = snapshot.val();
-            if(ans) {
-                for(let s in ans) {
-                    if(ans[s] == correctAnswer) {
-                        studentScores[s] = (studentScores[s] || 0) + 1;
-                    } else {
-                        studentScores[s] = studentScores[s] || 0;
-                    }
-                }
+        for(let s in currentAnswers) {
+            if(currentAnswers[s] == correctAnswer) {
+                studentScores[s] = (studentScores[s] || 0) + 1;
+            } else {
+                studentScores[s] = studentScores[s] || 0;
             }
-            db.ref('room/' + currentRoomPin + '/answers').remove();
-        });
+        }
+        
+        // 채점 완료 후 초기화
+        currentAnswers = {};
+        db.ref('room/' + currentRoomPin + '/answers').remove();
     }
 
     function resetClassroom() {
@@ -809,7 +812,6 @@
         isPracticeActive = false;
         isExamRunning = false;
         
-        // 화면 타이틀에 현재 선택된 범위 표시
         let rangeText = currentRangeMode === 'all' ? 'All' : (currentRangeMode === 'low' ? 'Low' : (currentRangeMode === 'mid' ? 'Mid' : 'High'));
         let catText = '';
         if (category === 'eq') catText = `EQ (10-Band: ${rangeText})`;
@@ -834,8 +836,7 @@
         freqControls.innerHTML = ''; actions.innerHTML = '';
         freqControls.style.display = 'none'; fxControls.style.display = 'none'; 
         
-        // 교사용 화면 하단 주파수 버튼 렌더링
-        if (category.startsWith('sine') || category === 'eq') {
+        if (category.startsWith('sine') || category.startsWith('eq')) {
             freqControls.style.display = 'grid'; 
             if (category === 'sine31') {
                 freqControls.className = 'freq-grid freq31-grid'; 
@@ -872,7 +873,7 @@
             `;
         } 
         else {
-            if(category.startsWith('sine') || category === 'eq') {
+            if(category.startsWith('sine') || category.startsWith('eq')) {
                 actions.innerHTML = `
                     <button class="btn primary" onclick="playListenAudio()">▶ ${category.startsWith('sine') ? 'PLAY SINE' : 'PLAY (FLAT)'}</button> 
                     <button class="btn" onclick="stopAudio()" style="background:var(--danger-color); color:white; border-color:var(--danger-color);">⏹ STOP</button>
@@ -889,11 +890,10 @@
             }
         }
 
-        // 학생용 리모컨 화면을 변경하기 위한 파이어베이스 전송 (결합된 모드 이름 전송)
         if (isGroupMode && db) {
             let broadcastMode = category;
             if (category === 'eq' || category === 'sine10') {
-                broadcastMode = category + '-' + currentRangeMode; // 예: eq-low, sine10-mid
+                broadcastMode = category + '-' + currentRangeMode; 
             }
             db.ref('room/' + currentRoomPin + '/mode').set(broadcastMode);
             db.ref('room/' + currentRoomPin + '/status').set('running'); 
@@ -1045,358 +1045,4 @@
         let pool;
         if (currentQuizCategory === 'eq' || currentQuizCategory === 'sine10') {
             if (currentRangeMode === 'low') pool = bandsLow;
-            else if (currentRangeMode === 'mid') pool = bandsMid;
-            else if (currentRangeMode === 'high') pool = bandsHigh;
-            else pool = bands10;
-        } else if (currentQuizCategory === 'sine31') {
-            pool = bands31;
-        } else pool = fxPool;
-
-        let newAnswer; do { newAnswer = pool[Math.floor(Math.random() * pool.length)]; } while (newAnswer === currentPracticeAnswer); currentPracticeAnswer = newAnswer;
-        if (currentQuizCategory.startsWith('eq')) { if (currentEqMode === 'mix') { currentQuestionGain = Math.random() > 0.5 ? currentGainAmount : -currentGainAmount; } else { currentQuestionGain = currentEqMode === 'boost' ? currentGainAmount : -currentGainAmount; } }
-        if (customBuffer && !currentQuizCategory.startsWith('sine')) { const maxStart = Math.max(0, customBuffer.duration - 32); fileStartTime = Math.random() * maxStart; }
-        
-        isPracticeActive = true; 
-        document.getElementById('answer-display').style.display = 'none';
-        document.getElementById('action-btns').innerHTML = `
-            <button class="btn" onclick="listenPracticeAgain()">🎧 AGAIN</button>
-            <button class="btn primary" onclick="showPracticeAnswer()">👁️ SHOW ANSWER</button>
-            <button class="btn" onclick="cancelPractice()" style="background:var(--danger-color); color:white; border-color:var(--danger-color);">⏹ STOP</button>
-        `;
-        playPracticeSequence(currentPracticeAnswer);
-    }
-    
-    async function listenPracticeAgain() {
-        if (audioCtx && audioCtx.state === 'suspended') await audioCtx.resume();
-        isPracticeActive = true; document.getElementById('answer-display').style.display = 'none';
-        document.getElementById('action-btns').innerHTML = `
-            <button class="btn" onclick="listenPracticeAgain()">🎧 AGAIN</button>
-            <button class="btn primary" onclick="showPracticeAnswer()">👁️ SHOW ANSWER</button>
-            <button class="btn" onclick="cancelPractice()" style="background:var(--danger-color); color:white; border-color:var(--danger-color);">⏹ STOP</button>
-        `;
-        playPracticeSequence(currentPracticeAnswer);
-    }
-
-    function playPracticeSequence(answer) {
-        stopAudio(); document.getElementById('answer-display').style.display = 'none'; 
-        if (currentQuizCategory.startsWith('sine')) { targetSineFreq = answer; startAudioSource(); document.getElementById('status').innerText = "Listen carefully (Sine Wave)..."; return; }
-        
-        if (currentQuizCategory.startsWith('eq')) { biquadFilter = audioCtx.createBiquadFilter(); biquadFilter.type = "peaking"; biquadFilter.frequency.value = answer; biquadFilter.Q.value = 1.4; biquadFilter.gain.value = 0; targetGain = currentQuestionGain; } 
-        else { activeFxCategory = answer; setupFxNode(answer); }
-        startAudioSource(); document.getElementById('status').innerText = "Listen carefully...";
-        
-        function step1() { setEffectActive(false); sequenceTimer = setTimeout(step2, 5000); } function step2() { setEffectActive(true); sequenceTimer = setTimeout(step3, 5000); } function step3() { setEffectActive(false); sequenceTimer = setTimeout(step4, 5000); } function step4() { setEffectActive(true); sequenceTimer = setTimeout(step5, 5000); } function step5() { setEffectActive(false); sequenceTimer = setTimeout(finishPracticeSeq, 2000); } 
-        step1(); 
-    }
-    
-    function finishPracticeSeq() { stopAudio(); document.getElementById('status').innerText = "Sequence complete. Guess the answer!"; }
-
-    function showPracticeAnswer() {
-        if (!isPracticeActive) return;
-        stopAudio();
-        const display = document.getElementById('answer-display');
-        let targetText = currentQuizCategory.startsWith('eq') ? `${currentPracticeAnswer} Hz (${currentQuestionGain > 0 ? '+' : ''}${currentQuestionGain}dB)` : (currentQuizCategory.startsWith('sine') ? `${currentPracticeAnswer} Hz` : currentPracticeAnswer.toUpperCase());
-        
-        display.innerHTML = `<div style="font-size: 1.2em; color: #94a3b8; margin-bottom: 15px; letter-spacing: 1px;">[ ANSWER ]</div><span style="color:#ffeb3b; font-size:2.5em; font-weight:900;">${targetText}</span>`; 
-        display.style.display = 'flex'; 
-        
-        document.getElementById('status').innerText = "Answer Revealed.";
-        document.getElementById('action-btns').innerHTML = `
-            <button class="btn primary" onclick="runPractice()">▶ NEXT QUESTION</button> 
-            <button class="btn" onclick="cancelPractice()">← BACK</button>
-        `;
-    }
-
-    async function runTest() {
-        if (audioCtx && audioCtx.state === 'suspended') await audioCtx.resume();
-        
-        studentScores = {};
-        if (isGroupMode && db) {
-            db.ref('room/' + currentRoomPin + '/students').once('value').then(snapshot => {
-                let students = snapshot.val();
-                if(students) {
-                    for(let s in students) {
-                        studentScores[s] = 0; 
-                    }
-                }
-            });
-            // 그룹 모드 상태 초기화 전송
-            let broadcastMode = currentQuizCategory;
-            if (currentQuizCategory === 'eq' || currentQuizCategory === 'sine10') {
-                broadcastMode = currentQuizCategory + '-' + currentRangeMode; 
-            }
-            db.ref('room/' + currentRoomPin + '/status').set('running');
-            db.ref('room/' + currentRoomPin + '/mode').set(broadcastMode);
-            db.ref('room/' + currentRoomPin + '/scores').remove();
-            db.ref('room/' + currentRoomPin + '/answers').remove();
-            db.ref('room/' + currentRoomPin + '/questionInfo').remove();
-        }
-
-        testAnswers = []; testGains = []; 
-        let pool;
-        if (currentQuizCategory === 'eq' || currentQuizCategory === 'sine10') {
-            if (currentRangeMode === 'low') pool = bandsLow;
-            else if (currentRangeMode === 'mid') pool = bandsMid;
-            else if (currentRangeMode === 'high') pool = bandsHigh;
-            else pool = bands10;
-        } else if (currentQuizCategory === 'sine31') {
-            pool = bands31;
-        } else pool = fxPool;
-
-        for (let i = 0; i < totalTestQuestions; i++) {
-            let newAns; do { newAns = pool[Math.floor(Math.random() * pool.length)]; } while (i > 0 && newAns === testAnswers[i - 1]); testAnswers.push(newAns);
-            if (currentQuizCategory.startsWith('eq')) { let g = currentEqMode === 'mix' ? (Math.random() > 0.5 ? currentGainAmount : -currentGainAmount) : (currentEqMode === 'boost' ? currentGainAmount : -currentGainAmount); testGains.push(g); }
-        }
-        if (customBuffer && !currentQuizCategory.startsWith('sine')) { const maxStart = Math.max(0, customBuffer.duration - (totalTestQuestions * 15)); fileStartTime = Math.random() * maxStart; }
-        isTestCompleted = false; isExamRunning = true; currentTestQuestion = 0; startTestSequence(0);
-        
-        document.getElementById('action-btns').innerHTML = `
-            <button class="btn primary" onclick="runTest()">▶ RESTART EXAM</button> 
-            <button class="btn" onclick="listenAgain()">🎧 AGAIN</button> 
-            <button class="btn" onclick="showAnswers()">👁️ ALL ANSWERS</button> 
-            <button class="btn" onclick="stopAudio()" style="background:var(--danger-color); color:white; border-color:var(--danger-color);">⏹ STOP</button>`;
-    }
-
-    async function listenAgain() { 
-        if (audioCtx && audioCtx.state === 'suspended') await audioCtx.resume(); 
-        if (currentMode === 'test') { 
-            if (testAnswers.length > 0) { 
-                let target = currentTestQuestion - 1; 
-                if (target < 0) target = 0; 
-                startTestSequence(target); 
-            } else alert("Press START EXAM first."); 
-        } 
-    }
-
-    function showAnswers() {
-        const display = document.getElementById('answer-display');
-        if (currentMode === 'test' && testAnswers.length > 0) {
-            
-            let answersHtml = testAnswers.map((ans, i) => { 
-                let text = currentQuizCategory.startsWith('eq') ? `${ans} Hz (${testGains[i] > 0 ? '+' : ''}${testGains[i]}dB)` : (currentQuizCategory.startsWith('sine') ? `${ans} Hz` : ans.toUpperCase()); 
-                return `<div style="padding:4px 0;">Q${i+1}: <span style="color:#ffeb3b; font-weight:900;">${text}</span></div>`; 
-            }).join('');
-
-            if (isGroupMode) {
-                broadcastScores(); 
-
-                let maxScore = -1;
-                let winners = [];
-
-                for (let s in studentScores) {
-                    if (studentScores[s] > maxScore) {
-                        maxScore = studentScores[s];
-                        winners = [s];
-                    } else if (studentScores[s] === maxScore) {
-                        winners.push(s);
-                    }
-                }
-
-                let scoreHtml = "";
-
-                if (Object.keys(studentScores).length === 0 || maxScore === -1) {
-                    scoreHtml = "<div style='padding:20px; color:#94a3b8; font-weight:bold; text-align:center;'>No answer data submitted.</div>";
-                } else {
-                    let pct = Math.round((maxScore / totalTestQuestions) * 100);
-                    scoreHtml = `
-                        <div style="text-align: center; padding: 30px 10px;">
-                            <div style="font-size: 1.5em; color: #64748b; font-weight: bold; margin-bottom: 10px;">🏆 TOP SCORER 🏆</div>
-                            <div style="font-size: 3em; font-weight: 900; color: #4A90E2; margin-bottom: 15px; word-break: break-all;">${winners.join(', ')}</div>
-                            <div style="font-size: 1.5em; font-weight: bold; color: #0f172a;">${maxScore} / ${totalTestQuestions} <span style="color:var(--success-color);">(${pct}%)</span></div>
-                        </div>
-                    `;
-                }
-
-                display.innerHTML = `
-                    <div style="display:flex; gap: 40px; text-align: left; width: 100%; max-width: 900px; justify-content: center; max-height: 90%; overflow-y: auto;">
-                        <div style="flex: 1;">
-                            <div style="color: #94a3b8; margin-bottom: 15px; font-weight: 800; letter-spacing: 1px;">[ EXAM ANSWERS ]</div>
-                            <div style="font-size: 1.2em; line-height: 1.6;">${answersHtml}</div>
-                        </div>
-                        <div style="flex: 1; background: white; padding: 20px 30px; border-radius: 16px; color: #1e293b; box-shadow: 0 10px 25px rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center;">
-                            ${scoreHtml}
-                        </div>
-                    </div>
-                `;
-            } else {
-                display.innerHTML = `<div style="font-size: 1.1em; color: #94a3b8; margin-bottom: 20px; letter-spacing: 1px;">[ EXAM ANSWERS ]</div> <div style="font-size: 1.2em; line-height: 1.6; display: grid; grid-template-columns: 1fr 1fr; gap: 10px 40px; text-align: left;"> ${answersHtml} </div>`; 
-            }
-            display.style.display = 'flex'; 
-        }
-    }
-
-    function startTestSequence(questionIndex) {
-        stopAudio(); 
-        document.getElementById('answer-display').style.display = 'none'; 
-        isTestCompleted = false; 
-        currentTestQuestion = questionIndex;
-
-        if (currentQuizCategory.startsWith('eq')) { biquadFilter = audioCtx.createBiquadFilter(); biquadFilter.type = "peaking"; biquadFilter.Q.value = 1.4; biquadFilter.gain.value = 0; }
-        if (currentQuizCategory.startsWith('sine')) { nextSineTestStep(); } else { startAudioSource(); nextTestStep(); }
-    }
-
-    function nextSineTestStep() {
-        if (currentTestQuestion >= totalTestQuestions) { 
-            document.getElementById('status').innerText = "EXAM COMPLETED! Check ANSWERS."; 
-            isTestCompleted = true; 
-            broadcastScores(); 
-            return; 
-        }
-        targetSineFreq = testAnswers[currentTestQuestion]; 
-        
-        if (isGroupMode && db) {
-            db.ref('room/' + currentRoomPin + '/questionInfo').set({
-                current: currentTestQuestion + 1,
-                total: totalTestQuestions
-            });
-        }
-
-        startAudioSource(); 
-        document.getElementById('status').innerText = `[Q ${currentTestQuestion + 1}/${totalTestQuestions}] Playing Sine Wave 1/2 (5s)`;
-        
-        sequenceTimer = setTimeout(() => { 
-            stopAudio(); 
-            document.getElementById('status').innerText = `[Q ${currentTestQuestion + 1}/${totalTestQuestions}] Waiting... (3s)`; 
-            
-            sequenceTimer = setTimeout(() => { 
-                startAudioSource(); 
-                document.getElementById('status').innerText = `[Q ${currentTestQuestion + 1}/${totalTestQuestions}] Playing Sine Wave 2/2 (5s)`;
-                
-                sequenceTimer = setTimeout(() => {
-                    stopAudio();
-                    document.getElementById('status').innerText = `[Q ${currentTestQuestion + 1}/${totalTestQuestions}] Time to answer... (5s)`;
-                    
-                    sequenceTimer = setTimeout(() => {
-                        gradeCurrentQuestion(targetSineFreq);
-                        currentTestQuestion++; 
-                        nextSineTestStep(); 
-                    }, 5000);
-                    
-                }, 5000);
-                
-            }, 3000); 
-            
-        }, 5000); 
-    }
-
-    function nextTestStep() {
-        if (currentTestQuestion >= totalTestQuestions) { 
-            setEffectActive(false); 
-            document.getElementById('status').innerText = "All completed! Original source (3s)"; 
-            sequenceTimer = setTimeout(() => { stopAudio(); isTestCompleted = true; document.getElementById('status').innerText = "EXAM COMPLETED! Check ANSWERS."; broadcastScores(); }, 3000); 
-            return; 
-        }
-
-        if (isGroupMode && db) {
-            db.ref('room/' + currentRoomPin + '/questionInfo').set({
-                current: currentTestQuestion + 1,
-                total: totalTestQuestions
-            });
-        }
-
-        setEffectActive(false); 
-        document.getElementById('status').innerText = `[Q ${currentTestQuestion + 1}/${totalTestQuestions}] Original (5s)`;
-        sequenceTimer = setTimeout(() => {
-            if (currentQuizCategory.startsWith('eq')) { biquadFilter.frequency.value = testAnswers[currentTestQuestion]; targetGain = testGains[currentTestQuestion]; } 
-            else { activeFxCategory = testAnswers[currentTestQuestion]; setupFxNode(testAnswers[currentTestQuestion]); }
-            setEffectActive(true); 
-            document.getElementById('status').innerText = `[Q ${currentTestQuestion + 1}/${totalTestQuestions}] Applied (5s)`;
-            sequenceTimer = setTimeout(() => {
-                setEffectActive(false); 
-                document.getElementById('status').innerText = `[Q ${currentTestQuestion + 1}/${totalTestQuestions}] Original (5s)`;
-                sequenceTimer = setTimeout(() => {
-                    setEffectActive(true); 
-                    document.getElementById('status').innerText = `[Q ${currentTestQuestion + 1}/${totalTestQuestions}] Applied (5s)`;
-                    
-                    sequenceTimer = setTimeout(() => { 
-                        gradeCurrentQuestion(testAnswers[currentTestQuestion]);
-                        currentTestQuestion++; 
-                        nextTestStep(); 
-                    }, 5000); 
-                    
-                }, 5000); 
-            }, 5000); 
-        }, 5000); 
-    }
-    
-    function startAudioSource() {
-        if (!audioCtx) return; 
-        if (currentQuizCategory.startsWith('sine')) {
-            activeSource = audioCtx.createOscillator(); activeSource.type = 'sine'; activeSource.frequency.value = targetSineFreq;
-            let sineGain = audioCtx.createGain(); sineGain.gain.value = 0; activeSource.connect(sineGain); sineGain.connect(masterGain); masterGain.gain.value = 0.15; 
-            activeSource.start(); sineGain.gain.linearRampToValueAtTime(1.0, audioCtx.currentTime + 0.05); activeSource.gainNode = sineGain; isPlaying = true; return;
-        }
-        
-        activeSource = audioCtx.createBufferSource();
-        if (customBuffer) activeSource.buffer = customBuffer;
-        else {
-            const bufferSize = audioCtx.sampleRate * 10; const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate); const output = noiseBuffer.getChannelData(0); let b0=0, b1=0, b2=0, b3=0, b4=0, b5=0, b6=0;
-            for (let i = 0; i < bufferSize; i++) { let white = Math.random() * 2 - 1; b0 = 0.99886 * b0 + white * 0.0555179; b1 = 0.99332 * b1 + white * 0.0750759; b2 = 0.96900 * b2 + white * 0.1538520; b3 = 0.86650 * b3 + white * 0.3104856; b4 = 0.55000 * b4 + white * 0.5329522; b5 = -0.7616 * b5 - white * 0.0168980; output[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.11; b6 = white * 0.115926; }
-            activeSource.buffer = noiseBuffer;
-        }
-        activeSource.loop = true;
-        if (!dryGainNode) { dryGainNode = audioCtx.createGain(); wetGainNode = audioCtx.createGain(); fxInputNode = audioCtx.createGain(); dryGainNode.connect(masterGain); wetGainNode.connect(masterGain); }
-
-        if (currentQuizCategory === 'fx') {
-            activeSource.connect(dryGainNode); activeSource.connect(fxInputNode); 
-            if (currentEffectNode) { fxInputNode.connect(currentEffectNode.input); currentEffectNode.output.connect(wetGainNode); }
-            
-            if ((currentMode === 'test' || currentMode === 'practice') && isExamRunning) {
-                setEffectActive(false); 
-            } else if (currentMode === 'practice' && isPracticeActive) {
-                setEffectActive(false);
-            } else {
-                if (isFxBypassed) setEffectActive(false); else applyFixedMix();
-            }
-        } else { activeSource.connect(biquadFilter); biquadFilter.connect(masterGain); }
-        let offset = customBuffer ? fileStartTime : 0; activeSource.start(0, offset); isPlaying = true;
-    }
-
-    function stopAudio() {
-        clearTimeout(sequenceTimer);
-        if (activeSource) { 
-            if (activeSource.gainNode) { activeSource.gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.05); setTimeout(() => { try { activeSource.stop(); activeSource.disconnect(); } catch(e){} activeSource = null; }, 50);
-            } else { try { activeSource.stop(); activeSource.disconnect(); } catch(e) {} activeSource = null; }
-        }
-        isPlaying = false; document.getElementById('status').innerText = "STOPPED";
-        if (currentMode === 'listen') { document.querySelectorAll('.freq-item').forEach(b => b.classList.remove('active')); currentListenFreq = null; }
-    }
-
-    function renderWaveform() {
-        const ctx = waveformCanvas.getContext('2d'); ctx.clearRect(0,0,1000,300); if(!customBuffer) return;
-        const data = customBuffer.getChannelData(0); const step = Math.ceil(data.length / 1000); ctx.fillStyle = '#4A90E2'; 
-        for (let i = 0; i < 1000; i++) { let min = 1.0, max = -1.0; for (let j = 0; j < step; j++) { let datum = data[i * step + j]; if (datum < min) min = datum; if (datum > max) max = datum; } let y = (1 + min) * 150; let h = Math.max(1, (max - min) * 150); ctx.fillRect(i, y, 1, h); }
-    }
-
-    function drawRTA() {
-        const canvas = document.getElementById('rta-canvas'); const ctx = canvas.getContext('2d'); ctx.clearRect(0,0,1000,300);
-        
-        if (currentQuizCategory.startsWith('sine') && isPlaying) {
-            ctx.beginPath(); ctx.strokeStyle = '#20c997'; ctx.lineWidth = 4;
-            let freqRatio = Math.max(0.01, targetSineFreq / 20000); let waves = 2 + (freqRatio * 60); 
-            for(let i=0; i<1000; i++) { let y = 150 + Math.sin(i * waves * 0.03 + (audioCtx ? audioCtx.currentTime * 3 : 0)) * 100; if(i===0) ctx.moveTo(i, y); else ctx.lineTo(i, y); }
-            ctx.stroke();
-        } else if (customBuffer) { 
-            ctx.drawImage(waveformCanvas, 0, 0, 1000, 300); const startX = (fileStartTime / customBuffer.duration) * 1000; ctx.fillStyle = '#ffeb3b'; ctx.fillRect(startX, 0, 3, 300);
-        } else { 
-            let time = Date.now() * 0.002; 
-            for(let i=0; i<50; i++) { 
-                let target = 5; 
-                if (isPlaying) { let wave = Math.sin(i * 0.3 + time) + Math.cos(i * 0.5 - time * 0.8) + Math.sin(i * 0.1 + time * 1.2); target = Math.abs(wave) * 40 + 30 + (Math.random() * 15); }
-                rtaBars[i] += (target - rtaBars[i]) * 0.15; let h = Math.max(5, rtaBars[i]);
-                ctx.fillStyle='#4A90E2'; ctx.fillRect(i*20, 300-h, 15, h); 
-            } 
-        }
-        requestAnimationFrame(drawRTA); 
-    } 
-
-    document.getElementById('display-area').addEventListener('click', function(e) {
-        if (!customBuffer || currentQuizCategory.startsWith('sine') || currentMode === 'test' || currentMode === 'practice') return;
-        const rect = this.getBoundingClientRect(); const x = e.clientX - rect.left; fileStartTime = customBuffer.duration * (x / rect.width);
-        if (isPlaying) { if (activeSource) { try { activeSource.stop(); activeSource.disconnect(); } catch(err) {} activeSource = null; } isPlaying = false; startAudioSource(); }
-    });
-    
-    requestAnimationFrame(drawRTA);
-</script>
-</body>
-</html>
+            else if (currentRangeMode
