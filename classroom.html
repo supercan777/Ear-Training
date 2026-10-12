@@ -157,6 +157,7 @@
         .student-counter .count { font-size: 4em; font-weight: 900; margin: 5px 0 0 0; line-height: 1;}
 
         .results-panel { background: white; border: 1px solid var(--border-color); border-radius: 16px; flex: 1; padding: 25px; display: flex; flex-direction: column; overflow-y: auto;}
+        
         .student-badge { background: #e0f2fe; color: #0284c7; padding: 10px 18px; border-radius: 20px; font-weight: 800; font-size: 1.1em; border: 2px solid #bae6fd;}
         
         .score-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 1.1em; }
@@ -204,7 +205,7 @@
             <button class="return-btn" style="margin-top:25px; max-width:400px;" onclick="showMainMenu()">BACK</button>
         </div>
 
-        <!-- STEP 3: 테스트 상세 선택 -->
+        <!-- STEP 3: 테스트 상세 선택 (개인 시험용) -->
         <div id="test-type-menu" style="display:none; flex-direction:column; align-items:center; justify-content:center; flex:1; gap:20px;">
             <button class="mega-btn" onclick="selectTestType('explore')">EXPLORE QUIZ</button>
             <button class="mega-btn" onclick="selectTestType('test-custom')">START TEST (<span id="menu-test-btn-text">5</span> Qs)</button>
@@ -325,7 +326,6 @@
             </div>
         </div>
 
-        <!-- 10-Band 범위 선택 메뉴 -->
         <div class="settings-group">
             <div class="settings-label">10-Band Range (EQ & SINE)</div>
             <div class="row">
@@ -427,8 +427,6 @@
 
     let db = null;
     const currentRoomPin = "7734"; 
-
-    // ★ 실시간 접속자 체크 및 로컬 저장소 캐시(currentAnswers) ★
     let currentAnswers = {};
 
     try {
@@ -455,7 +453,6 @@
                 }
             });
 
-            // ★ 채점 누락 방지를 위한 실시간 정답 수집 리스너 ★
             db.ref('room/' + currentRoomPin + '/answers').on('value', (snapshot) => {
                 currentAnswers = snapshot.val() || {};
             });
@@ -485,8 +482,7 @@
     let currentQuestionGain = 12; 
     let testGains = []; 
 
-    // ★ 범위 설정 배열 ★
-    let currentRangeMode = 'all'; // all, low, mid, high
+    let currentRangeMode = 'all'; 
 
     const bandsLow = [31.5, 63, 125, 250, 500];
     const bandsMid = [250, 500, 1000, 2000, 4000];
@@ -548,7 +544,6 @@
         }
     }
 
-    // ★ 로컬 캐시(currentAnswers)를 이용한 누락 없는 완벽한 채점 로직 ★
     function gradeCurrentQuestion(correctAnswer) {
         if (!isGroupMode || !db) return; 
 
@@ -560,7 +555,6 @@
             }
         }
         
-        // 채점 완료 후 초기화
         currentAnswers = {};
         db.ref('room/' + currentRoomPin + '/answers').remove();
     }
@@ -834,215 +828,4 @@
         const actions = document.getElementById('action-btns');
         
         freqControls.innerHTML = ''; actions.innerHTML = '';
-        freqControls.style.display = 'none'; fxControls.style.display = 'none'; 
-        
-        if (category.startsWith('sine') || category.startsWith('eq')) {
-            freqControls.style.display = 'grid'; 
-            if (category === 'sine31') {
-                freqControls.className = 'freq-grid freq31-grid'; 
-                bands31.forEach(f => { freqControls.innerHTML += `<button id="btn-freq-${f}" class="btn freq-item" onclick="handleFreqClick(${f})">${f}</button>`; });
-            } else {
-                let targetBands = bands10;
-                if (currentRangeMode === 'low') targetBands = bandsLow;
-                else if (currentRangeMode === 'mid') targetBands = bandsMid;
-                else if (currentRangeMode === 'high') targetBands = bandsHigh;
-                
-                freqControls.className = targetBands.length === 5 ? 'freq-grid grid-5' : 'freq-grid'; 
-                targetBands.forEach(f => { freqControls.innerHTML += `<button id="btn-freq-${f}" class="btn freq-item" onclick="handleFreqClick(${f})">${f}</button>`; });
-            }
-        }
-
-        if (mode === 'test') {
-            freqControls.style.display = 'none'; 
-            actions.innerHTML = `
-                <button class="btn primary" onclick="runTest()">▶ START EXAM</button> 
-                <button class="btn" onclick="listenAgain()">🎧 AGAIN</button> 
-                <button class="btn" onclick="showAnswers()">👁️ ALL ANSWERS</button> 
-                <button class="btn" onclick="stopAudio()" style="background:var(--danger-color); color:white; border-color:var(--danger-color);">⏹ STOP</button>`;
-            
-            if(category === 'fx') {
-                fxControls.style.display = 'flex';
-                applyFxSetup();
-            }
-        } 
-        else if (mode === 'practice') {
-            freqControls.style.display = 'none'; 
-            actions.innerHTML = `
-                <button class="btn primary" onclick="runPractice()">▶ START QUIZ</button>
-                <button class="btn" onclick="stopAudio()" style="background:var(--danger-color); color:white; border-color:var(--danger-color);">⏹ STOP</button>
-            `;
-        } 
-        else {
-            if(category.startsWith('sine') || category.startsWith('eq')) {
-                actions.innerHTML = `
-                    <button class="btn primary" onclick="playListenAudio()">▶ ${category.startsWith('sine') ? 'PLAY SINE' : 'PLAY (FLAT)'}</button> 
-                    <button class="btn" onclick="stopAudio()" style="background:var(--danger-color); color:white; border-color:var(--danger-color);">⏹ STOP</button>
-                `;
-                currentListenFreq = null; 
-            } else if(category === 'fx') {
-                fxControls.style.display = 'flex'; isFxBypassed = false; 
-                actions.innerHTML = `
-                    <button class="btn primary" onclick="playListenAudio()">▶ PLAY</button> 
-                    <button id="btn-fx-toggle" class="btn active" style="background-color:#8b5cf6; border-color:#8b5cf6; color:white;" onclick="toggleFxBypass()">✨ FX: ON</button> 
-                    <button class="btn" onclick="stopAudio()" style="background:var(--danger-color); color:white; border-color:var(--danger-color);">⏹ STOP</button>
-                `;
-                applyFxSetup(); 
-            }
-        }
-
-        if (isGroupMode && db) {
-            let broadcastMode = category;
-            if (category === 'eq' || category === 'sine10') {
-                broadcastMode = category + '-' + currentRangeMode; 
-            }
-            db.ref('room/' + currentRoomPin + '/mode').set(broadcastMode);
-            db.ref('room/' + currentRoomPin + '/status').set('running'); 
-        }
-    }
-
-    function toggleFxBypass() {
-        isFxBypassed = !isFxBypassed; const btn = document.getElementById('btn-fx-toggle');
-        if (isFxBypassed) { if(btn) { btn.innerHTML = "✨ BYPASS"; btn.style.backgroundColor = "#94a3b8"; btn.style.borderColor = "#94a3b8"; } setEffectActive(false); } 
-        else { if(btn) { btn.innerHTML = "✨ FX: ON"; btn.style.backgroundColor = "#8b5cf6"; btn.style.borderColor = "#8b5cf6"; } setEffectActive(true); }
-        updateFxStatusText();
-    }
-
-    function updateFxStatusText() {
-        if (!isPlaying) return;
-        if (isFxBypassed) document.getElementById('status').innerText = `PLAYING: ORIGINAL (Bypassed)`;
-        else { let type = activeFxCategory === 'reverb' ? activeReverbType : (activeFxCategory === 'filter' ? activeFilterType : activeFxCategory); document.getElementById('status').innerText = `PLAYING FX: ${type.toUpperCase()}`; }
-    }
-
-    function setupFxNode(fxType) {
-        if (currentLFOs.length > 0) { currentLFOs.forEach(lfo => { try { lfo.stop(); lfo.disconnect(); } catch(e) {} }); currentLFOs = []; }
-        if (currentEffectNode) { try { if (currentEffectNode.input) { currentEffectNode.input.disconnect(); currentEffectNode.output.disconnect(); } else currentEffectNode.disconnect(); } catch(e) {} }
-
-        if (['room', 'chamber', 'plate', 'hall'].includes(fxType)) currentEffectNode = createReverb(audioCtx, fxType, revPreDelayMs, revTimeSec);
-        else if (fxType === 'tremolo') currentEffectNode = createTremolo(audioCtx);
-        else if (fxType === 'distortion') currentEffectNode = createDistortion(audioCtx);
-        else if (['hpf', 'lpf', 'bpf'].includes(fxType)) {
-            let f = filterFreq;
-            if (currentMode === 'test' || currentMode === 'practice') { if(fxType === 'hpf') f = 1000; else if(fxType === 'lpf') f = 1000; else if(fxType === 'bpf') f = 1000; }
-            currentEffectNode = createFilter(audioCtx, fxType, f);
-        }
-        
-        if (fxInputNode && wetGainNode) {
-            fxInputNode.connect(currentEffectNode.input); currentEffectNode.output.connect(wetGainNode); 
-        }
-    }
-
-    const fxMixSettings = { 'reverb': 0.30, 'tremolo': 0.30, 'distortion': 0.30, 'filter': 1.0 }; 
-
-    function applyFixedMix() {
-        if (!dryGainNode || !wetGainNode || !audioCtx) return;
-        let mix = document.getElementById('set-mix').value / 100.0;
-        let dGain = Math.cos(mix * 0.5 * Math.PI); let wGain = Math.sin(mix * 0.5 * Math.PI);
-        dryGainNode.gain.cancelScheduledValues(audioCtx.currentTime); dryGainNode.gain.setValueAtTime(dryGainNode.gain.value, audioCtx.currentTime); dryGainNode.gain.linearRampToValueAtTime(dGain, audioCtx.currentTime + 0.03);
-        wetGainNode.gain.cancelScheduledValues(audioCtx.currentTime); wetGainNode.gain.setValueAtTime(wetGainNode.gain.value, audioCtx.currentTime); wetGainNode.gain.linearRampToValueAtTime(wGain, audioCtx.currentTime + 0.03);
-    }
-    
-    function updateFxMix() {
-        if (isPlaying && !isFxBypassed) applyFixedMix();
-    }
-
-    function setEffectActive(isActive) {
-        if (currentQuizCategory.startsWith('eq')) {
-            if(biquadFilter) { biquadFilter.gain.cancelScheduledValues(audioCtx.currentTime); biquadFilter.gain.setValueAtTime(biquadFilter.gain.value, audioCtx.currentTime); biquadFilter.gain.linearRampToValueAtTime(isActive ? targetGain : 0, audioCtx.currentTime + 0.03); }
-        } else if (currentQuizCategory === 'fx') {
-            if (!dryGainNode || !wetGainNode || !audioCtx) return;
-            if (isActive) {
-                if (currentMode === 'test' || currentMode === 'practice') {
-                    let quizMix = 0.30;
-                    if(['room', 'chamber', 'plate', 'hall'].includes(activeFxCategory)) quizMix = fxMixSettings['reverb'];
-                    else if(['hpf', 'lpf', 'bpf'].includes(activeFxCategory)) quizMix = 1.0; 
-                    else quizMix = fxMixSettings[activeFxCategory] || 0.30;
-                    
-                    let dGain = Math.cos(quizMix * 0.5 * Math.PI); let wGain = Math.sin(quizMix * 0.5 * Math.PI);
-                    dryGainNode.gain.cancelScheduledValues(audioCtx.currentTime); dryGainNode.gain.setValueAtTime(dryGainNode.gain.value, audioCtx.currentTime); dryGainNode.gain.linearRampToValueAtTime(dGain, audioCtx.currentTime + 0.03);
-                    wetGainNode.gain.cancelScheduledValues(audioCtx.currentTime); wetGainNode.gain.setValueAtTime(wetGainNode.gain.value, audioCtx.currentTime); wetGainNode.gain.linearRampToValueAtTime(wGain, audioCtx.currentTime + 0.03);
-                } else applyFixedMix(); 
-            } else {
-                dryGainNode.gain.cancelScheduledValues(audioCtx.currentTime); dryGainNode.gain.setValueAtTime(dryGainNode.gain.value, audioCtx.currentTime); dryGainNode.gain.linearRampToValueAtTime(1.0, audioCtx.currentTime + 0.03);
-                wetGainNode.gain.cancelScheduledValues(audioCtx.currentTime); wetGainNode.gain.setValueAtTime(wetGainNode.gain.value, audioCtx.currentTime); wetGainNode.gain.linearRampToValueAtTime(0.0, audioCtx.currentTime + 0.03); 
-            }
-        }
-    }
-
-    function selectFxCategory(category) {
-        activeFxCategory = category; document.querySelectorAll('.fx-categories .btn').forEach(b => b.classList.remove('active')); document.getElementById(`btn-cat-${category}`).classList.add('active');
-        document.getElementById('reverb-only-params').style.display = (category === 'reverb') ? 'flex' : 'none'; document.getElementById('filter-only-params').style.display = (category === 'filter') ? 'flex' : 'none';
-        let defaultMix = (category === 'filter') ? 100 : (fxMixSettings[category] ? fxMixSettings[category] * 100 : 30);
-        syncParam('mix', defaultMix); applyFxSetup(); if (isPlaying && currentMode === 'listen' && !isFxBypassed) applyFixedMix();
-    }
-    
-    function setReverbType(type) { activeReverbType = type; document.querySelectorAll('.rev-type-btn').forEach(b => b.classList.remove('active')); document.getElementById(`btn-rev-${type}`).classList.add('active'); applyFxSetup(); }
-    function setFilterType(type) { activeFilterType = type; document.querySelectorAll('.fil-type-btn').forEach(b => b.classList.remove('active')); document.getElementById(`btn-fil-${type}`).classList.add('active'); applyFxSetup(); }
-
-    function updateReverbParams() {
-        if(document.getElementById('slider-predelay')) revPreDelayMs = document.getElementById('slider-predelay').value;
-        else revPreDelayMs = document.getElementById('set-predelay').value;
-        
-        if(document.getElementById('slider-revtime')) revTimeSec = document.getElementById('slider-revtime').value;
-        else revTimeSec = document.getElementById('set-revtime').value;
-        
-        if (activeFxCategory === 'reverb' && isPlaying) applyFxSetup(); 
-    }
-    function updateFilterParams() { 
-        if(document.getElementById('slider-filfreq')) filterFreq = document.getElementById('slider-filfreq').value;
-        else filterFreq = document.getElementById('set-filfreq').value;
-        if (activeFxCategory === 'filter' && isPlaying) applyFxSetup();  
-    }
-
-    function applyFxSetup() {
-        let type = activeFxCategory === 'reverb' ? activeReverbType : (activeFxCategory === 'filter' ? activeFilterType : activeFxCategory); 
-        setupFxNode(type); if(isPlaying && !isExamRunning) updateFxStatusText();
-    }
-
-    function handleFreqClick(freq) {
-        if (currentMode === 'listen') { 
-            document.querySelectorAll('.freq-item').forEach(btn => btn.classList.remove('active'));
-            if (currentListenFreq === freq) { 
-                currentListenFreq = null; 
-                if (currentQuizCategory.startsWith('sine')) { stopAudio(); document.getElementById('status').innerText = "READY"; } 
-                else { if (biquadFilter) biquadFilter.gain.value = 0; document.getElementById('status').innerText = isPlaying ? "PLAYING: FLAT" : "READY"; }
-            } else { 
-                currentListenFreq = freq; document.getElementById(`btn-freq-${freq}`).classList.add('active'); 
-                if (currentQuizCategory.startsWith('sine')) {
-                    targetSineFreq = freq; if (!isPlaying) startAudioSource(); else if (activeSource && activeSource.frequency) activeSource.frequency.setValueAtTime(freq, audioCtx.currentTime);
-                    document.getElementById('status').innerText = `PLAYING SINE: ${freq}Hz`; 
-                } else {
-                    if (currentEqMode === 'mix') { targetGain = Math.random() > 0.5 ? currentGainAmount : -currentGainAmount; } else { targetGain = currentEqMode === 'boost' ? currentGainAmount : -currentGainAmount; }
-                    if(!biquadFilter) createOrUpdateFilter(freq, targetGain); else { biquadFilter.frequency.value = freq; biquadFilter.gain.value = targetGain; } 
-                    document.getElementById('status').innerText = isPlaying ? `PLAYING: ${freq}Hz (${targetGain > 0 ? '+' : ''}${targetGain}dB)` : `READY (${freq}Hz)`; 
-                }
-            }
-        }
-    }
-
-    function createOrUpdateFilter(freq, gain) {
-        if (!biquadFilter) { biquadFilter = audioCtx.createBiquadFilter(); biquadFilter.type = "peaking"; biquadFilter.Q.value = 1.4; }
-        biquadFilter.frequency.value = freq; biquadFilter.gain.value = gain;
-    }
-
-    async function playListenAudio() {
-        if (isPlaying) return; if (audioCtx && audioCtx.state === 'suspended') await audioCtx.resume();
-        if (currentMode === 'listen') {
-            if (currentQuizCategory.startsWith('sine')) { targetSineFreq = currentListenFreq || 1000; startAudioSource(); document.getElementById('status').innerText = currentListenFreq ? `PLAYING SINE: ${currentListenFreq}Hz` : "PLAYING SINE: 1000Hz"; } 
-            else if (currentQuizCategory.startsWith('eq')) { if (!biquadFilter) createOrUpdateFilter(1000, 0); startAudioSource(); document.getElementById('status').innerText = currentListenFreq ? `PLAYING: ${currentListenFreq}Hz (${targetGain > 0 ? '+' : ''}${targetGain}dB)` : "PLAYING: FLAT (Original)"; }
-            else { startAudioSource(); updateFxStatusText(); }
-        }
-    }
-
-    function cancelPractice() {
-        stopAudio(); isPracticeActive = false; document.getElementById('answer-display').style.display = 'none';
-        document.getElementById('status').innerText = "Canceled. Ready to start.";
-        document.getElementById('action-btns').innerHTML = `<button class="btn primary" onclick="runPractice()">▶ START QUIZ</button>`;
-    }
-
-    async function runPractice() {
-        if (audioCtx && audioCtx.state === 'suspended') await audioCtx.resume();
-        
-        let pool;
-        if (currentQuizCategory === 'eq' || currentQuizCategory === 'sine10') {
-            if (currentRangeMode === 'low') pool = bandsLow;
-            else if (currentRangeMode
+        freqControls
