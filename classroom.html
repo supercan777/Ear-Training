@@ -5,23 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ear Training - Classroom Pro</title>
     
-    <!-- ======================================================================= -->
-    <!-- ★ 파이어베이스 설정: 이 스크립트 블록 안의 값만 조심스럽게 수정하세요! ★ -->
-    <!-- ======================================================================= -->
-    <script>
-        var firebaseConfig = {
-          apiKey: "AIzaSyD7ldX4co1tDyZlulM3bG0RM2gYP9rX6yM",
-  authDomain: "ear-training-ad2a1.firebaseapp.com",
-  databaseURL: "https://ear-training-ad2a1-default-rtdb.firebaseio.com",
-  projectId: "ear-training-ad2a1",
-  storageBucket: "ear-training-ad2a1.firebasestorage.app",
-  messagingSenderId: "735813738589",
-  appId: "1:735813738589:web:797e1eb0c3af9ebaeaedb4",
-  measurementId: "G-B6B462KBCB"
-        };
-    </script>
-    <!-- ======================================================================= -->
-
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
@@ -190,7 +173,8 @@
             <h2 style="margin-bottom: 8px; font-size: 3em; font-weight: 800; color: #0f172a; letter-spacing: -1px;">Ear Training</h2>
             <p style="margin: 0; color: var(--primary-color); font-weight: 800; letter-spacing: 3px; font-size: 1em;">CLASSROOM EDITION</p>
         </div>
-        <input type="password" id="pw-input" placeholder="Enter Password (ainstudio)">
+        <!-- ★ 비밀번호 힌트 제거 ★ -->
+        <input type="password" id="pw-input" placeholder="Enter Password">
         <button class="btn primary" onclick="checkPassword()" style="width: 80%; max-width: 320px; font-size: 1.1em; padding: 20px; flex: none;">START APP</button>
     </div>
 
@@ -417,6 +401,22 @@
         <button class="btn" onclick="resetClassroom()" style="margin-top: 10px; width:100%; background: #ef4444; color: white; border-color: transparent; max-width:none; flex: none;">Logout & Reset Classroom</button>
     </div>
 </div>
+
+<!-- ======================================================================= -->
+<!-- ★ 파이어베이스 설정: 이 스크립트 블록 안의 값만 수정하세요! ★ -->
+<!-- ======================================================================= -->
+<script>
+    var firebaseConfig = {
+       apiKey: "AIzaSyD7ldX4co1tDyZlulM3bG0RM2gYP9rX6yM",
+  authDomain: "ear-training-ad2a1.firebaseapp.com",
+  databaseURL: "https://ear-training-ad2a1-default-rtdb.firebaseio.com",
+  projectId: "ear-training-ad2a1",
+  storageBucket: "ear-training-ad2a1.firebasestorage.app",
+  messagingSenderId: "735813738589",
+  appId: "1:735813738589:web:797e1eb0c3af9ebaeaedb4",
+  measurementId: "G-B6B462KBCB"
+    };
+</script>
 
 <!-- ======================================================================= -->
 <!-- 메인 앱 로직 -->
@@ -738,7 +738,6 @@
     }
 
     async function checkPassword() {
-        // ★ 대소문자나 띄어쓰기 오타가 있어도 작동하도록 처리 ★
         const pw = document.getElementById('pw-input').value.trim().toLowerCase();
         
         if (pw === "ainstudio") { 
@@ -852,7 +851,7 @@
         if (mode === 'test') {
             freqControls.style.display = 'none'; 
             actions.innerHTML = `
-                <button class="btn primary" onclick="runTest()">▶ START EXAM</button> 
+                <button class="btn primary" onclick="runTest()">▶ RESTART EXAM</button> 
                 <button class="btn" onclick="listenAgain()">🎧 AGAIN</button> 
                 <button class="btn" onclick="showAnswers('top')">🏆 1등 보기</button> 
                 <button class="btn" onclick="showAnswers('all')">📊 전체 보기</button> 
